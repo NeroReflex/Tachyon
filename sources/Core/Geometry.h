@@ -17,7 +17,7 @@ namespace Tachyon {
 
 				Triangle(const Triangle& src) noexcept;
 
-				bool hit(const Ray& ray) const noexcept override;
+				bool isHitBy(const Ray& ray) const noexcept override;
 
 			private:
 				std::array<glm::vec4, 3> mVertices;
@@ -35,7 +35,7 @@ namespace Tachyon {
 
 				glm::float32 getRadius() const noexcept;
 				
-				bool hit(const Ray& ray) const noexcept override;
+				bool isHitBy(const Ray& ray) const noexcept override;
 
 			private:
 				glm::vec4 mOrigin;
@@ -63,7 +63,7 @@ namespace Tachyon {
 
 			static Geometry makeTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept;
 
-			bool hit(const Ray& ray) const noexcept override;
+			bool isHitBy(const Ray& ray) const noexcept override;
 
 		protected:
 			/**

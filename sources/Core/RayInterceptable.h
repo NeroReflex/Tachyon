@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Ray.h"
+#include "RayGeometryIntersection.h"
 
 namespace Tachyon {
 	namespace Core {
 		class RayInterceptable {
 		public:
-			virtual bool hit(const Ray& ray) const noexcept = 0;
+			virtual bool isHitBy(const Ray& ray) const noexcept = 0;
 		};
 	}
 }

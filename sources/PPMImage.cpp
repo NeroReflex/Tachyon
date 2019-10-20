@@ -5,7 +5,7 @@ using namespace Tachyon;
 PPMImage::PPMImage(glm::uint32 width, glm::uint32 height) noexcept
 	: mWidth(width),
 	mHeight(height),
-	mColorBuffer(mWidth * mHeight, glm::vec3(0, 0, 0)) {}
+	mColorBuffer(static_cast<size_t>(mWidth) * static_cast<size_t>(mHeight), glm::vec3(0, 0, 0)) {}
 
 PPMImage::PPMImage(const PPMImage& src) noexcept
 	: mWidth(src.mWidth),
@@ -31,11 +31,11 @@ glm::uint32 PPMImage::getHeight() const noexcept {
 }
 
 void PPMImage::setPixel(const glm::uint32& width, const glm::uint32& height, const glm::vec3& color) noexcept {
-	mColorBuffer[height * mWidth + width] = color;
+	mColorBuffer[(static_cast<size_t>(height) * static_cast<size_t>(mWidth)) + static_cast<size_t>(width)] = color;
 }
 
 glm::vec3 PPMImage::getPixel(const glm::uint32& width, const glm::uint32& height) const noexcept {
-	return mColorBuffer[height * mWidth + width];
+	return mColorBuffer[(static_cast<size_t>(height) * static_cast<size_t>(mWidth)) + static_cast<size_t>(width)];
 }
 
 void PPMImage::write(const std::string& fileName) const noexcept {
@@ -49,10 +49,10 @@ void PPMImage::write(const std::string& fileName) const noexcept {
 	{
 		for (int i = 0; i < mWidth; ++i)
 		{
-			const auto& color = mColorBuffer[j * mWidth + i];
+			const auto& color = mColorBuffer[(static_cast<size_t>(j) * static_cast<size_t>(mWidth)) + static_cast<size_t>(i)];
 			outFile << static_cast<unsigned>(std::min<glm::float32>(1, color.r) * 255) << " "
 				<< static_cast<unsigned>(std::min<glm::float32>(1, color.g) * 255) << " "
-				<< static_cast<unsigned>(std::min<glm::float32>(1, color.b) * 255) << std::endl;
+				<< static_cast<unsigned>(std::min<glm::float32>(1, color.b) * 255) << " " << std::endl;
 		}
 	}
 

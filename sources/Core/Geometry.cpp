@@ -20,7 +20,7 @@ Geometry::Triangle::Triangle(const std::array<glm::vec3, 3>& data) noexcept
 Geometry::Triangle::Triangle(const Triangle& src) noexcept 
 	: mVertices(src.mVertices) {}
 
-bool Geometry::Triangle::hit(const Ray& ray) const noexcept {
+bool Geometry::Triangle::isHitBy(const Ray& ray) const noexcept {
 	return false;
 }
 
@@ -38,7 +38,7 @@ glm::float32 Geometry::Sphere::getRadius() const noexcept {
 	return mRadius;
 }
 
-bool Geometry::Sphere::hit(const Ray& ray) const noexcept {
+bool Geometry::Sphere::isHitBy(const Ray& ray) const noexcept {
 	glm::vec3 oc = ray.getOrigin() - this->getOrigin();
 	const auto radius = this->getRadius();
 	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
@@ -46,7 +46,7 @@ bool Geometry::Sphere::hit(const Ray& ray) const noexcept {
 	const auto c = glm::dot(oc, oc) - radius * radius;
 	const auto discriminant = b * b - 4.0 * a * c;
 
-	return discriminant > 0.0;
+	return discriminant >= 0.0;
 }
 
 Geometry Geometry::makeSphere(glm::vec3 origin, glm::float32 radius) noexcept {
@@ -89,11 +89,11 @@ Geometry::Geometry(glm::vec3 position, glm::float32 radius) noexcept
 	: mType(Geometry::Type::Sphere),
 	mGeometryAsSphere(std::move(position), std::move(radius)) {}
 
-bool Geometry::hit(const Ray& ray) const noexcept {
+bool Geometry::isHitBy(const Ray& ray) const noexcept {
 	if (mType == Geometry::Type::Sphere)
-		return this->mGeometryAsSphere.hit(ray);
+		return this->mGeometryAsSphere.isHitBy(ray);
 	else if (mType == Geometry::Type::Triangle)
-		return this->mGeometryAsTriangle.hit(ray);
+		return this->mGeometryAsTriangle.isHitBy(ray);
 	else // unknown geometry type
 		return false;
 }

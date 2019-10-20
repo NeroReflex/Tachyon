@@ -18,7 +18,7 @@ namespace Tachyon {
 
 			glm::uint32 getSize() const noexcept;
 
-			bool hit(const Ray& ray) const noexcept override;
+			bool isHitBy(const Ray& ray) const noexcept override;
 
 		private:
 			std::array<Geometry, maxNumber> mGeometry;

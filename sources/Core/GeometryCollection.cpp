@@ -12,22 +12,23 @@ GeometryCollection::GeometryCollection(const GeometryCollection& src) noexcept
 
 GeometryCollection::GeometryCollection(const std::initializer_list<Geometry>& geometryCollection) noexcept
 	: mGeometryCount(geometryCollection.size()) {
-	size_t i = 0;
-	for (const auto& geometry : geometryCollection) {
+	glm::uint32 i = 0;
+
+	// Add each geometric shape to the list starting from the first position
+	for (const auto& geometry : geometryCollection)
 		mGeometry[i++] = geometry;
-	}
 }
 
 glm::uint32 GeometryCollection::getSize() const noexcept {
 	return mGeometryCount;
 }
 
-bool GeometryCollection::hit(const Ray& ray) const noexcept {
-	for (size_t i = 0; i < mGeometryCount; ++i) {
-		if (mGeometry[i].hit(ray)) {
-			return true;
-		}
-	}
+bool GeometryCollection::isHitBy(const Ray& ray) const noexcept {
+	bool hit = false;
 
-	return false;
+	std::for_each(mGeometry.cbegin(), mGeometry.cbegin() + mGeometryCount, [&hit, ray](const Geometry& geometry) {
+		hit = (geometry.isHitBy(ray)) ? true : hit;
+	});
+
+	return hit;
 }
