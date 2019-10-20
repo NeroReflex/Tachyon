@@ -7,6 +7,8 @@ namespace Tachyon {
 		class RayInterceptable {
 		public:
 			virtual bool isHitBy(const Ray& ray) const noexcept = 0;
+
+			virtual bool intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept = 0;
 		};
 	}
 }

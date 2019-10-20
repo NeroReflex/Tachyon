@@ -20,6 +20,8 @@ namespace Tachyon {
 
 			glm::vec3 getDirection() const noexcept;
 
+			glm::vec3 pointAt(const glm::float32& coeff) const noexcept;
+
 		private:
 			/**
 			 * This is the ray origin.

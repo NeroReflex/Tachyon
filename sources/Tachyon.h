@@ -16,4 +16,7 @@
 #include <algorithm>
 #include <utility>
 
+// GLM math library
 #include <glm.hpp>
+
+#define DBG_ASSERT(x) assert(x)

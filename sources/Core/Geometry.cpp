@@ -24,6 +24,10 @@ bool Geometry::Triangle::isHitBy(const Ray& ray) const noexcept {
 	return false;
 }
 
+bool Geometry::Triangle::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
+	return false;
+}
+
 Geometry::Sphere::Sphere(glm::vec3 origin, glm::float32 radius) noexcept
 	: mOrigin(glm::vec4(std::move(origin), 1)), mRadius(std::move(radius)) {}
 
@@ -46,7 +50,36 @@ bool Geometry::Sphere::isHitBy(const Ray& ray) const noexcept {
 	const auto c = glm::dot(oc, oc) - radius * radius;
 	const auto discriminant = b * b - 4.0 * a * c;
 
-	return discriminant >= 0.0;
+	return discriminant > 0.0;
+}
+
+bool Geometry::Sphere::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
+	const auto origin = this->getOrigin();
+	const auto radius = this->getRadius();
+
+	glm::vec3 oc = ray.getOrigin() - origin;
+	
+	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
+	const auto b = 2.0 * glm::dot(oc, ray.getDirection());
+	const auto c = glm::dot(oc, oc) - radius * radius;
+	const auto discriminant = b * b - 4.0 * a * c;
+
+	if (discriminant > 0.0) { // if delta > 0 then we have two intersections (one for each side of the sphere)
+		const glm::float32 squareRoot = glm::sqrt(b*b - (a * c));
+
+		glm::float32 x0 = (-b - squareRoot) / a;
+		glm::float32 x1 = (-b + squareRoot) / a;
+
+		// x0 and x1 are the distances to the origin of the ray
+		glm::vec3 point_x0 = ray.pointAt(x0), point_x1 = ray.pointAt(x1); // so if I use that distance as a coefficient I obtain the intersection point
+		glm::vec3 normal_x0 = (point_x0 - this->getOrigin()) / radius, normal_x1 = (point_x1 - this->getOrigin()); // and the normal for a point p is (point - center)/radius
+
+		isecInfo = (x0 <= x1) ? RayGeometryIntersection(point_x0, x0, normal_x0) : RayGeometryIntersection(point_x1, x1, normal_x1);
+
+		return true;
+	}
+
+	return false;
 }
 
 Geometry Geometry::makeSphere(glm::vec3 origin, glm::float32 radius) noexcept {
@@ -94,6 +127,15 @@ bool Geometry::isHitBy(const Ray& ray) const noexcept {
 		return this->mGeometryAsSphere.isHitBy(ray);
 	else if (mType == Geometry::Type::Triangle)
 		return this->mGeometryAsTriangle.isHitBy(ray);
+	else // unknown geometry type
+		return false;
+}
+
+bool Geometry::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
+	if (mType == Geometry::Type::Sphere)
+		return this->mGeometryAsSphere.intersection(ray, isecInfo);
+	else if (mType == Geometry::Type::Triangle)
+		return this->mGeometryAsTriangle.intersection(ray, isecInfo);
 	else // unknown geometry type
 		return false;
 }

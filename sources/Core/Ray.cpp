@@ -24,3 +24,7 @@ glm::vec3 Ray::getOrigin() const noexcept {
 glm::vec3 Ray::getDirection() const noexcept {
 	return mDirection;
 }
+
+glm::vec3 Ray::pointAt(const glm::float32& coeff) const noexcept {
+	return getOrigin() + coeff * getDirection();
+}

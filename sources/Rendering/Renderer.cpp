@@ -3,10 +3,13 @@
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 
-Renderer::Renderer(PPMImage& renderingSurface) noexcept
+Renderer::Renderer(RenderSurface& renderingSurface) noexcept
 	: mRenderingSurface(renderingSurface) {}
 
 void Renderer::render(const Core::GeometryCollection& scene) noexcept {
+	// Reset the render target surface
+	mRenderingSurface.reset();
+
 	const glm::float32 k = 2.0;
 
 	const auto lower_left_corner = glm::vec3(-2.0, -1.0, -1.0);
@@ -21,9 +24,12 @@ void Renderer::render(const Core::GeometryCollection& scene) noexcept {
 
 			const Core::Ray currentCameraRay(origin, std::move(lower_left_corner + u*horizontal + v*vertical));
 
-			const auto currentColor = (scene.isHitBy(currentCameraRay)) ? glm::vec3(1, 0, 0) : glm::vec3(0, 0, 0);
+			// Hit informations
+			Core::RayGeometryIntersection isect;
 
-			mRenderingSurface.setPixel(i, j, currentColor);
+			const auto currentColor = (scene.intersection(currentCameraRay, isect)) ? isect.getNormal() : glm::vec3(0, 0, 0);
+
+			mRenderingSurface.store(i, j, currentColor, isect.getDistance());
 		}
 	}
 }

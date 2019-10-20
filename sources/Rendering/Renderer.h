@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Core/GeometryCollection.h"
-#include "PPMImage.h"
+#include "Rendering/RenderSurface.h"
 
 namespace Tachyon {
 	namespace Rendering {
 		class Renderer {
 		public:
-			Renderer(PPMImage& renderingSurface) noexcept;
+			Renderer(RenderSurface& renderingSurface) noexcept;
 
 			void render(const Core::GeometryCollection& scene) noexcept;
 
 		private:
-			PPMImage& mRenderingSurface;
+			RenderSurface& mRenderingSurface;
 		};
 	}
 }
