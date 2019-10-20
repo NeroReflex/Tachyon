@@ -49,10 +49,10 @@ void RenderSurface::reset() noexcept {
 	}
 }
 
-void RenderSurface::transferTo(PPMImage& destination) const noexcept {
+void RenderSurface::transferTo(PPMImage& destination, ToneMapper& tm) const noexcept {
 	for (size_t j = 0; j < getHeight(); ++j)
 		for (size_t i = 0; i < getWidth(); ++i)
-			destination.setPixel(i, j, mColorBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)]);
+			destination.setPixel(i, j, tm(mColorBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)]));
 }
 
 void RenderSurface::store(const glm::uint32& width, const glm::uint32& height, const glm::vec3& color, const glm::float32& depth) noexcept {

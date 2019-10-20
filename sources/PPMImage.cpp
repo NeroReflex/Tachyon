@@ -50,10 +50,12 @@ void PPMImage::write(const std::string& fileName) const noexcept {
 		for (int i = 0; i < mWidth; ++i)
 		{
 			const auto& color = mColorBuffer[(static_cast<size_t>(j) * static_cast<size_t>(mWidth)) + static_cast<size_t>(i)];
-			;
-			outFile << static_cast<unsigned>(std::min<glm::float32>(1, color.r) * 255) << " "
-				<< static_cast<unsigned>(std::min<glm::float32>(1, color.g) * 255) << " "
-				<< static_cast<unsigned>(std::min<glm::float32>(1, color.b) * 255) << " " << std::endl;
+			
+			outFile
+				<< static_cast<unsigned>(color.r * 255) << " "
+				<< static_cast<unsigned>(color.g * 255) << " "
+				<< static_cast<unsigned>(color.b * 255) << " "
+				<< std::endl;
 		}
 	}
 

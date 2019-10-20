@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Tachyon.h"
+#include "ToneMapper.h"
 #include "PPMImage.h"
 
 namespace Tachyon {
@@ -13,7 +14,7 @@ namespace Tachyon {
 
 			RenderSurface(const RenderSurface&) noexcept;
 
-			void transferTo(PPMImage& destination) const noexcept;
+			void transferTo(PPMImage& destination, ToneMapper& tm) const noexcept;
 
 			glm::uint32 getWidth() const noexcept;
 

@@ -1,4 +1,5 @@
 #include "Rendering/Renderer.h"
+#include "Rendering/ExposureToneMapper.h"
 
 int main(int argc, char** argv) {
 	Tachyon::PPMImage image(480, 360);
@@ -11,7 +12,7 @@ int main(int argc, char** argv) {
 			Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, -1), 0.5)
 		})
 	);
-	renderTarget.transferTo(image);
+	renderTarget.transferTo(image, Tachyon::Rendering::ExposureToneMapper(0.01));
 
 	image.write("output.ppm");
 
