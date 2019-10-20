@@ -2,6 +2,7 @@
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
+using namespace Tachyon::Rendering::ToneMapping;
 
 ExposureToneMapper::ExposureToneMapper(glm::float32 exposure) noexcept
 	: mExposure(std::move(exposure)) {}

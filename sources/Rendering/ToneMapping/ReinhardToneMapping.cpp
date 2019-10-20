@@ -2,9 +2,9 @@
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
+using namespace Tachyon::Rendering::ToneMapping;
 
-ReinhardToneMapping::ReinhardToneMapping() noexcept
-	: mExposure(std::move(exposure)) {}
+ReinhardToneMapping::ReinhardToneMapping() noexcept {}
 
 glm::vec3 ReinhardToneMapping::operator()(const glm::vec3& src) noexcept {
 	const float gamma = 2.2;
