@@ -11,6 +11,9 @@ cmake_policy(SET CMP0074 NEW)
 # Multithreading (avoid problems when using std::thread and std::async)
 find_package (Threads)
 
+# Include GLM
+include_directories(${PROJECT_SOURCE_DIR}/external/glm/glm)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

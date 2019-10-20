@@ -1,0 +1,37 @@
+#pragma once
+
+#include "Tachyon.h"
+
+namespace Tachyon {
+	namespace Core {
+		class Ray {
+		public:
+			Ray() = delete;
+
+			Ray(const Ray& src) noexcept;
+
+			Ray(Ray&&) = delete;
+			
+			Ray(glm::vec3 origin, glm::vec3 direction) noexcept;
+
+			Ray& operator=(const Ray& src) noexcept;
+
+			glm::vec3 getOrigin() const noexcept;
+
+			glm::vec3 getDirection() const noexcept;
+
+		private:
+			/**
+			 * This is the ray origin.
+			 * note: the W component is always 1.
+			 */
+			glm::vec4 mOrigin;
+
+			/**
+			 * This is the ray direction.
+			 * note: the W component is always 0.
+			 */
+			glm::vec4 mDirection;
+		};
+	}
+}
