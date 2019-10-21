@@ -17,6 +17,11 @@
 #include <utility>
 
 // GLM math library
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
+#include <gtc/type_ptr.hpp>
+#include <gtx/transform.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtx/quaternion.hpp>
 
 #define DBG_ASSERT(x) assert(x)

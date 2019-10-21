@@ -10,7 +10,7 @@ namespace Tachyon {
 
 			Ray(const Ray& src) noexcept;
 
-			Ray(Ray&&) = delete;
+			Ray(Ray&&) noexcept;
 			
 			Ray(glm::vec3 origin, glm::vec3 direction) noexcept;
 

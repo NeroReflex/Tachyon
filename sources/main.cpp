@@ -4,10 +4,13 @@
 int main(int argc, char** argv) {
 	Tachyon::PPMImage image(480, 360);
 
-	Tachyon::Rendering::RenderSurface renderTarget(200, 100);
+	Tachyon::Rendering::RenderSurface renderTarget(480, 360);
+	const auto aspectRatio = static_cast<glm::float32>(renderTarget.getWidth()) / static_cast<glm::float32>(renderTarget.getHeight());
+	Tachyon::Core::Camera renderCamera(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0), glm::float32(60.0f), aspectRatio);
+	
 
 	Tachyon::Rendering::Renderer renderer(renderTarget);
-	renderer.render(
+	renderer.render(renderCamera,
 		Tachyon::Core::GeometryCollection({
 			Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, -1), 0.5),
 			Tachyon::Core::Geometry::makeSphere(glm::vec3(0,-100.5,-1), 100)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/GeometryCollection.h"
+#include "Core/Camera.h"
 #include "Rendering/RenderSurface.h"
 
 namespace Tachyon {
@@ -9,7 +10,7 @@ namespace Tachyon {
 		public:
 			Renderer(RenderSurface& renderingSurface) noexcept;
 
-			void render(const Core::GeometryCollection& scene) noexcept;
+			void render(const Core::Camera& camera, const Core::GeometryCollection& scene) noexcept;
 
 		private:
 			RenderSurface& mRenderingSurface;

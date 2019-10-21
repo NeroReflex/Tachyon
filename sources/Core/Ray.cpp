@@ -6,6 +6,9 @@ using namespace Tachyon::Core;
 Ray::Ray(const Ray& src) noexcept
 	: mOrigin(src.mOrigin), mDirection(src.mDirection) {}
 
+Ray::Ray(Ray&& src) noexcept
+	: mOrigin(src.mOrigin), mDirection(src.mDirection) {}
+
 Ray::Ray(glm::vec3 origin, glm::vec3 direction) noexcept
 	: mOrigin(glm::vec4(std::move(origin), 1.0)),
 	mDirection(glm::vec4(glm::normalize(direction), 0.0)) {}

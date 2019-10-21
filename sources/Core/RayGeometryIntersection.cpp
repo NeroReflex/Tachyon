@@ -4,7 +4,9 @@ using namespace Tachyon;
 using namespace Tachyon::Core;
 
 RayGeometryIntersection::RayGeometryIntersection() noexcept
-	: mSurfaceDistance(std::numeric_limits<glm::float32>::infinity()) {}
+	: mSurfaceContactPoint(glm::vec4(std::numeric_limits<glm::float32>::quiet_NaN())),
+	mSurfaceDistance(std::numeric_limits<glm::float32>::infinity()),
+	mSurfaceNormal(glm::vec4(std::numeric_limits<glm::float32>::quiet_NaN())) {}
 
 RayGeometryIntersection::RayGeometryIntersection(glm::vec3 contactPoint, glm::float32 distance, glm::vec3 normal) noexcept
 	: mSurfaceContactPoint(std::move(contactPoint)),
