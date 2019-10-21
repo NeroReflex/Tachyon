@@ -15,8 +15,11 @@ GeometryCollection::GeometryCollection(const std::initializer_list<Geometry>& ge
 	glm::uint32 i = 0;
 
 	// Add each geometric shape to the list starting from the first position
-	for (const auto& geometry : geometryCollection)
+	for (const auto& geometry : geometryCollection) {
 		mGeometry[i++] = geometry;
+
+		std::cout << geometry.getLinearBufferSize() << std::endl;
+	}
 }
 
 glm::uint32 GeometryCollection::getSize() const noexcept {

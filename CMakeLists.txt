@@ -14,6 +14,11 @@ find_package (Threads)
 # Include GLM
 include_directories(${PROJECT_SOURCE_DIR}/external/glm/glm)
 
+# Include OpenCL
+#find_package(OpenCL REQUIRED)
+
+#include_directories( ${OPENCL_INCLUDE_DIR} )
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

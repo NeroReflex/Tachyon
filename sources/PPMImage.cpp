@@ -44,6 +44,7 @@ void PPMImage::resize(const glm::uint32& width, const glm::uint32& height) noexc
 
 	size_t newDimension = static_cast<size_t>(width)* static_cast<size_t>(height);
 
+	// Change dimensions
 	mWidth = width;
 	mHeight = height;
 

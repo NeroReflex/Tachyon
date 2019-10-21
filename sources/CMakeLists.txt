@@ -6,4 +6,6 @@ add_executable(Tachyon ${TACHYON_SOURCES})
 set_property(TARGET Tachyon PROPERTY CXX_STANDARD 11)
 
 target_link_libraries(Tachyon
-	${CMAKE_THREAD_LIBS_INIT})
+	${CMAKE_THREAD_LIBS_INIT}
+	#${OPENCL_LIBRARIES}
+)

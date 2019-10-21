@@ -1,13 +1,24 @@
 #pragma once
 
 #include "RayInterceptable.h"
+#include "Linearizable.h"
 
 namespace Tachyon {
 	namespace Core {
 		class Geometry :
+			virtual public Linearizable,
 			virtual public RayInterceptable {
 
+			class LinearizableShape :
+				virtual public Linearizable {
+
+			public:
+				size_t getLinearBufferSize() const noexcept final;
+			};
+
 			class Triangle :
+				virtual public Linearizable,
+				virtual public LinearizableShape,
 				virtual public RayInterceptable {
 
 			public:
@@ -21,11 +32,15 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
 
+				void linearizeToBuffer(void* buffer) const noexcept final;
+
 			private:
 				std::array<glm::vec4, 3> mVertices;
 			};
 
 			class Sphere :
+				virtual public Linearizable,
+				virtual public LinearizableShape,
 				virtual public RayInterceptable {
 
 			public:
@@ -40,6 +55,8 @@ namespace Tachyon {
 				bool isHitBy(const Ray& ray) const noexcept override;
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
+
+				void linearizeToBuffer(void* buffer) const noexcept final;
 
 			private:
 				glm::vec4 mOrigin;
@@ -66,6 +83,10 @@ namespace Tachyon {
 			static Geometry makeSphere(glm::vec3 origin, glm::float32 radius) noexcept;
 
 			static Geometry makeTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept;
+
+			size_t getLinearBufferSize() const noexcept override;
+
+			void linearizeToBuffer(void* buffer) const noexcept override;
 
 			bool isHitBy(const Ray& ray) const noexcept override;
 

@@ -21,3 +21,7 @@ Camera::Camera(glm::vec3 lookfrom, glm::vec3 lookat, glm::vec3 vup, glm::float32
 Ray Camera::generate(glm::float32 s, glm::float32 t) const noexcept {
 	return Ray(mOrigin, mLowerLeftCorner + s * mHorizontal + t * mVertical - mOrigin);
 }
+
+glm::vec3 Camera::getCameraPosition() const noexcept {
+	return mOrigin;
+}

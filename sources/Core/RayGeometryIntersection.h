@@ -18,6 +18,8 @@ namespace Tachyon {
 
 			glm::float32 getDistance() const noexcept;
 
+			glm::vec3 getPoint() const noexcept;
+
 			glm::vec3 getNormal() const noexcept;
 
 		private:

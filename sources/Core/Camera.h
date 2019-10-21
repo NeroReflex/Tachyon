@@ -10,6 +10,8 @@ namespace Tachyon {
 
 			Ray generate(glm::float32 s, glm::float32 t) const noexcept;
 
+			glm::vec3 getCameraPosition() const noexcept;
+
 		private:
 			glm::vec3 mOrigin;
 			glm::vec3 mLowerLeftCorner;

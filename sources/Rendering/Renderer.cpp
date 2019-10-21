@@ -20,7 +20,9 @@ void Renderer::render(const Core::Camera& camera, const Core::GeometryCollection
 			// Hit informations
 			Core::RayGeometryIntersection isect;
 
-			const auto currentColor = (scene.intersection(currentCameraRay, 0.00001, std::numeric_limits<glm::float32>::max(), isect)) ? isect.getNormal() : glm::vec3(0, 0, 0);
+			const auto currentColor = (scene.intersection(currentCameraRay, 0.00001, std::numeric_limits<glm::float32>::max(), isect))
+				? glm::vec3(std::max<glm::float32>(0, glm::dot(isect.getNormal(), glm::normalize(camera.getCameraPosition() - isect.getPoint()))))  // HIT: 
+				: glm::vec3(0, 0, 0); // MISS
 
 			mRenderingSurface.store(i, j, currentColor, isect.getDistance());
 		}

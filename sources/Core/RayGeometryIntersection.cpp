@@ -40,3 +40,7 @@ glm::float32 RayGeometryIntersection::getDistance() const noexcept {
 glm::vec3 RayGeometryIntersection::getNormal() const noexcept {
 	return mSurfaceNormal;
 }
+
+glm::vec3 RayGeometryIntersection::getPoint() const noexcept {
+	return mSurfaceContactPoint;
+}

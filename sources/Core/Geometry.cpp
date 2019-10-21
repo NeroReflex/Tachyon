@@ -17,6 +17,46 @@ Geometry::Triangle::Triangle(const std::array<glm::vec3, 3>& data) noexcept
 		glm::vec4(data[2], 1)
 	}) {}
 
+size_t Geometry::LinearizableShape::getLinearBufferSize() const noexcept {
+	return sizeof(glm::vec4) * 3;
+}
+
+size_t Geometry::getLinearBufferSize() const noexcept {
+	return sizeof(glm::vec4) * 4;
+}
+
+void Geometry::linearizeToBuffer(void* buffer) const noexcept {
+	glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(buffer);
+	
+	if (mType == Type::Sphere) {
+		// This is the sphere signature
+		bufferAsVectors[0] = glm::vec4(0, 0, 0, 0);
+
+		mGeometryAsSphere.linearizeToBuffer(reinterpret_cast<void*>(&bufferAsVectors[1]));
+	}
+	else if (mType == Type::Triangle) {
+		// This is the triangle signature
+		bufferAsVectors[0] = glm::vec4(0, 0, 0, 1);
+
+		mGeometryAsSphere.linearizeToBuffer(reinterpret_cast<void*>(&bufferAsVectors[1]));
+	}
+}
+
+void Geometry::Triangle::linearizeToBuffer(void* buffer) const noexcept {
+	glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(buffer);
+
+	size_t i = 0;
+	std::for_each(mVertices.cbegin(), mVertices.cend(), [&bufferAsVectors, &i](const glm::vec4& vertex) {
+		bufferAsVectors[i++] = vertex;
+	});
+}
+
+void Geometry::Sphere::linearizeToBuffer(void* buffer) const noexcept {
+	glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(buffer);
+	bufferAsVectors[0] = mOrigin;
+	bufferAsVectors[1].x = mRadius;
+}
+
 Geometry::Triangle::Triangle(const Triangle& src) noexcept 
 	: mVertices(src.mVertices) {}
 
