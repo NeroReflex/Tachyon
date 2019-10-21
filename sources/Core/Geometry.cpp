@@ -22,7 +22,16 @@ size_t Geometry::LinearizableShape::getLinearBufferSize() const noexcept {
 }
 
 size_t Geometry::getLinearBufferSize() const noexcept {
+	return Geometry::getMaxLinearBufferSize();
+}
+
+size_t Geometry::getMaxLinearBufferSize() noexcept {
 	return sizeof(glm::vec4) * 4;
+}
+
+void Geometry::linearizeEmptyToBuffer(void* buffer) noexcept {
+	glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(buffer);
+	*bufferAsVectors = glm::vec4(std::numeric_limits<glm::float32>::quiet_NaN());
 }
 
 void Geometry::linearizeToBuffer(void* buffer) const noexcept {

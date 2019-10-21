@@ -84,9 +84,13 @@ namespace Tachyon {
 
 			static Geometry makeTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept;
 
+			static size_t getMaxLinearBufferSize() noexcept;
+
 			size_t getLinearBufferSize() const noexcept override;
 
 			void linearizeToBuffer(void* buffer) const noexcept override;
+
+			static void linearizeEmptyToBuffer(void* buffer) noexcept;
 
 			bool isHitBy(const Ray& ray) const noexcept override;
 

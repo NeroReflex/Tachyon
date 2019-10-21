@@ -12,6 +12,9 @@
 #include <initializer_list>
 #include <vector>
 
+// STL memory
+#include <memory>
+
 // STL algorithms
 #include <algorithm>
 #include <utility>

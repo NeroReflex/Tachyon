@@ -15,11 +15,8 @@ GeometryCollection::GeometryCollection(const std::initializer_list<Geometry>& ge
 	glm::uint32 i = 0;
 
 	// Add each geometric shape to the list starting from the first position
-	for (const auto& geometry : geometryCollection) {
+	for (const auto& geometry : geometryCollection)
 		mGeometry[i++] = geometry;
-
-		std::cout << geometry.getLinearBufferSize() << std::endl;
-	}
 }
 
 glm::uint32 GeometryCollection::getSize() const noexcept {
@@ -54,4 +51,25 @@ bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, 
 	isecInfo = closestHit;
 
 	return hit;
+}
+
+size_t GeometryCollection::getMaxLinearBufferSize() noexcept {
+	return Geometry::getMaxLinearBufferSize() * GeometryCollection::maxNumber;
+}
+
+size_t GeometryCollection::getLinearBufferSize() const noexcept {
+	return GeometryCollection::getMaxLinearBufferSize();
+}
+
+void GeometryCollection::linearizeToBuffer(void* buffer) const noexcept {
+	// TODO: linearize along with used location count...
+	for (size_t i = 0; i < GeometryCollection::maxNumber; ++i) {
+		void* bufferLocation = reinterpret_cast<void*>(reinterpret_cast<char*>(buffer) + (Geometry::getMaxLinearBufferSize() * i));
+		if (i < mGeometryCount) {
+			const auto& currentGeometry = mGeometry[i];
+			currentGeometry.linearizeToBuffer(bufferLocation);
+		} else {
+			Geometry::linearizeEmptyToBuffer(bufferLocation);
+		}
+	}
 }
