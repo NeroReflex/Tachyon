@@ -10,6 +10,12 @@ namespace Tachyon {
 
 			RayGeometryIntersection(glm::vec3 contactPoint, glm::float32 distance, glm::vec3 normal) noexcept;
 
+			RayGeometryIntersection(RayGeometryIntersection&&) noexcept;
+
+			RayGeometryIntersection(const RayGeometryIntersection&) noexcept;
+
+			RayGeometryIntersection& operator=(const RayGeometryIntersection&) noexcept;
+
 			glm::float32 getDistance() const noexcept;
 
 			glm::vec3 getNormal() const noexcept;

@@ -33,12 +33,12 @@ bool GeometryCollection::isHitBy(const Ray& ray) const noexcept {
 	return hit;
 }
 
-bool GeometryCollection::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
+bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
 	bool hit = false;
 	RayGeometryIntersection closestHit;
 
-	std::for_each(mGeometry.cbegin(), mGeometry.cbegin() + mGeometryCount, [&hit, ray, &closestHit, &isecInfo](const Geometry& geometry) {
-		bool currentHit = geometry.intersection(ray, isecInfo);
+	std::for_each(mGeometry.cbegin(), mGeometry.cbegin() + mGeometryCount, [&hit, ray, &closestHit, &isecInfo, minDistance, maxDistance](const Geometry& geometry) {
+		bool currentHit = geometry.intersection(ray, minDistance, maxDistance, isecInfo);
 
 		if ((currentHit && !hit) || ((hit && currentHit) && (closestHit.getDistance() > isecInfo.getDistance()))) {
 			closestHit = isecInfo;

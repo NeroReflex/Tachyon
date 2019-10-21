@@ -24,7 +24,7 @@ bool Geometry::Triangle::isHitBy(const Ray& ray) const noexcept {
 	return false;
 }
 
-bool Geometry::Triangle::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
+bool Geometry::Triangle::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
 	return false;
 }
 
@@ -46,35 +46,42 @@ bool Geometry::Sphere::isHitBy(const Ray& ray) const noexcept {
 	glm::vec3 oc = ray.getOrigin() - this->getOrigin();
 	const auto radius = this->getRadius();
 	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
-	const auto b = 2.0 * glm::dot(oc, ray.getDirection());
+	const auto b = glm::dot(oc, ray.getDirection());
 	const auto c = glm::dot(oc, oc) - radius * radius;
-	const auto discriminant = b * b - 4.0 * a * c;
+	const auto discriminant = b * b - a * c;
 
 	return discriminant > 0.0;
 }
 
-bool Geometry::Sphere::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
-	const auto origin = this->getOrigin();
+bool Geometry::Sphere::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
+	const auto center = this->getOrigin();
 	const auto radius = this->getRadius();
 
-	glm::vec3 oc = ray.getOrigin() - origin;
+	glm::vec3 oc = ray.getOrigin() - center;
 	
 	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
-	const auto b = 2.0 * glm::dot(oc, ray.getDirection());
+	const auto b = glm::dot(oc, ray.getDirection());
 	const auto c = glm::dot(oc, oc) - radius * radius;
-	const auto discriminant = b * b - 4.0 * a * c;
+	const auto discriminant = b * b - a * c;
 
 	if (discriminant > 0.0) { // if delta > 0 then we have two intersections (one for each side of the sphere)
-		const glm::float32 squareRoot = glm::sqrt(b*b - (a * c));
-
-		glm::float32 x0 = (-b - squareRoot) / a;
-		glm::float32 x1 = (-b + squareRoot) / a;
+		const glm::float32 squareRoot = glm::sqrt(discriminant);
 
 		// x0 and x1 are the distances to the origin of the ray
-		glm::vec3 point_x0 = ray.pointAt(x0), point_x1 = ray.pointAt(x1); // so if I use that distance as a coefficient I obtain the intersection point
-		glm::vec3 normal_x0 = (point_x0 - this->getOrigin()) / radius, normal_x1 = (point_x1 - this->getOrigin()); // and the normal for a point p is (point - center)/radius
+		glm::float32 x0 = (-b - squareRoot) / a, x1 = (-b + squareRoot) / a;
 
-		isecInfo = (x0 <= x1) ? RayGeometryIntersection(point_x0, x0, normal_x0) : RayGeometryIntersection(point_x1, x1, normal_x1);
+		// Use x0 and x1 to calculate intersection points
+		glm::vec3 point_x0 = ray.pointAt(x0), point_x1 = ray.pointAt(x1); // so if I use that distance as a coefficient I obtain the intersection point
+		
+		// Use intersecting points to calculate the surface normal at that point
+		glm::vec3 normal_x0 = (point_x0 - center) / radius, normal_x1 = (point_x1 - center) / radius; // and the normal for a point p is (point - center)/radius
+
+		// No valid intersection? return false.
+		if (((x0 <= minDistance) || (x0 >= maxDistance)) && ((x1 <= minDistance) || (x1 >= maxDistance))) return false;
+
+		// Choose the closest intersection point
+		isecInfo = (((x0 > minDistance) && (x0 < maxDistance)) && (x0 <= x1)) || ((x1 <= minDistance) || (x1 >= maxDistance)) ?
+			RayGeometryIntersection(point_x0, x0, normal_x0) : RayGeometryIntersection(point_x1, x1, normal_x1);
 
 		return true;
 	}
@@ -131,11 +138,11 @@ bool Geometry::isHitBy(const Ray& ray) const noexcept {
 		return false;
 }
 
-bool Geometry::intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept {
+bool Geometry::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
 	if (mType == Geometry::Type::Sphere)
-		return this->mGeometryAsSphere.intersection(ray, isecInfo);
+		return this->mGeometryAsSphere.intersection(ray, minDistance, maxDistance, isecInfo);
 	else if (mType == Geometry::Type::Triangle)
-		return this->mGeometryAsTriangle.intersection(ray, isecInfo);
+		return this->mGeometryAsTriangle.intersection(ray, minDistance, maxDistance, isecInfo);
 	else // unknown geometry type
 		return false;
 }

@@ -20,7 +20,7 @@ namespace Tachyon {
 
 			bool isHitBy(const Ray& ray) const noexcept override;
 
-			bool intersection(const Ray& ray, RayGeometryIntersection& isecInfo) const noexcept override;
+			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
 
 		private:
 			std::array<Geometry, maxNumber> mGeometry;

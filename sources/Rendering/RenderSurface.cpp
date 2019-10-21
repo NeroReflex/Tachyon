@@ -50,6 +50,8 @@ void RenderSurface::reset() noexcept {
 }
 
 void RenderSurface::transferTo(PPMImage& destination, ToneMapping::ToneMapper& tm) const noexcept {
+	destination.resize(mWidth, mHeight);
+
 	for (size_t j = 0; j < getHeight(); ++j)
 		for (size_t i = 0; i < getWidth(); ++i)
 			destination.setPixel(i, j, tm(mColorBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)]));

@@ -38,6 +38,24 @@ glm::vec3 PPMImage::getPixel(const glm::uint32& width, const glm::uint32& height
 	return mColorBuffer[(static_cast<size_t>(height) * static_cast<size_t>(mWidth)) + static_cast<size_t>(width)];
 }
 
+void PPMImage::resize(const glm::uint32& width, const glm::uint32& height) noexcept {
+	// Do not change anything if it is not necessary
+	if ((mWidth == width) && (mHeight == height)) return;
+
+	size_t newDimension = static_cast<size_t>(width)* static_cast<size_t>(height);
+
+	mWidth = width;
+	mHeight = height;
+
+	mColorBuffer.clear();
+	mColorBuffer.reserve(newDimension);
+
+	for (size_t i = 0; i < newDimension; ++i)
+		mColorBuffer.push_back(glm::vec3(0, 0, 0));
+	
+	mColorBuffer.shrink_to_fit();
+}
+
 void PPMImage::write(const std::string& fileName) const noexcept {
 	// Open the stream
 	std::ofstream outFile(fileName);

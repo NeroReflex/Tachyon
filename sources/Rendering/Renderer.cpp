@@ -27,7 +27,7 @@ void Renderer::render(const Core::GeometryCollection& scene) noexcept {
 			// Hit informations
 			Core::RayGeometryIntersection isect;
 
-			const auto currentColor = (scene.intersection(currentCameraRay, isect)) ? isect.getNormal() : glm::vec3(0, 0, 0);
+			const auto currentColor = (scene.intersection(currentCameraRay, 0.00001, std::numeric_limits<glm::float32>::max(), isect)) ? isect.getNormal() : glm::vec3(0, 0, 0);
 
 			mRenderingSurface.store(i, j, currentColor, isect.getDistance());
 		}

@@ -7,8 +7,8 @@ Ray::Ray(const Ray& src) noexcept
 	: mOrigin(src.mOrigin), mDirection(src.mDirection) {}
 
 Ray::Ray(glm::vec3 origin, glm::vec3 direction) noexcept
-	: mOrigin(glm::vec4(std::move(origin), 1)),
-	mDirection(glm::vec4(glm::normalize(std::move(direction)), 1)) {}
+	: mOrigin(glm::vec4(std::move(origin), 1.0)),
+	mDirection(glm::vec4(glm::normalize(direction), 0.0)) {}
 
 Ray& Ray::operator=(const Ray& src) noexcept {
 	mOrigin = src.mOrigin;

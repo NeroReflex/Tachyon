@@ -21,6 +21,8 @@ namespace Tachyon {
 
 		glm::uint32 getHeight() const noexcept;
 
+		void resize(const glm::uint32& width, const glm::uint32& height) noexcept;
+
 		void setPixel(const glm::uint32& width, const glm::uint32& height, const glm::vec3& color) noexcept;
 
 		glm::vec3 getPixel(const glm::uint32& width, const glm::uint32& height) const noexcept;
