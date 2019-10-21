@@ -5,6 +5,21 @@
 
 namespace Tachyon {
 	namespace Core {
+		/**
+		 * This class is used to store a simple geometric shape that can be intersected by a ray.
+		 * As the raytracer algorithm can be executed on specilized hardware (GPU) linearization is a necessity.
+		 * Each geometric shape is linearized a set of 4 vec4 components.
+		 * - Empty:  vec4(NaN, NaN, NaN, NaN)
+		 *           vec4(NaN, NaN, NaN, NaN)
+		 *           vec4(NaN, NaN, NaN, NaN)
+		 *           vec4(NaN, NaN, NaN, NaN)
+		 * - Sphere: vec4(0, 0, 0, 0) <= sphere signature
+		 *           vec4(center, 1.0) <= the center position
+		 *           vec4(radius, 0, 0, 0) <= the radius
+		 *           vec4(??, ??, ??, ??) <= UNUSED
+		 *
+		 * An empty shape is used as the last element of a buffer or successive geometry data (geometry collection).
+		 */
 		class Geometry :
 			virtual public Linearizable,
 			virtual public RayInterceptable {
@@ -16,6 +31,9 @@ namespace Tachyon {
 				size_t getLinearBufferSize() const noexcept final;
 			};
 
+			/**
+			 * This class represents a triangle with vertices in anti-clockwise order
+			 */
 			class Triangle :
 				virtual public Linearizable,
 				virtual public LinearizableShape,
@@ -38,6 +56,9 @@ namespace Tachyon {
 				std::array<glm::vec4, 3> mVertices;
 			};
 
+			/**
+			 * This class represents a sphere
+			 */
 			class Sphere :
 				virtual public Linearizable,
 				virtual public LinearizableShape,
