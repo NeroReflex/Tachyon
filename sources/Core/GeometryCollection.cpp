@@ -40,12 +40,15 @@ bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, 
 	std::for_each(mGeometry.cbegin(), mGeometry.cbegin() + mGeometryCount, [&hit, ray, &closestHit, &isecInfo, minDistance, maxDistance](const Geometry& geometry) {
 		bool currentHit = geometry.intersection(ray, minDistance, maxDistance, isecInfo);
 
-		if ((currentHit && !hit) || ((hit && currentHit) && (closestHit.getDistance() > isecInfo.getDistance()))) {
+		if ((currentHit) && (closestHit.getDistance() > isecInfo.getDistance())) {
 			closestHit = isecInfo;
 		}
 
 		hit = (currentHit) ? true : hit;
 	});
+
+	// Return the hit closer to the camera
+	isecInfo = closestHit;
 
 	return hit;
 }

@@ -47,7 +47,7 @@ namespace Tachyon {
 			};
 
 		public:
-			enum Type {
+			enum class Type {
 				Sphere = 0,
 				Triangle = 1,
 
