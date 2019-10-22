@@ -47,8 +47,10 @@ bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, 
 		hit = (currentHit) ? true : hit;
 	});
 
-	// Return the hit closer to the camera
-	isecInfo = closestHit;
+	// Return the hit closer to the camera (checking if a previous one exists already)
+	if (closestHit.getDistance() < isecInfo.getDistance()) {
+		isecInfo = closestHit;
+	}
 
 	return hit;
 }

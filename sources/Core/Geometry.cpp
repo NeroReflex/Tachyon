@@ -109,15 +109,15 @@ bool Geometry::Sphere::intersection(const Ray& ray, glm::float32 minDistance, gl
 	glm::vec3 oc = ray.getOrigin() - center;
 	
 	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
-	const auto b = 2.0 * glm::dot(oc, ray.getDirection());
+	const auto b = glm::dot(oc, ray.getDirection());
 	const auto c = glm::dot(oc, oc) - radius * radius;
-	const auto discriminant = b * b - 4.0 * a * c;
+	const auto discriminant = b * b - a * c;
 
 	if (discriminant > 0.0) { // if delta > 0 then we have two intersections (one for each side of the sphere)
 		const glm::float32 squareRoot = glm::sqrt(discriminant);
 
 		// x0 and x1 are the distances to the origin of the ray
-		glm::float32 x0 = (-b - squareRoot) / (2.0 * a), x1 = (-b + squareRoot) / (2.0 * a);
+		glm::float32 x0 = (-b - squareRoot) / a, x1 = (-b + squareRoot) / a;
 
 		// Use x0 and x1 to calculate intersection points
 		glm::vec3 point_x0 = ray.pointAt(x0), point_x1 = ray.pointAt(x1); // so if I use that distance as a coefficient I obtain the intersection point
