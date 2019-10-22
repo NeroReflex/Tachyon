@@ -105,11 +105,12 @@ bool Geometry::Sphere::isHitBy(const Ray& ray) const noexcept {
 bool Geometry::Sphere::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
 	const auto center = this->getOrigin();
 	const auto radius = this->getRadius();
+	const auto direction = ray.getDirection();
 
 	glm::vec3 oc = ray.getOrigin() - center;
 	
-	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
-	const auto b = glm::dot(oc, ray.getDirection());
+	const auto a = glm::dot(direction, direction);
+	const auto b = glm::dot(oc, direction);
 	const auto c = glm::dot(oc, oc) - radius * radius;
 	const auto discriminant = b * b - a * c;
 
