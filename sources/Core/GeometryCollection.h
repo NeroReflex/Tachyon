@@ -29,6 +29,8 @@ namespace Tachyon {
 
 			void linearizeToBuffer(void* buffer) const noexcept final;
 
+			void push(const Geometry& geometry) noexcept;
+
 		private:
 			std::array<Geometry, maxNumber> mGeometry;
 

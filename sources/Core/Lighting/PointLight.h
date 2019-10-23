@@ -9,7 +9,9 @@ namespace Tachyon {
                 public Light {
                     
             public:
-                PointLight(const glm::vec3& position) noexcept;
+                PointLight(const glm::vec3& color, const glm::float32& intensity, const glm::vec3& position) noexcept;
+
+				glm::vec3 getPosition() const noexcept;
 
             private:
                 glm::vec4 mPosition;

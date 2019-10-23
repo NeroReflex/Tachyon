@@ -5,6 +5,7 @@
 #include <fstream>
 
 // STL data types
+#include <functional>
 #include <string>
 
 // STL containers

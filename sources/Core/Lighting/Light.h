@@ -9,11 +9,12 @@ namespace Tachyon {
                 virtual public Linearizable {
             
             public:
-                Linearizable(const glm::vec3& mColor, const glm::float32& intensity) noexcept;
+				Light(const glm::vec3& color, const glm::float32& intensity) noexcept;
 
                 glm::vec3 getColor() const noexcept;
 
-                glm::flaot32 getIntensity() const noexcept;
+                glm::float32 getIntensity() const noexcept;
+				
 
             private:
                 /**

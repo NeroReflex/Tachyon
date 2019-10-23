@@ -11,12 +11,17 @@ GeometryCollection::GeometryCollection(const GeometryCollection& src) noexcept
 	mGeometry(src.mGeometry) {}
 
 GeometryCollection::GeometryCollection(const std::initializer_list<Geometry>& geometryCollection) noexcept
-	: mGeometryCount(geometryCollection.size()) {
-	glm::uint32 i = 0;
-
+	: GeometryCollection() {
 	// Add each geometric shape to the list starting from the first position
 	for (const auto& geometry : geometryCollection)
-		mGeometry[i++] = geometry;
+		push(geometry);
+}
+
+void  GeometryCollection::push(const Geometry& geometry) noexcept {
+	DBG_ASSERT(mGeometryCount < GeometryCollection::maxNumber);
+
+	// Store the geometry and increase the counter of stored geometry
+	mGeometry[mGeometryCount++] = geometry;
 }
 
 glm::uint32 GeometryCollection::getSize() const noexcept {
