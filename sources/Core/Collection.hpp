@@ -22,6 +22,8 @@ namespace Tachyon {
 
 			Collection& operator=(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept;
 
+			virtual ~Collection() = default;
+
 			void push(const T& element) noexcept;
 
 			size_t getSize() const noexcept;
@@ -29,6 +31,24 @@ namespace Tachyon {
 			void foreach(const std::function<void(T&)>& fn) noexcept;
 
 			void foreach(const std::function<void(const T&)>& fn) const noexcept;
+
+			static constexpr size_t getBufferSize() noexcept {
+				// The required memory space in bytes is the number of bytes required by the serialization of the template type,
+				// multiplied by the maximum number of serializable elements, plus an uint32 used to store the number of effectively serialized elements
+				return sizeof(glm::uint32) + (T::getBufferSize() * GeometryCollection::maxNumber);
+			};
+
+			static void linearizeToBuffer(const Collection<T, expOfTwoOfMaxNumberOfElements>& src, void* dst) noexcept {
+				// Append the number of linearized elements at the beginning...
+				glm::uint32* bufferSerializedCount = reinterpret_cast<void*>(dst);
+				*bufferSerializedCount = src.mElementsCount;
+
+				for (size_t i = 0; i < Collection<T, expOfTwoOfMaxNumberOfElements>; ++i) {
+					void* bufferLocation = reinterpret_cast<void*>(reinterpret_cast<char*>(dst) + (T::getBufferSize() * i) + sizeof(glm::uint32));
+
+					T::linearizeToBuffer(src.mGeometry[i], bufferLocation);
+				}
+			}
 
 		private:
 			std::array<T, maxNumber> mElements;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RayInterceptable.h"
-#include "Linearizable.h"
 
 namespace Tachyon {
 	namespace Core {
@@ -24,22 +23,12 @@ namespace Tachyon {
 		 * An empty shape is used as the last element of a buffer or successive geometry data (geometry collection).
 		 */
 		class Geometry :
-			virtual public Linearizable,
 			virtual public RayInterceptable {
-
-			class LinearizableShape :
-				virtual public Linearizable {
-
-			public:
-				size_t getLinearBufferSize() const noexcept final;
-			};
 
 			/**
 			 * This class represents a triangle with vertices in anti-clockwise order
 			 */
 			class Triangle :
-				virtual public Linearizable,
-				virtual public LinearizableShape,
 				virtual public RayInterceptable {
 
 			public:
@@ -53,7 +42,14 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
 
-				void linearizeToBuffer(void* buffer) const noexcept final;
+				static void linearizeToBuffer(const Triangle& src, void* dst) noexcept {
+					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
+
+					size_t i = 0;
+					std::for_each(src.mVertices.cbegin(), src.mVertices.cend(), [&bufferAsVectors, &i](const glm::vec4& vertex) {
+						bufferAsVectors[i++] = vertex;
+					});
+				}
 
 			private:
 				std::array<glm::vec4, 3> mVertices;
@@ -63,8 +59,6 @@ namespace Tachyon {
 			 * This class represents a sphere
 			 */
 			class Sphere :
-				virtual public Linearizable,
-				virtual public LinearizableShape,
 				virtual public RayInterceptable {
 
 			public:
@@ -80,7 +74,11 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
 
-				void linearizeToBuffer(void* buffer) const noexcept final;
+				static void linearizeToBuffer(const Sphere& src, void* dst) noexcept {
+					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
+					bufferAsVectors[0] =src. mOrigin;
+					bufferAsVectors[1].x = src.mRadius;
+				}
 
 			private:
 				glm::vec4 mOrigin;
@@ -108,13 +106,32 @@ namespace Tachyon {
 
 			static Geometry makeTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept;
 
-			static size_t getMaxLinearBufferSize() noexcept;
+			static constexpr size_t getBufferSize() noexcept {
+				// the linearization of a geometric shape is split in a series of FOUR vec4 components.
+				// Last three depends on the particular shape being serialized, while the first one is the shape signature.
+				return sizeof(glm::vec4) * 4;
+			};
 
-			size_t getLinearBufferSize() const noexcept override;
+			static void linearizeToBuffer(const Geometry& src, void* dst) noexcept {
+				glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
 
-			void linearizeToBuffer(void* buffer) const noexcept override;
+				if (src.mType == Type::Sphere) {
+					// This is the sphere signature
+					bufferAsVectors[0] = glm::vec4(0, 0, 0, 0);
 
-			static void linearizeEmptyToBuffer(void* buffer) noexcept;
+					Sphere::linearizeToBuffer(src.mGeometryAsSphere, reinterpret_cast<void*>(&bufferAsVectors[1]));
+				} else if (src.mType == Type::Triangle) {
+					// This is the triangle signature
+					bufferAsVectors[0] = glm::vec4(0, 0, 0, 1);
+
+					Triangle::linearizeToBuffer(src.mGeometryAsTriangle, reinterpret_cast<void*>(&bufferAsVectors[1]));
+				}
+			}
+
+			static void linearizeEmptyToBuffer(void* buffer) noexcept {
+				glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(buffer);
+				*bufferAsVectors = glm::vec4(std::numeric_limits<glm::float32>::quiet_NaN());
+			}
 
 			bool isHitBy(const Ray& ray) const noexcept override;
 

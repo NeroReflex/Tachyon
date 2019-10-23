@@ -59,24 +59,3 @@ bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, 
 
 	return hit;
 }
-
-size_t GeometryCollection::getMaxLinearBufferSize() noexcept {
-	return Geometry::getMaxLinearBufferSize() * GeometryCollection::maxNumber;
-}
-
-size_t GeometryCollection::getLinearBufferSize() const noexcept {
-	return GeometryCollection::getMaxLinearBufferSize();
-}
-
-void GeometryCollection::linearizeToBuffer(void* buffer) const noexcept {
-	// TODO: linearize along with used location count...
-	for (size_t i = 0; i < GeometryCollection::maxNumber; ++i) {
-		void* bufferLocation = reinterpret_cast<void*>(reinterpret_cast<char*>(buffer) + (Geometry::getMaxLinearBufferSize() * i));
-		if (i < mGeometryCount) {
-			const auto& currentGeometry = mGeometry[i];
-			currentGeometry.linearizeToBuffer(bufferLocation);
-		} else {
-			Geometry::linearizeEmptyToBuffer(bufferLocation);
-		}
-	}
-}

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Core/Linearizable.h"
+#include "Tachyon.h"
 
 namespace Tachyon {
     namespace Core {
         namespace Lighting {
-            class Light :
-                virtual public Linearizable {
+            class Light {
             
             public:
 				Light(const glm::vec3& color, const glm::float32& intensity) noexcept;

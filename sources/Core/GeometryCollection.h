@@ -5,7 +5,6 @@
 namespace Tachyon {
 	namespace Core {
 		class GeometryCollection :
-			virtual public Linearizable,
 			virtual public RayInterceptable {
 
 			constexpr static glm::uint32 maxNumber = 16;
@@ -23,13 +22,24 @@ namespace Tachyon {
 
 			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
 
-			static size_t getMaxLinearBufferSize() noexcept;
-
-			size_t getLinearBufferSize() const noexcept final;
-
-			void linearizeToBuffer(void* buffer) const noexcept final;
-
 			void push(const Geometry& geometry) noexcept;
+
+			static constexpr size_t getBufferSize() noexcept {
+				return Geometry::getBufferSize() * GeometryCollection::maxNumber;
+			};
+
+			static void linearizeToBuffer(const GeometryCollection& src, void* dst) noexcept {
+				// TODO: linearize along with used location count...
+				for (size_t i = 0; i < GeometryCollection::maxNumber; ++i) {
+					void* bufferLocation = reinterpret_cast<void*>(reinterpret_cast<char*>(dst) + (Geometry::getBufferSize() * i));
+					if (i < src.mGeometryCount) {
+						const auto& currentGeometry = src.mGeometry[i];
+						Geometry::linearizeToBuffer(currentGeometry, bufferLocation);
+					} else {
+						Geometry::linearizeEmptyToBuffer(bufferLocation);
+					}
+				}
+			}
 
 		private:
 			std::array<Geometry, maxNumber> mGeometry;
