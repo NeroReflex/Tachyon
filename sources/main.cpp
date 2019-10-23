@@ -15,8 +15,10 @@ int main(int argc, char** argv) {
 			Tachyon::Core::Geometry::makeSphere(glm::vec3(0,-100.5,-1), 100)
 		});
 
+	Tachyon::Rendering::ToneMapping::ExposureToneMapper toneMapper(0.1);
+
 	renderer.render(renderCamera, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader, scene);
-	renderTarget.transferTo(image, Tachyon::Rendering::ToneMapping::ExposureToneMapper(0.1));
+	renderTarget.transferTo(image, toneMapper);
 
 	image.write("output.ppm");
 
