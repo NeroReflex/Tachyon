@@ -93,6 +93,28 @@ namespace Tachyon {
 				static NodeData createTree(UnsignedType left, UnsignedType right) noexcept;
 
 				static NodeData createLeaf(UnsignedType contentLocation) noexcept;
+
+				static constexpr size_t getBufferSize() noexcept {
+					// To store a node data we need two vec4 and two uint32 elements:
+					// One vec4 is the minimum vertex, the other is vec4(length, depth, width, 0)
+					// The first uint32 is the left node index / content, the other is the right node index, or zero if the node is a leaf
+
+					// TODO: change the (4) with the amound of bytes needed to store a node
+					return sizeof(glm::vec4 * 2) + (glm::uint32 * 2);
+				};
+
+				static void linearizeToBuffer(const NodeData& src, void* dst) noexcept {
+					// Make sure the linearization won't take more space than what it is necessary
+					static_assert(sizeof(glm::vec4 / 4) == sizeof(glm::uint32));
+
+					glm::vec4* bufferAsVector = reinterpret_cast<glm::vec4*>(dst);
+					bufferAsVector[0] = glm::vec4(bvh.getPosition(), 1.0);
+					bufferAsVector[1] = glm::vec4(bvh.getLength(), bvh.getDepth(), bvh.getWidth(), 0);
+
+					glm::uint32* bufferAsUint = reinterpret_cast<glm::uint32*>(bufferAsVector[2]);
+					bufferAsUint[0] = tree.mLeft;
+					bufferAsUint[1] = tree.mRight;
+				}
 			};
 
 			UnsignedType insert(NodeData node, UnsignedType root = 0) noexcept;
@@ -100,6 +122,17 @@ namespace Tachyon {
 			Collection<ContentType, N> mContentCollection;
 			std::array<NodeData, maxNumberOfTreeElements> mLinearTree;
 
+
+		public:
+			static constexpr size_t getBufferSize() noexcept {
+				// To store a linear tree we need the space of the internal transformation matrix (a 4x4 matrix of floats),
+				// plus the space to linearize all contained elements, plus the space to linarize all tree nodes
+				return sizeof(glm::mat4) + (ContentType::getBufferSize() * maxNumberOfElements) + (NodeData::getBufferSize() * maxNumberOfTreeElements);
+			};
+
+			static void linearizeToBuffer(const BVHLinearTree<ContentType, N>& src, void* dst) noexcept {
+				// TODO: implement linearization
+			}
 		};
 
 		template <class ContentType, size_t N>
