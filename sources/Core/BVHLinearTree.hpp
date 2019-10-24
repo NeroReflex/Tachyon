@@ -32,6 +32,9 @@ namespace Tachyon {
 
 				void linearTraverse(const std::function<void(const ContentType&)>&) const noexcept;
 
+			private:
+				std::list<glm::uint64> mFreeNodes;
+
 			protected:
 				void traverse(const std::function<void(const ContentType&)>&, UnsignedType root) const noexcept;
 
@@ -47,10 +50,7 @@ namespace Tachyon {
 
 				void refreshBVH(UnsignedType index) noexcept;
 
-				std::list<glm::uint64> mFreeNodes;
-				std::list<glm::uint64> mFreeContentLocations;
-
-#pragma pack(push, 1)
+#pragma pack(push, 16)
 				struct NodeData {
 					AABB bvh;
 
@@ -90,11 +90,8 @@ namespace Tachyon {
 
 			template <class ContentType, size_t N>
 			BVHLinearTree<ContentType, N>::BVHLinearTree() noexcept {
-				for (size_t i = 0; i < BVHLinearTree::maxNumberOfTreeElements; ++i) {
-					if (i < BVHLinearTree::maxNumberOfElements)
-						mFreeContentLocations.emplace_back(i);
+				for (size_t i = 0; i < BVHLinearTree::maxNumberOfTreeElements; ++i)
 					mFreeNodes.emplace_back(i);
-				}
 			}
 
 			template <class ContentType, size_t N>
@@ -144,22 +141,16 @@ namespace Tachyon {
 			template <class ContentType, size_t N>
 			bool BVHLinearTree<ContentType, N>::insert(const ContentType& element) noexcept {
 				// No free space remaining on the BVH or nothing to be addedd
-				/*if ((mFreeNodes.empty()) || (!element))
-					return false;*/
+				DBG_ASSERT((!mContentCollection.isFull()));
 
-				// get the iterator of the fisrt element of the free-content-location list
-				const auto firstFreeContentLocation = mFreeContentLocations.cbegin();
-
-				// occupy the given location
-				const auto occupiedContentLocation = *firstFreeContentLocation;
-				mContentCollection[occupiedContentLocation] = element;
-
-				// the location is not free anymore
-				mFreeContentLocations.erase(firstFreeContentLocation);
+				// occupy the first free location (its index is getSize())
+				const auto occupiedContentLocation = mContentCollection.getSize();
+				mContentCollection.push(element); // This will also update the content count
 
 				// create the leaf to be added
 				auto leaf = NodeData::createLeaf(occupiedContentLocation);
-				leaf.bvh = AABB(element.bvBase(), element.getModelMatrix());
+				// TODO: FIX THIS!!!!
+				//leaf.bvh = AABB(element.bvBase(), element.getModelMatrix());
 
 				// add the leaf node to the tree
 				insert(std::move(leaf));
@@ -226,9 +217,10 @@ namespace Tachyon {
 			void BVHLinearTree<ContentType, N>::refreshBVH(UnsignedType index) noexcept {
 				if (isLeaf(index)) {
 					// sync this BV shape to the base rigid object BV multiplied by the rigid body current Model latrix ...
-					const auto elementPtr = mContentCollection[mLinearTree[index].content].get();
+					const auto& element = mContentCollection[mLinearTree[index].content];
 
-					bv(index) = AABB(elementPtr->bvBase(), elementPtr->getModelMatrix());
+					// TODO: FIX THIS
+					//bv(index) = AABB(element.bvBase(), element.getModelMatrix());
 				}
 				else {
 					bv(index) = AABB(bv(mLinearTree[index].tree.mLeft), bv(mLinearTree[index].tree.mRight));
@@ -252,9 +244,8 @@ namespace Tachyon {
 				if (isFree(root)) return;
 
 				if (isLeaf(root)) {
-					fn(*(mContentCollection[mLinearTree[root].content]));
-				}
-				else {
+					fn(mContentCollection[mLinearTree[root].content]);
+				} else {
 					traverse(fn, mLinearTree[root].tree.mLeft);
 					traverse(fn, mLinearTree[root].tree.mRight);
 				}

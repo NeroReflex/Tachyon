@@ -28,6 +28,8 @@ namespace Tachyon {
 
 			size_t getSize() const noexcept;
 
+			bool isFull() const noexcept;
+
 			void foreach(const std::function<void(T&)>& fn) noexcept;
 
 			void foreach(const std::function<void(const T&)>& fn) const noexcept;
@@ -94,6 +96,11 @@ namespace Tachyon {
 
 			// Store the geometry and increase the counter of stored geometry
 			mElements[mElementsCount++] = element;
+		}
+
+		template <class T, size_t expOfTwoOfMaxNumberOfElements>
+		bool Collection<T, expOfTwoOfMaxNumberOfElements>::isFull() const noexcept {
+			return mElementsCount < maxNumber;
 		}
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>
