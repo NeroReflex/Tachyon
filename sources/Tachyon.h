@@ -12,6 +12,7 @@
 #include <array>
 #include <initializer_list>
 #include <vector>
+#include <list>
 
 // STL memory
 #include <memory>
@@ -28,6 +29,7 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtx/quaternion.hpp>
 
+typedef glm::uint32 UnsignedType;
 typedef glm::float32 NumericType;
 
 #define DBG_ASSERT(x) assert(x)

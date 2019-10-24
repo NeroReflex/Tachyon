@@ -1,6 +1,8 @@
 #include "Rendering/Renderer.h"
 #include "Rendering/ToneMapping/ExposureToneMapper.h"
 
+#include "Core/BLAS.h"
+
 int main(int argc, char** argv) {
 	Tachyon::PPMImage image(480, 360);
 
@@ -10,9 +12,12 @@ int main(int argc, char** argv) {
 
 	Tachyon::Rendering::Renderer renderer(renderTarget);
 	const auto scene = Tachyon::Core::GeometryCollection({
-			Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, -1), 0.5),
-			Tachyon::Core::Geometry::makeSphere(glm::vec3(0,-100.5,-1), 100)
-		});
+		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, -1), 0.5),
+		Tachyon::Core::Geometry::makeSphere(glm::vec3(0,-100.5,-1), 100)
+	});
+
+	Tachyon::Core::BLAS blas;
+	blas.insert(scene);
 
 	Tachyon::Rendering::ToneMapping::ExposureToneMapper toneMapper(0.1);
 

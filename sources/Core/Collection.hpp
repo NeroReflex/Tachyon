@@ -32,6 +32,10 @@ namespace Tachyon {
 
 			void foreach(const std::function<void(const T&)>& fn) const noexcept;
 
+			const T& operator[](const UnsignedType& index) const noexcept;
+
+			T& operator[](const UnsignedType& index) noexcept;
+
 			static constexpr size_t getBufferSize() noexcept {
 				// The required memory space in bytes is the number of bytes required by the serialization of the template type,
 				// multiplied by the maximum number of serializable elements, plus an uint32 used to store the number of effectively serialized elements
@@ -107,6 +111,20 @@ namespace Tachyon {
 		void Collection<T, expOfTwoOfMaxNumberOfElements>::foreach(const std::function<void(const T&)>& fn) const noexcept {
 			for (size_t i = 0; i < mElementsCount; ++i)
 				fn(mElements[i]);
+		}
+
+		template <class T, size_t expOfTwoOfMaxNumberOfElements>
+		const T& Collection<T, expOfTwoOfMaxNumberOfElements>::operator[](const UnsignedType& index) const noexcept {
+			DBG_ASSERT((index < mElementsCount));
+
+			return mElements[index];
+		}
+
+		template <class T, size_t expOfTwoOfMaxNumberOfElements>
+		T& Collection<T, expOfTwoOfMaxNumberOfElements>::operator[](const UnsignedType& index) noexcept {
+			DBG_ASSERT((index < mElementsCount));
+
+			return mElements[index];
 		}
 	}
 }
