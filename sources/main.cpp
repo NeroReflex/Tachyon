@@ -12,19 +12,22 @@ int main(int argc, char** argv) {
 
 	Tachyon::Rendering::Renderer renderer(renderTarget);
 	const auto sphereTest = Tachyon::Core::GeometryCollection({
-		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, -1), 0.5),
-		Tachyon::Core::Geometry::makeSphere(glm::vec3(0,-100.5,-1), 100)
+		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, 0), 0.5),
+		Tachyon::Core::Geometry::makeSphere(glm::vec3(0.75, 0, 0), 0.25),
+		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, -100.5, 0), 100)
 	});
 
 	Tachyon::Core::BLAS sphericBLAS;
+	sphericBLAS.setTransform(glm::translate(glm::vec3(0, 0, -1)));
 	sphericBLAS.insert(sphereTest);
 
-	Tachyon::Core::TLAS scene;
-	scene.insert(sphericBLAS);
+	// The TLAS occupy a big chunk of memory, therefore it is advised it stays on the heap
+	std::unique_ptr<Tachyon::Core::TLAS> scene(new Tachyon::Core::TLAS());
+	scene->insert(sphericBLAS);
 
 	Tachyon::Rendering::ToneMapping::ExposureToneMapper toneMapper(0.1);
 
-	renderer.render(renderCamera, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader, scene);
+	renderer.render(renderCamera, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader, *scene);
 	renderTarget.transferTo(image, toneMapper);
 
 	image.write("output.ppm");

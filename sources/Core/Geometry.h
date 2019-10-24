@@ -35,9 +35,9 @@ namespace Tachyon {
 
 				Triangle(const Triangle& src) noexcept;
 				
-				bool isHitBy(const Ray& ray) const noexcept override;
+				bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
+				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 				
 				static void linearizeToBuffer(const Triangle& src, void* dst) noexcept {
 					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
@@ -67,9 +67,9 @@ namespace Tachyon {
 
 				glm::float32 getRadius() const noexcept;
 				
-				bool isHitBy(const Ray& ray) const noexcept override;
+				bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
+				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
 				static void linearizeToBuffer(const Sphere& src, void* dst) noexcept {
 					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
@@ -125,9 +125,9 @@ namespace Tachyon {
 				}
 			}
 
-			bool isHitBy(const Ray& ray) const noexcept override;
+			bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept override;
 
-			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
+			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept override;
 
 			AABB bvBase() const noexcept;
 

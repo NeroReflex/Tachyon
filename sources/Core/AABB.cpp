@@ -148,20 +148,23 @@ std::vector<glm::vec3> AABB::getVertices() const noexcept {
 	return vertices;
 }
 
-bool AABB::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
+bool AABB::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform) const noexcept {
     // TODO: what should I do with this?
-	return isHitBy(ray);
+	return isHitBy(ray, transform);
 }
 
-bool AABB::isHitBy(const Ray& ray) const noexcept {
+bool AABB::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
+	AABB transformedAABB = (transform != glm::mat4(1)) ?
+		transformedAABB = AABB(transformedAABB, transform) : *this;
+
 	float tmin, tmax, tymin, tymax, tzmin, tzmax;
 
 	glm::vec3 orig = ray.getOrigin();
 	glm::vec3 invdir = ray.getInvDirection();
 
 	std::array<glm::vec3, 2> bounds = {
-		mPosition,
-		glm::vec3(mPosition.x + mLength, mPosition.y + mDepth, mPosition.z + mWidth)
+		transformedAABB.mPosition,
+		glm::vec3(transformedAABB.mPosition.x + mLength, transformedAABB.mPosition.y + mDepth, transformedAABB.mPosition.z + mWidth)
 	};
 
 	tmin = (bounds[ray.getSigns()[0]].x - orig.x) * invdir.x;

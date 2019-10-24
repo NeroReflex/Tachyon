@@ -3,22 +3,22 @@
 using namespace Tachyon;
 using namespace Tachyon::Core;
 
-bool GeometryCollection::isHitBy(const Ray& ray) const noexcept {
+bool GeometryCollection::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
 	bool hit = false;
 
-	Collection<Geometry, 3>::foreach([&hit, ray](const Geometry& geometry) {
-		hit = (geometry.isHitBy(ray)) ? true : hit;
+	Collection<Geometry, 3>::foreach([&hit, ray, transform](const Geometry& geometry) {
+		hit = (geometry.isHitBy(ray, transform)) ? true : hit;
 	});
 
 	return hit;
 }
 
-bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
+bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform) const noexcept {
 	bool hit = false;
 	RayGeometryIntersection closestHit;
 
-	Collection<Geometry, 3>::foreach([&hit, ray, &closestHit, &isecInfo, minDistance, maxDistance](const Geometry& geometry) {
-		bool currentHit = geometry.intersection(ray, minDistance, maxDistance, isecInfo);
+	Collection<Geometry, 3>::foreach([&hit, ray, &closestHit, &isecInfo, minDistance, maxDistance, transform](const Geometry& geometry) {
+		bool currentHit = geometry.intersection(ray, minDistance, maxDistance, isecInfo, transform);
 
 		if ((currentHit) && (closestHit.getDistance() > isecInfo.getDistance())) {
 			closestHit = isecInfo;

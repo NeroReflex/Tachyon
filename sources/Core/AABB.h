@@ -49,9 +49,9 @@ namespace Tachyon {
 			 *
 			 * @return true on hit
 			 */
-			bool isHitBy(const Ray& ray) const noexcept override;
+			bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-            bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
+            bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
 			bool contains(const glm::vec3& point) const noexcept;
 

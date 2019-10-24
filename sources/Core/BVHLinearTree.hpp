@@ -37,15 +37,36 @@ namespace Tachyon {
 			 */
 			void traverse(const std::function<void(const ContentType&)>& fn, UnsignedType root = 0) const noexcept;
 
-			bool isHitBy(const Ray& ray) const noexcept final;
+			/**
+			 * Check if the given ray collides with any of the stored elements transformed by the internal matrix and the give one.
+			 *
+			 * @return true if the given ray intersects one or more stored objects
+			 */
+			bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept final;
+			/**
+			 * Check if the given ray collides with any of the stored elements transformed by the internal matrix and the give one,
+			 * and if that's the case the ray-geometry intersection gets updated with the closes hit.
+			 *
+			 * @return true if the given ray intersects one or more stored objects
+			 */
+			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
+
+			void setTransform(const glm::mat4& transformationMatrix = glm::mat4(1)) noexcept;
+
+			const glm::mat4& getTransform() const noexcept;
 
 		private:
+			glm::mat4 mTransformationMatrix;
+
 			/**
 			 * Keeps track of free nodes
 			 */
 			std::list<glm::uint64> mFreeNodes;
+
+			bool isBVHitByRay(const Ray& ray, glm::mat4 transform = glm::mat4(1), UnsignedType root = 0) const noexcept;
+
+			bool intersects(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1), UnsignedType root = 0) const noexcept;
 
 		protected:
 			bool isRoot(UnsignedType index) const noexcept;
@@ -57,10 +78,6 @@ namespace Tachyon {
 			const AABB& bv(UnsignedType index) const noexcept;
 
 			bool isFree(UnsignedType index) const noexcept;
-
-			bool isBVHitByRay(const Ray& ray, UnsignedType root = 0) const noexcept;
-
-			bool intersects(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, UnsignedType root = 0) const noexcept;
 
 			void refreshBVH(UnsignedType index) noexcept;
 
@@ -111,7 +128,7 @@ namespace Tachyon {
 					bufferAsVector[0] = glm::vec4(bvh.getPosition(), 1.0);
 					bufferAsVector[1] = glm::vec4(bvh.getLength(), bvh.getDepth(), bvh.getWidth(), 0);
 
-					glm::uint32* bufferAsUint = reinterpret_cast<glm::uint32*>(bufferAsVector[2]);
+					glm::uint32* bufferAsUint = reinterpret_cast<glm::uint32*>(&bufferAsVector[2]);
 					bufferAsUint[0] = tree.mLeft;
 					bufferAsUint[1] = tree.mRight;
 				}
@@ -131,25 +148,32 @@ namespace Tachyon {
 			};
 
 			static void linearizeToBuffer(const BVHLinearTree<ContentType, N>& src, void* dst) noexcept {
-				// TODO: implement linearization
+				glm::mat4* bufferAsTransformationMatrix = reinterpret_cast<glm::mat4*>(dst);
+				bufferAsTransformationMatrix[0] = mTransformationMatrix;
+
+
+				// TODO: continue to implement linearization...
 			}
 		};
 
 		template <class ContentType, size_t N>
-		BVHLinearTree<ContentType, N>::BVHLinearTree() noexcept {
+		BVHLinearTree<ContentType, N>::BVHLinearTree() noexcept 
+			: mTransformationMatrix(glm::mat4(1)) {
 			for (size_t i = 0; i < BVHLinearTree::maxNumberOfTreeElements; ++i)
 				mFreeNodes.emplace_back(i);
 		}
 
 		template <class ContentType, size_t N>
 		BVHLinearTree<ContentType, N>::BVHLinearTree(const BVHLinearTree<ContentType, N>& src) noexcept
-			: mFreeNodes(src.mFreeNodes),
+			: mTransformationMatrix(src.mTransformationMatrix),
+			mFreeNodes(src.mFreeNodes),
 			mContentCollection(src.mContentCollection),
 			mLinearTree(src.mLinearTree) {}
 
 		template <class ContentType, size_t N>
 		BVHLinearTree<ContentType, N>& BVHLinearTree<ContentType, N>::operator=(const BVHLinearTree<ContentType, N>& src) noexcept {
 			if (&src != this) {
+				mTransformationMatrix = src.mTransformationMatrix;
 				mFreeNodes = src.mFreeNodes;
 				mContentCollection = src.mContentCollection;
 				mLinearTree = src.mLinearTree;
@@ -160,6 +184,16 @@ namespace Tachyon {
 
 		template <class ContentType, size_t N>
 		BVHLinearTree<ContentType, N>::~BVHLinearTree() {}
+
+		template <class ContentType, size_t N>
+		void BVHLinearTree<ContentType, N>::setTransform(const glm::mat4& transformationMatrix = glm::mat4(1)) noexcept {
+			mTransformationMatrix = transformationMatrix;
+		}
+
+		template <class ContentType, size_t N>
+		const glm::mat4& BVHLinearTree<ContentType, N>::getTransform() const noexcept {
+			return mTransformationMatrix;
+		}
 
 		template <class ContentType, size_t N>
 		BVHLinearTree<ContentType, N>::NodeData::NodeData() noexcept {
@@ -311,20 +345,20 @@ namespace Tachyon {
 		}
 
 		template <class ContentType, size_t N>
-		bool BVHLinearTree<ContentType, N>::isBVHitByRay(const Ray& ray, UnsignedType root = 0) const noexcept {
+		bool BVHLinearTree<ContentType, N>::isBVHitByRay(const Ray& ray, glm::mat4 transform, UnsignedType root = 0) const noexcept {
 			if (isFree(root)) return false;
 
 			if (isLeaf(root)) {
-				return mContentCollection[mLinearTree[root].content].isHitBy(ray);
-			} else if (bv(root).isHitBy(ray)) {
+				return mContentCollection[mLinearTree[root].content].isHitBy(ray, transform);
+			} else if (bv(root).isHitBy(ray, transform)) {
 				bool leftHit = false, rightHit = false;
 
-				if (bv(mLinearTree[root].tree.mLeft).isHitBy(ray)) {
-					leftHit = isBVHitByRay(ray, mLinearTree[root].tree.mLeft);
+				if (bv(mLinearTree[root].tree.mLeft).isHitBy(ray, transform)) {
+					leftHit = isBVHitByRay(ray, transform, mLinearTree[root].tree.mLeft);
 				}
 
-				if (bv(mLinearTree[root].tree.mRight).isHitBy(ray)) {
-					rightHit = isBVHitByRay(ray, mLinearTree[root].tree.mRight);
+				if (bv(mLinearTree[root].tree.mRight).isHitBy(ray, transform)) {
+					rightHit = isBVHitByRay(ray, transform, mLinearTree[root].tree.mRight);
 				}
 
 				return leftHit || rightHit;
@@ -334,23 +368,23 @@ namespace Tachyon {
 		}
 
 		template <class ContentType, size_t N>
-		bool BVHLinearTree<ContentType, N>::intersects(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, UnsignedType root = 0) const noexcept {
+		bool BVHLinearTree<ContentType, N>::intersects(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform, UnsignedType root) const noexcept {
 			if (isFree(root)) return false;
 
 			bool match = false;
 
 			if (isLeaf(root)) {
-				return mContentCollection[mLinearTree[root].content].intersection(ray, minDistance, maxDistance, isecInfo);
-			} else if (bv(root).isHitBy(ray)) {
+				return mContentCollection[mLinearTree[root].content].intersection(ray, minDistance, maxDistance, isecInfo, transform);
+			} else if (bv(root).isHitBy(ray, transform)) {
 				bool leftHit = false, rightHit = false;
 
-				if (bv(mLinearTree[root].tree.mLeft).isHitBy(ray)) {
-					leftHit = intersects(ray, minDistance, maxDistance, isecInfo, mLinearTree[root].tree.mLeft);
+				if (bv(mLinearTree[root].tree.mLeft).isHitBy(ray, transform)) {
+					leftHit = intersects(ray, minDistance, maxDistance, isecInfo, transform, mLinearTree[root].tree.mLeft);
 				}
 
-				if (bv(mLinearTree[root].tree.mRight).isHitBy(ray)) {
+				if (bv(mLinearTree[root].tree.mRight).isHitBy(ray, transform)) {
 					RayGeometryIntersection temp;
-					rightHit = intersects(ray, minDistance, maxDistance, temp, mLinearTree[root].tree.mRight);
+					rightHit = intersects(ray, minDistance, maxDistance, temp, transform, mLinearTree[root].tree.mRight);
 
 					if (!leftHit || (temp.getDistance() < isecInfo.getDistance())) {
 						isecInfo = temp;
@@ -388,13 +422,13 @@ namespace Tachyon {
 		}
 
 		template <class ContentType, size_t N>
-		bool BVHLinearTree<ContentType, N>::isHitBy(const Ray& ray) const noexcept {
-			return isBVHitByRay(ray, 0);
+		bool BVHLinearTree<ContentType, N>::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
+			return isBVHitByRay(ray, transform * mTransformationMatrix, 0);
 		}
 
 		template <class ContentType, size_t N>
-		bool BVHLinearTree<ContentType, N>::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
-			return intersects(ray, minDistance, maxDistance, isecInfo);
+		bool BVHLinearTree<ContentType, N>::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform) const noexcept {
+			return intersects(ray, minDistance, maxDistance, isecInfo, transform * mTransformationMatrix);
 		}
 	}
 }

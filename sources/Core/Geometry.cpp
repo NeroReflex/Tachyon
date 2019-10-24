@@ -20,11 +20,11 @@ Geometry::Triangle::Triangle(const std::array<glm::vec3, 3>& data) noexcept
 Geometry::Triangle::Triangle(const Triangle& src) noexcept 
 	: mVertices(src.mVertices) {}
 
-bool Geometry::Triangle::isHitBy(const Ray& ray) const noexcept {
+bool Geometry::Triangle::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
 	return false;
 }
 
-bool Geometry::Triangle::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
+bool Geometry::Triangle::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform) const noexcept {
 	return false;
 }
 
@@ -42,7 +42,9 @@ glm::float32 Geometry::Sphere::getRadius() const noexcept {
 	return mRadius;
 }
 
-bool Geometry::Sphere::isHitBy(const Ray& ray) const noexcept {
+bool Geometry::Sphere::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
+	const glm::vec3 origin = transform * mOrigin;
+
 	glm::vec3 oc = ray.getOrigin() - this->getOrigin();
 	const auto radius = this->getRadius();
 	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
@@ -53,8 +55,8 @@ bool Geometry::Sphere::isHitBy(const Ray& ray) const noexcept {
 	return discriminant > 0.0;
 }
 
-bool Geometry::Sphere::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
-	const auto center = this->getOrigin();
+bool Geometry::Sphere::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform) const noexcept {
+	const glm::vec3 center = transform * mOrigin;
 	const auto radius = this->getRadius();
 	const auto direction = ray.getDirection();
 
@@ -130,20 +132,20 @@ Geometry::Geometry(glm::vec3 position, glm::float32 radius) noexcept
 	: mType(Geometry::Type::Sphere),
 	mGeometryAsSphere(std::move(position), std::move(radius)) {}
 
-bool Geometry::isHitBy(const Ray& ray) const noexcept {
+bool Geometry::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
 	if (mType == Geometry::Type::Sphere)
-		return this->mGeometryAsSphere.isHitBy(ray);
+		return this->mGeometryAsSphere.isHitBy(ray, transform);
 	else if (mType == Geometry::Type::Triangle)
-		return this->mGeometryAsTriangle.isHitBy(ray);
+		return this->mGeometryAsTriangle.isHitBy(ray, transform);
 	else // unknown geometry type
 		return false;
 }
 
-bool Geometry::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
+bool Geometry::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform) const noexcept {
 	if (mType == Geometry::Type::Sphere)
-		return this->mGeometryAsSphere.intersection(ray, minDistance, maxDistance, isecInfo);
+		return this->mGeometryAsSphere.intersection(ray, minDistance, maxDistance, isecInfo, transform);
 	else if (mType == Geometry::Type::Triangle)
-		return this->mGeometryAsTriangle.intersection(ray, minDistance, maxDistance, isecInfo);
+		return this->mGeometryAsTriangle.intersection(ray, minDistance, maxDistance, isecInfo, transform);
 	else // unknown geometry type
 		return false;
 }
