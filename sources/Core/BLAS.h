@@ -10,6 +10,8 @@ namespace Tachyon {
 
         public:
             using BVHLinearTree<GeometryCollection, 3>::BVHLinearTree;
+
+			AABB bvBase() const noexcept;
         };
     }
 }

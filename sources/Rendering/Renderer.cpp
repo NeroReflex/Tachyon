@@ -7,7 +7,7 @@ using namespace Tachyon::Rendering;
 Renderer::Renderer(RenderSurface& renderingSurface) noexcept
 	: mRenderingSurface(renderingSurface) {}
 
-void Renderer::render(const Core::Camera& camera, const ShaderAlgorithm& shadingAlgo, const Core::BLAS& scene) noexcept {
+void Renderer::render(const Core::Camera& camera, const ShaderAlgorithm& shadingAlgo, const Core::TLAS& scene) noexcept {
 	// Reset the render target surface
 	mRenderingSurface.reset();
 

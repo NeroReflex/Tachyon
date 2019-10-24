@@ -19,9 +19,10 @@ namespace Tachyon {
 			constexpr static size_t maxNumberOfTreeElements = (maxNumberOfElements * 2) - 1;
 
 		public:
-			BVHLinearTree(const BVHLinearTree<ContentType, N>&) = delete;
-			BVHLinearTree(BVHLinearTree&&) = delete;
-			BVHLinearTree& operator=(const BVHLinearTree<ContentType, N>&) = delete;
+			BVHLinearTree(const BVHLinearTree<ContentType, N>&) noexcept;
+			
+			BVHLinearTree& operator=(const BVHLinearTree<ContentType, N>&) noexcept;
+
 			virtual ~BVHLinearTree();
 
 			BVHLinearTree() noexcept;
@@ -34,7 +35,7 @@ namespace Tachyon {
 			/**
 			 * Traverse each node of the tree to execute the given function on each leaf.
 			 */
-			void traverse(const std::function<void(const ContentType&)>& fn, UnsignedType root) const noexcept;
+			void traverse(const std::function<void(const ContentType&)>& fn, UnsignedType root = 0) const noexcept;
 
 			bool isHitBy(const Ray& ray) const noexcept final;
 
@@ -105,6 +106,23 @@ namespace Tachyon {
 		BVHLinearTree<ContentType, N>::BVHLinearTree() noexcept {
 			for (size_t i = 0; i < BVHLinearTree::maxNumberOfTreeElements; ++i)
 				mFreeNodes.emplace_back(i);
+		}
+
+		template <class ContentType, size_t N>
+		BVHLinearTree<ContentType, N>::BVHLinearTree(const BVHLinearTree<ContentType, N>& src) noexcept
+			: mFreeNodes(src.mFreeNodes),
+			mContentCollection(src.mContentCollection),
+			mLinearTree(src.mLinearTree) {}
+
+		template <class ContentType, size_t N>
+		BVHLinearTree<ContentType, N>& BVHLinearTree<ContentType, N>::operator=(const BVHLinearTree<ContentType, N>& src) noexcept {
+			if (&src != this) {
+				mFreeNodes = src.mFreeNodes;
+				mContentCollection = src.mContentCollection;
+				mLinearTree = src.mLinearTree;
+			}
+
+			return *this;
 		}
 
 		template <class ContentType, size_t N>
