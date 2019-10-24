@@ -4,6 +4,7 @@
 
 namespace Tachyon {
     namespace Core {
+
         /**
 		 * This represents an axis-aligned bounding box.
 		 *
@@ -43,6 +44,11 @@ namespace Tachyon {
 
 			~AABB();
 
+			/**
+			 * Check if the given ray intersects the AABB.
+			 *
+			 * @return true on hit
+			 */
 			bool isHitBy(const Ray& ray) const noexcept override;
 
             bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;

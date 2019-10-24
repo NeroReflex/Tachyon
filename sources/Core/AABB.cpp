@@ -149,7 +149,8 @@ std::vector<glm::vec3> AABB::getVertices() const noexcept {
 }
 
 bool AABB::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept {
-    return isHitBy(ray);
+    // TODO: what should I do with this?
+	return isHitBy(ray);
 }
 
 bool AABB::isHitBy(const Ray& ray) const noexcept {
