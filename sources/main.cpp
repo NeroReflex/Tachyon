@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
 	Tachyon::Rendering::Renderer renderer(renderTarget);
 	const auto sphereTest = Tachyon::Core::GeometryCollection({
 		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, 0), 0.5),
-		Tachyon::Core::Geometry::makeSphere(glm::vec3(0.75, 0, 0), 0.25),
+		Tachyon::Core::Geometry::makeSphere(glm::vec3(0.75, 0, -0.5), 0.25),
 		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, -100.5, 0), 100)
 	});
 

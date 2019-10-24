@@ -30,7 +30,7 @@ namespace Tachyon {
 			/**
 			 * Insert an element into the BVH tree.
 			 */
-			bool insert(const ContentType& uniqueInstance) noexcept;
+			void insert(const ContentType& uniqueInstance) noexcept;
 
 			/**
 			 * Traverse each node of the tree to execute the given function on each leaf.
@@ -237,7 +237,7 @@ namespace Tachyon {
 		}
 
 		template <class ContentType, size_t N>
-		bool BVHLinearTree<ContentType, N>::insert(const ContentType& element) noexcept {
+		void BVHLinearTree<ContentType, N>::insert(const ContentType& element) noexcept {
 			// No free space remaining on the BVH or nothing to be addedd
 			DBG_ASSERT((!mContentCollection.isFull()));
 
@@ -251,9 +251,6 @@ namespace Tachyon {
 
 			// add the leaf node to the tree
 			insert(std::move(leaf));
-
-			// Susccess!
-			return true;
 		}
 
 		template <class ContentType, size_t N>
