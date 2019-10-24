@@ -9,7 +9,7 @@ namespace Tachyon {
 		class Collection {
 
 		protected:
-			constexpr static size_t maxNumber = 2^expOfTwoOfMaxNumberOfElements;
+			constexpr static size_t maxNumber = 0x01 << expOfTwoOfMaxNumberOfElements;
 
 		public:
 			Collection() noexcept;
@@ -20,7 +20,7 @@ namespace Tachyon {
 
 			Collection(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept;
 
-			Collection& operator=(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept;
+			Collection<T, expOfTwoOfMaxNumberOfElements>& operator=(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept;
 
 			virtual ~Collection() = default;
 
