@@ -39,6 +39,10 @@ namespace Tachyon {
 			 */
 			glm::vec4 mDirection;
 
+			/**
+			 * This is 1 / mDirection.xyz.
+			 * note: the W component is always 0.
+			 */
 			glm::vec4 mInvDirection;
 
 			std::array<glm::int16, 3> mSign;
