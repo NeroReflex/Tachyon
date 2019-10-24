@@ -35,7 +35,7 @@ namespace Tachyon {
 			static constexpr size_t getBufferSize() noexcept {
 				// The required memory space in bytes is the number of bytes required by the serialization of the template type,
 				// multiplied by the maximum number of serializable elements, plus an uint32 used to store the number of effectively serialized elements
-				return sizeof(glm::uint32) + (T::getBufferSize() * GeometryCollection::maxNumber);
+				return sizeof(glm::uint32) + (T::getBufferSize() * Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber);
 			};
 
 			static void linearizeToBuffer(const Collection<T, expOfTwoOfMaxNumberOfElements>& src, void* dst) noexcept {
@@ -43,10 +43,10 @@ namespace Tachyon {
 				glm::uint32* bufferSerializedCount = reinterpret_cast<void*>(dst);
 				*bufferSerializedCount = src.mElementsCount;
 
-				for (size_t i = 0; i < Collection<T, expOfTwoOfMaxNumberOfElements>; ++i) {
+				for (size_t i = 0; i < src.mElementsCount; ++i) {
 					void* bufferLocation = reinterpret_cast<void*>(reinterpret_cast<char*>(dst) + (T::getBufferSize() * i) + sizeof(glm::uint32));
 
-					T::linearizeToBuffer(src.mGeometry[i], bufferLocation);
+					T::linearizeToBuffer(src.mElements[i], bufferLocation);
 				}
 			}
 
@@ -75,7 +75,7 @@ namespace Tachyon {
 		Collection<T, expOfTwoOfMaxNumberOfElements>::Collection(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept : Collection(src.mElements.data(), src.mElementsCount) {}
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>
-		Collection& Collection<T, expOfTwoOfMaxNumberOfElements>::operator=(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept {
+		Collection<T, expOfTwoOfMaxNumberOfElements>& Collection<T, expOfTwoOfMaxNumberOfElements>::operator=(const Collection<T, expOfTwoOfMaxNumberOfElements>& src) noexcept {
 			mElementsCount = 0;
 
 			for (size_t i = 0; i < src.mElementsCount; ++i)
@@ -86,7 +86,7 @@ namespace Tachyon {
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>
 		void Collection<T, expOfTwoOfMaxNumberOfElements>::push(const T& element) noexcept {
-			DBG_ASSERT(mElementsCount < Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber);
+			DBG_ASSERT((mElementsCount < Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber));
 
 			// Store the geometry and increase the counter of stored geometry
 			mElements[mElementsCount++] = element;
