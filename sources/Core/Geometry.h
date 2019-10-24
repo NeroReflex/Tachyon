@@ -9,10 +9,6 @@ namespace Tachyon {
 		 * This class is used to store a simple geometric shape that can be intersected by a ray.
 		 * As the raytracer algorithm can be executed on specilized hardware (GPU) linearization is a necessity.
 		 * Each geometric shape is linearized a set of 4 vec4 components.
-		 * - Empty:    vec4(NaN, NaN, NaN, NaN)
-		 *             vec4(NaN, NaN, NaN, NaN)
-		 *             vec4(NaN, NaN, NaN, NaN)
-		 *             vec4(NaN, NaN, NaN, NaN)
 		 * - Sphere:   vec4(0, 0, 0, 0) <= sphere signature
 		 *             vec4(center, 1.0) <= the center position
 		 *             vec4(radius, 0, 0, 0) <= the radius
@@ -127,11 +123,6 @@ namespace Tachyon {
 
 					Triangle::linearizeToBuffer(src.mGeometryAsTriangle, reinterpret_cast<void*>(&bufferAsVectors[1]));
 				}
-			}
-
-			static void linearizeEmptyToBuffer(void* buffer) noexcept {
-				glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(buffer);
-				*bufferAsVectors = glm::vec4(std::numeric_limits<glm::float32>::quiet_NaN());
 			}
 
 			bool isHitBy(const Ray& ray) const noexcept override;
