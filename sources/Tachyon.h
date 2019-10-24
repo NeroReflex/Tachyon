@@ -28,4 +28,6 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtx/quaternion.hpp>
 
+typedef glm::float32 NumericType;
+
 #define DBG_ASSERT(x) assert(x)

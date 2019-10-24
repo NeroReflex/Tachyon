@@ -22,6 +22,10 @@ namespace Tachyon {
 
 			glm::vec3 pointAt(const glm::float32& coeff) const noexcept;
 
+			const glm::vec4& getInvDirection() const noexcept;
+
+			const std::array<glm::int16, 3>& getSigns() const noexcept;
+
 		private:
 			/**
 			 * This is the ray origin.
@@ -34,6 +38,10 @@ namespace Tachyon {
 			 * note: the W component is always 0.
 			 */
 			glm::vec4 mDirection;
+
+			glm::vec4 mInvDirection;
+
+			std::array<glm::int16, 3> mSign;
 		};
 	}
 }
