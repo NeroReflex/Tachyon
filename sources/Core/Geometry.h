@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RayInterceptable.h"
+#include "Core/AABB.h"
 
 namespace Tachyon {
 	namespace Core {
@@ -37,11 +38,11 @@ namespace Tachyon {
 				Triangle(const std::array<glm::vec3, 3>& data) noexcept;
 
 				Triangle(const Triangle& src) noexcept;
-
+				
 				bool isHitBy(const Ray& ray) const noexcept override;
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
-
+				
 				static void linearizeToBuffer(const Triangle& src, void* dst) noexcept {
 					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
 

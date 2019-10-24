@@ -18,7 +18,7 @@ AABB::AABB(const AABB& box1, const AABB& box2) noexcept
 AABB::AABB(const AABB& aabb, const glm::mat4& transformationMatrix) noexcept
 	: AABB(aabb.getVertices(), transformationMatrix) {}
 
-AABB::AABB(const std::vector<glm::vec3>& vertexBuffer, const glm::mat4& transformationMatrix) noexcept {
+AABB::AABB(const glm::vec3* vertexBuffer, size_t count, const glm::mat4& transformationMatrix) noexcept {
 	NumericType
 		minX = std::numeric_limits<glm::float64>::max(),
 		maxX = std::numeric_limits<glm::float64>::min(),
@@ -27,7 +27,8 @@ AABB::AABB(const std::vector<glm::vec3>& vertexBuffer, const glm::mat4& transfor
 		minZ = std::numeric_limits<glm::float64>::max(),
 		maxZ = std::numeric_limits<glm::float64>::min();
 
-	for (const auto vertex : vertexBuffer) {
+	for (size_t i = 0;  i < count; ++i) {
+		const auto& vertex = vertexBuffer[i];
 		const glm::vec3 vertexWorldPosition = glm::vec3(transformationMatrix * glm::vec4(vertex, 1));
 
 		minX = std::min(vertexWorldPosition.x, minX);
@@ -43,6 +44,9 @@ AABB::AABB(const std::vector<glm::vec3>& vertexBuffer, const glm::mat4& transfor
 	mDepth = maxY - minY;
 	mWidth = maxZ - minZ;
 }
+
+AABB::AABB(const std::vector<glm::vec3>& vertexBuffer, const glm::mat4& transformationMatrix) noexcept
+	: AABB(vertexBuffer.data(), vertexBuffer.size(), transformationMatrix) {}
 
 AABB::AABB(const AABB& src) noexcept 
 	: mPosition(src.mPosition), mLength(src.mLength), mWidth(src.mWidth), mDepth(src.mDepth) {}

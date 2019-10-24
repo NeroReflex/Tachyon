@@ -33,6 +33,8 @@ namespace Tachyon {
 
 			AABB(const std::vector<glm::vec3>& vertexBuffer, const glm::mat4& transformationMatrix = glm::mat4(1)) noexcept;
 
+			AABB(const glm::vec3* vertexBuffer, size_t count, const glm::mat4& transformationMatrix) noexcept;
+
 			AABB() noexcept;
 
 			AABB(const AABB&) noexcept;
