@@ -10,10 +10,10 @@ Ray::Ray(const Ray& src) noexcept
 	mSign(src.mSign) {}
 
 Ray::Ray(Ray&& src) noexcept
-	: mOrigin(src.mOrigin),
-	mDirection(src.mDirection),
-	mInvDirection(src.mInvDirection),
-	mSign(src.mSign) {}
+	: mOrigin(std::move(src.mOrigin)),
+	mDirection(std::move(src.mDirection)),
+	mInvDirection(std::move(src.mInvDirection)),
+	mSign(std::move(src.mSign)) {}
 
 Ray::Ray(glm::vec3 origin, glm::vec3 direction) noexcept
 	: mOrigin(glm::vec4(std::move(origin), 1.0)),
