@@ -34,3 +34,18 @@ bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, 
 
 	return hit;
 }
+
+AABB GeometryCollection::bvBase() const noexcept {
+	std::vector<glm::vec3> vertices;
+
+	foreach([this, &vertices](const Geometry& geometry) {
+		// Build an AABB from the current geometry
+		const auto currentAABB = geometry.bvBase();
+
+		const auto currentAABBVertices = currentAABB.getVertices();
+
+		vertices.insert(vertices.end(), currentAABBVertices.cbegin(), currentAABBVertices.cend());
+	});
+
+	return AABB(vertices);
+}

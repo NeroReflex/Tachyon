@@ -147,3 +147,20 @@ bool Geometry::intersection(const Ray& ray, glm::float32 minDistance, glm::float
 	else // unknown geometry type
 		return false;
 }
+
+AABB Geometry::bvBase() const noexcept
+{
+	if (mType == Geometry::Type::Sphere) {
+		const auto origin = mGeometryAsSphere.getOrigin();
+		const auto radius = mGeometryAsSphere.getRadius();
+
+		return AABB(std::vector<glm::vec3>({
+			glm::vec3(origin.x - radius, origin.y - radius, origin.z - radius),
+			glm::vec3(origin.x + radius, origin.y + radius, origin.z + radius)
+		}));
+	}
+
+	DBG_ASSERT(false);
+
+	return AABB();
+}

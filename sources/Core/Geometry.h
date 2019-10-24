@@ -138,6 +138,8 @@ namespace Tachyon {
 
 			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo) const noexcept override;
 
+			AABB bvBase() const noexcept;
+
 		protected:
 			/**
 			 * Create a new geometry as as sphere

@@ -33,7 +33,7 @@ namespace Tachyon {
 
 			AABB(const std::vector<glm::vec3>& vertexBuffer, const glm::mat4& transformationMatrix = glm::mat4(1)) noexcept;
 
-			AABB(const glm::vec3* vertexBuffer, size_t count, const glm::mat4& transformationMatrix) noexcept;
+			AABB(const glm::vec3* vertexBuffer, size_t count, const glm::mat4& transformationMatrix = glm::mat4(1)) noexcept;
 
 			AABB() noexcept;
 
@@ -69,9 +69,14 @@ namespace Tachyon {
 
 			NumericType getDepth() const noexcept;
 
-		private:
+			/**
+			 * Returns the complete list of the 8 vertices of the AABB.
+			 *
+			 * @return the eight vertices
+			 */
 			std::vector<glm::vec3> getVertices() const noexcept;
 
+		private:
 			glm::vec3 mPosition;
 
 			NumericType mLength, mWidth, mDepth;

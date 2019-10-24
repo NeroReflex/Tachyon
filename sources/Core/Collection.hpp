@@ -100,7 +100,7 @@ namespace Tachyon {
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>
 		bool Collection<T, expOfTwoOfMaxNumberOfElements>::isFull() const noexcept {
-			return mElementsCount < maxNumber;
+			return mElementsCount == Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber;
 		}
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>

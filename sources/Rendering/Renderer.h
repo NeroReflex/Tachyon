@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/GeometryCollection.h"
+#include "Core/BLAS.h"
 #include "Core/Camera.h"
 #include "Rendering/RenderSurface.h"
 #include "Rendering/Shading/Shader.h"
@@ -16,7 +16,7 @@ namespace Tachyon {
 
 			Renderer(RenderSurface& renderingSurface) noexcept;
 
-			void render(const Core::Camera& camera, const ShaderAlgorithm& shadingAlgo, const Core::GeometryCollection& scene) noexcept;
+			void render(const Core::Camera& camera, const ShaderAlgorithm& shadingAlgo, const Core::BLAS& scene) noexcept;
 
 		private:
 			RenderSurface& mRenderingSurface;
