@@ -6,7 +6,7 @@ namespace Tachyon {
     namespace Core {
 
         /**
-		 * This represents an axis-aligned bounding box.
+		 * This represents an Axis-Aligned Bounding Box.
 		 *
 		 *    +--------------+
 		 *   /|             /|
