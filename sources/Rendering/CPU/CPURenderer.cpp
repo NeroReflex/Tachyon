@@ -1,13 +1,17 @@
-#include "Renderer.h"
-#include "Rendering/Shading/DistanceShader.h"
+#include "Rendering/CPU/CPURenderer.h"
+#include "Rendering/CPU/Shading/DistanceShader.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
+using namespace Tachyon::Rendering::CPU;
 
-Renderer::Renderer(RenderSurface& renderingSurface) noexcept
-	: mRenderingSurface(renderingSurface) {}
+CPURenderer::CPURenderer() noexcept
+	: mRenderingSurface(RenderSurface(480, 360)) {}
 
-void Renderer::render(const Core::Camera& camera, const ShaderAlgorithm& shadingAlgo, const Core::TLAS& scene) noexcept {
+void CPURenderer::render(const Core::RenderContext& scene, const ShaderAlgorithm& shadingAlgo) noexcept {
+	const Core::Camera& camera = scene.getCamera();
+	const Core::TLAS& as = scene.getRaytracingAS();
+
 	// Reset the render target surface
 	mRenderingSurface.reset();
 
@@ -27,7 +31,7 @@ void Renderer::render(const Core::Camera& camera, const ShaderAlgorithm& shading
 			// Hit informations
 			Core::RayGeometryIntersection isect;
 
-			const auto currentColor = (scene.intersection(currentCameraRay, 0.00001, std::numeric_limits<glm::float32>::max(), isect))
+			const auto currentColor = (as.intersection(currentCameraRay, 0.00001, std::numeric_limits<glm::float32>::max(), isect))
 				? (*shader)(isect)  // HIT: shade the point
 				: glm::vec3(0, 0, 0); // MISS
 

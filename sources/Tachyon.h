@@ -20,6 +20,7 @@
 // STL algorithms
 #include <algorithm>
 #include <utility>
+#include <limits>
 
 // GLM math library
 #define GLM_ENABLE_EXPERIMENTAL

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "Core/TLAS.h"
-#include "Core/Camera.h"
-#include "Rendering/RenderSurface.h"
-#include "Rendering/Shading/Shader.h"
+#include "Core/RenderContext.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -14,12 +11,7 @@ namespace Tachyon {
 
 			};
 
-			Renderer(RenderSurface& renderingSurface) noexcept;
-
-			void render(const Core::Camera& camera, const ShaderAlgorithm& shadingAlgo, const Core::TLAS& scene) noexcept;
-
-		private:
-			RenderSurface& mRenderingSurface;
+			virtual void render(const Core::RenderContext& scene, const ShaderAlgorithm& shadingAlgo) noexcept = 0;
 		};
 	}
 }

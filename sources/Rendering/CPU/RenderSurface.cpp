@@ -2,13 +2,13 @@
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
+using namespace Tachyon::Rendering::CPU;
 
 RenderSurface::RenderSurface(glm::uint32 width, glm::uint32 height) noexcept
 	: mWidth(width),
 	mHeight(height),
 	mColorBuffer(static_cast<size_t>(mWidth)* static_cast<size_t>(mHeight), glm::vec3(0, 0, 0)),
 	mDepthBuffer(static_cast<size_t>(mWidth)* static_cast<size_t>(mHeight), std::numeric_limits<glm::float32>::infinity()) {}
-
 
 RenderSurface::RenderSurface(const RenderSurface& src) noexcept
 	: mWidth(src.mWidth),

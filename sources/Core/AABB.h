@@ -3,9 +3,9 @@
 #include "Core/RayInterceptable.h"
 
 namespace Tachyon {
-    namespace Core {
+	namespace Core {
 
-        /**
+		/**
 		 * This represents an Axis-Aligned Bounding Box.
 		 *
 		 *    +--------------+
@@ -51,7 +51,7 @@ namespace Tachyon {
 			 */
 			bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-            bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
+			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
 			bool contains(const glm::vec3& point) const noexcept;
 
@@ -87,5 +87,6 @@ namespace Tachyon {
 
 			NumericType mLength, mWidth, mDepth;
 		};
-    }
+
+	}
 }

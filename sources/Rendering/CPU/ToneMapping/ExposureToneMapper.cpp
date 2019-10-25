@@ -1,8 +1,8 @@
 #include "ExposureToneMapper.h"
 
 using namespace Tachyon;
-using namespace Tachyon::Rendering;
-using namespace Tachyon::Rendering::ToneMapping;
+using namespace Tachyon::Rendering::CPU;
+using namespace Tachyon::Rendering::CPU::ToneMapping;
 
 ExposureToneMapper::ExposureToneMapper(glm::float32 exposure) noexcept
 	: mExposure(std::move(exposure)) {}

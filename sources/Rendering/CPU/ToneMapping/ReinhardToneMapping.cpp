@@ -1,8 +1,8 @@
 #include "ReinhardToneMapping.h"
 
 using namespace Tachyon;
-using namespace Tachyon::Rendering;
-using namespace Tachyon::Rendering::ToneMapping;
+using namespace Tachyon::Rendering::CPU;
+using namespace Tachyon::Rendering::CPU::ToneMapping;
 
 ReinhardToneMapping::ReinhardToneMapping() noexcept {}
 
