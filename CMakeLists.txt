@@ -5,6 +5,8 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 project (SparkEngine)
 
+include(${PROJECT_SOURCE_DIR}/cmake/file2c.cmake)
+
 # Set new policy when searching for external libs
 cmake_policy(SET CMP0074 NEW)
 

@@ -32,13 +32,17 @@ Program::Program(const std::initializer_list<std::shared_ptr<const Shader>>& sha
 
 		// Register the error
 		//writeError(std::move(std::string(infoLog.data())));
+
+		DBG_ONLY({
+			printf("Error in program linking: %s\n\n", infoLog.data());
+		})
 	}
 
 	// Detach each shader one after the other
 	for (auto& shader : shaders)
 		glDetachShader(program, shader->shader);
 
-    DBG_ASSERT( (isLinked == GL_FALSE) );
+    DBG_ASSERT( (isLinked == GL_TRUE) );
 }
 
 Program::~Program() {

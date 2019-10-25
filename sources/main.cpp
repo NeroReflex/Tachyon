@@ -1,4 +1,5 @@
 #include "Rendering/CPU/CPURenderer.h"
+#include "Rendering/OpenGL/OpenGLRenderer.h"
 
 #include "PPMImage.h"
 
@@ -26,13 +27,51 @@ int main(int argc, char** argv) {
 	);
 	ctx.getRaytracingAS().insert(sphericBLAS);
 
+
+	/*
+	// Execute raytracing on the CPU
 	Tachyon::Rendering::CPU::CPURenderer renderer;
 	renderer.render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
 	renderer.transfertResult(image);
-
 	image.write("output.ppm");
+	*/
 
-	
+
+	// OpenGL Raytracing
+	DBG_ASSERT( (glfwInit() != 0) );
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	// TODO: let the user decide the input antialiasing
+	glfwWindowHint(GLFW_SAMPLES, 16);
+
+	GLFWwindow* window = glfwCreateWindow(480, 360, "Tachyon Raytracer", nullptr, nullptr);
+
+	DBG_ASSERT( (window != nullptr) );
+
+	// Make the window's context current
+	glfwMakeContextCurrent(window);
+
+	assert( (!gl3wInit()) );
+
+	DBG_ASSERT( (gl3wIsSupported(4, 5)) );
+
+	// Now it is safe to create the renderer
+	Tachyon::Rendering::OpenGL::OpenGLRenderer raytracer;
+
+	while (!glfwWindowShouldClose(window)) {
+		glfwPollEvents();
+
+		raytracer.render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
+
+		glfwSwapBuffers(window);
+	}
+
+	glfwDestroyWindow(window);
+
+	glfwTerminate();
 
     return EXIT_SUCCESS;
 }

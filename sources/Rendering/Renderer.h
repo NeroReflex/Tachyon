@@ -12,6 +12,8 @@ namespace Tachyon {
 
 			};
 
+			virtual ~Renderer() = default;
+
 			virtual void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept = 0;
 		};
 		

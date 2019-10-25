@@ -29,9 +29,13 @@ Shader::Shader(GLuint shader, const char* src, size_t srcSize) noexcept
 
 		// Convert to string
 		//writeError(std::move(std::string(infoLog.data())));
+
+		DBG_ONLY({
+			printf("Error in shader compilation: %s\n\n", infoLog.data());
+		})
 	}
 
-	DBG_ASSERT( (isCompiled == GL_FALSE) );
+	DBG_ASSERT( (isCompiled == GL_TRUE) );
 }
 
 Shader::~Shader() {
