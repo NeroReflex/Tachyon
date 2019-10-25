@@ -9,9 +9,10 @@
 #include <string>
 
 // STL containers
-#include <array>
 #include <initializer_list>
+#include <unordered_map>
 #include <vector>
+#include <array>
 #include <list>
 
 // STL memory
