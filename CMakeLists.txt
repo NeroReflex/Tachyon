@@ -14,10 +14,19 @@ find_package (Threads)
 # Include GLM
 include_directories(${PROJECT_SOURCE_DIR}/external/glm/glm)
 
-# Include OpenCL
-#find_package(OpenCL REQUIRED)
+# Include GL3W
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/gl3w)
+include_directories(${PROJECT_SOURCE_DIR}/external/gl3w/include)
 
-#include_directories( ${OPENCL_INCLUDE_DIR} )
+# Include GLFW
+# OpenGL library new profile if possible
+set(OpenGL_GL_PREFERENCE GLVND)
+find_package(OpenGL REQUIRED)
+if(NOT OPENGL_FOUND)
+    message("ERROR: OpenGL not found")
+endif(NOT OPENGL_FOUND)
+
+find_package(glfw3 REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

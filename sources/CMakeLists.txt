@@ -5,7 +5,11 @@ add_executable(Tachyon ${TACHYON_SOURCES})
 # Set C++11 standard
 set_property(TARGET Tachyon PROPERTY CXX_STANDARD 11)
 
+add_dependencies(Tachyon glfw)
+add_dependencies(Tachyon gl3w)
+
 target_link_libraries(Tachyon
 	${CMAKE_THREAD_LIBS_INIT}
-	#${OPENCL_LIBRARIES}
+	glfw
+	gl3w
 )

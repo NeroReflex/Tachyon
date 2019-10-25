@@ -117,20 +117,20 @@ namespace Tachyon {
 					// The first uint32 is the left node index / content, the other is the right node index, or zero if the node is a leaf
 
 					// TODO: change the (4) with the amound of bytes needed to store a node
-					return sizeof(glm::vec4 * 2) + (glm::uint32 * 2);
+					return 2 * sizeof(glm::vec4) + 2 * sizeof(glm::uint32);
 				};
 
 				static void linearizeToBuffer(const NodeData& src, void* dst) noexcept {
 					// Make sure the linearization won't take more space than what it is necessary
-					static_assert(sizeof(glm::vec4 / 4) == sizeof(glm::uint32));
+					static_assert((sizeof(glm::vec4) / 4) == sizeof(glm::uint32));
 
 					glm::vec4* bufferAsVector = reinterpret_cast<glm::vec4*>(dst);
-					bufferAsVector[0] = glm::vec4(bvh.getPosition(), 1.0);
-					bufferAsVector[1] = glm::vec4(bvh.getLength(), bvh.getDepth(), bvh.getWidth(), 0);
+					bufferAsVector[0] = glm::vec4(src.bvh.getPosition(), 1.0);
+					bufferAsVector[1] = glm::vec4(src.bvh.getLength(), src.bvh.getDepth(), src.bvh.getWidth(), 0);
 
 					glm::uint32* bufferAsUint = reinterpret_cast<glm::uint32*>(&bufferAsVector[2]);
-					bufferAsUint[0] = tree.mLeft;
-					bufferAsUint[1] = tree.mRight;
+					bufferAsUint[0] = src.tree.mLeft;
+					bufferAsUint[1] = src.tree.mRight;
 				}
 			};
 
@@ -149,7 +149,7 @@ namespace Tachyon {
 
 			static void linearizeToBuffer(const BVHLinearTree<ContentType, N>& src, void* dst) noexcept {
 				glm::mat4* bufferAsTransformationMatrix = reinterpret_cast<glm::mat4*>(dst);
-				bufferAsTransformationMatrix[0] = mTransformationMatrix;
+				bufferAsTransformationMatrix[0] = src.mTransformationMatrix;
 
 
 				// TODO: continue to implement linearization...
@@ -186,7 +186,7 @@ namespace Tachyon {
 		BVHLinearTree<ContentType, N>::~BVHLinearTree() {}
 
 		template <class ContentType, size_t N>
-		void BVHLinearTree<ContentType, N>::setTransform(const glm::mat4& transformationMatrix = glm::mat4(1)) noexcept {
+		void BVHLinearTree<ContentType, N>::setTransform(const glm::mat4& transformationMatrix) noexcept {
 			mTransformationMatrix = transformationMatrix;
 		}
 
@@ -342,7 +342,7 @@ namespace Tachyon {
 		}
 
 		template <class ContentType, size_t N>
-		bool BVHLinearTree<ContentType, N>::isBVHitByRay(const Ray& ray, glm::mat4 transform, UnsignedType root = 0) const noexcept {
+		bool BVHLinearTree<ContentType, N>::isBVHitByRay(const Ray& ray, glm::mat4 transform, UnsignedType root) const noexcept {
 			if (isFree(root)) return false;
 
 			if (isLeaf(root)) {
