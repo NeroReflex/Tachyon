@@ -14,7 +14,9 @@ namespace Tachyon {
 			public:
 				CPURenderer() noexcept;
 
-				void render(const Core::RenderContext& scene, const ShaderAlgorithm& shadingAlgo) noexcept final;
+				void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
+
+				void transfertResult(PPMImage& image) const noexcept;
 
 			private:
 				RenderSurface mRenderingSurface;

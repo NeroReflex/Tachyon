@@ -11,7 +11,11 @@ namespace Tachyon {
 		public:
 			RenderContext(Core::Camera camera) noexcept;
 
+			TLAS& getRaytracingAS() noexcept;
+
 			const TLAS& getRaytracingAS() const noexcept;
+
+			Camera& getCamera() noexcept;
 
 			const Camera& getCamera() const noexcept;
 

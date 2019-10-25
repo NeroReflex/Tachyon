@@ -4,6 +4,7 @@
 
 namespace Tachyon {
 	namespace Rendering {
+
 		class Renderer {
 		public:
 			enum class ShaderAlgorithm {
@@ -11,7 +12,8 @@ namespace Tachyon {
 
 			};
 
-			virtual void render(const Core::RenderContext& scene, const ShaderAlgorithm& shadingAlgo) noexcept = 0;
+			virtual void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept = 0;
 		};
+		
 	}
 }

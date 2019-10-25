@@ -1,5 +1,8 @@
 #include "Rendering/CPU/CPURenderer.h"
+
 #include "Rendering/CPU/Shading/DistanceShader.h"
+
+#include "Rendering/CPU/ToneMapping/ExposureToneMapper.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
@@ -15,9 +18,9 @@ void CPURenderer::render(const Core::RenderContext& scene, const ShaderAlgorithm
 	// Reset the render target surface
 	mRenderingSurface.reset();
 
-	std::shared_ptr<Rendering::Shading::Shader> shader;
+	std::shared_ptr<Rendering::CPU::Shading::Shader> shader;
 	if (shadingAlgo == ShaderAlgorithm::DistanceShader) {
-		shader.reset(new Tachyon::Rendering::Shading::DistanceShader());
+		shader.reset(new Tachyon::Rendering::CPU::Shading::DistanceShader());
 	}
 
 	for (size_t j = 0; j < mRenderingSurface.getHeight(); ++j) {
@@ -38,4 +41,10 @@ void CPURenderer::render(const Core::RenderContext& scene, const ShaderAlgorithm
 			mRenderingSurface.store(i, j, currentColor, isect.getDistance());
 		}
 	}
+}
+
+void CPURenderer::transfertResult(PPMImage& image) const noexcept {
+	Tachyon::Rendering::CPU::ToneMapping::ExposureToneMapper toneMapper(0.1);
+
+	mRenderingSurface.transferTo(image, toneMapper);
 }
