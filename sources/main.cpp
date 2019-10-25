@@ -32,5 +32,7 @@ int main(int argc, char** argv) {
 
 	image.write("output.ppm");
 
+	
+
     return EXIT_SUCCESS;
 }

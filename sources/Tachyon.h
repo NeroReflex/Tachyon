@@ -29,6 +29,12 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtx/quaternion.hpp>
 
+// OpenGL
+#include <GL/gl3w.h>
+
+// GLFW
+#include <GLFW/glfw3.h>
+
 typedef glm::uint32 UnsignedType;
 typedef glm::float32 NumericType;
 
