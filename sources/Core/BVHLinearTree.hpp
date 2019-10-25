@@ -80,8 +80,6 @@ namespace Tachyon {
 			bool isFree(UnsignedType index) const noexcept;
 
 			void refreshBVH(UnsignedType index) noexcept;
-
-#pragma pack(push, 16)
 			struct NodeData {
 				AABB bvh;
 
@@ -97,7 +95,6 @@ namespace Tachyon {
 					} tree;
 					UnsignedType content;
 				};
-#pragma pack(pop)
 
 				NodeData() noexcept;
 

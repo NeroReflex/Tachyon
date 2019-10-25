@@ -4,6 +4,10 @@
 
 #include "Rendering/CPU/ToneMapping/ExposureToneMapper.h"
 
+// Removed macros that generate compile errors
+#undef max
+#undef min
+
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::CPU;

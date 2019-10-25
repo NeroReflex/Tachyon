@@ -3,6 +3,10 @@
 using namespace Tachyon;
 using namespace Tachyon::Core;
 
+// Remove macros that generate compile errors
+#undef max
+#undef min
+
 AABB::AABB() noexcept
 	: mPosition(glm::vec3(0,0,0)), mLength(0), mWidth(0), mDepth(0) {}
 

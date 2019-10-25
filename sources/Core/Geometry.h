@@ -151,9 +151,9 @@ namespace Tachyon {
 			Type mType;
 			
 			union {
-				struct Sphere mGeometryAsSphere;
+				Sphere mGeometryAsSphere;
 
-				struct Triangle mGeometryAsTriangle;
+				Triangle mGeometryAsTriangle;
 			};
 			
 
