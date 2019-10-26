@@ -147,7 +147,10 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, mTLAS, 0, Core::TLAS::getBufferSize());
 	*/
 
+	// Switch to the compute shader for raytracing
 	Program::use(*mRaytracer);
+
+	// Set rendering information
 	mRaytracer->setUniform("width", glm::uint32(mOutputWidth));
 	mRaytracer->setUniform("height", glm::uint32(mOutputHeight));
 
@@ -157,9 +160,12 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 	// make sure writing to image has finished before read
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+	
+
 	// Switch to the tone mapper program
 	Program::use(*mDisplayWriter);
 
+	// Set parameters to obtain hdr
 	mDisplayWriter->setUniform("gamma", glm::float32(2.2));
 	mDisplayWriter->setUniform("exposure", glm::float32(0.2));
 

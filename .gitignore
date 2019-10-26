@@ -36,6 +36,7 @@
 /.vs
 /build
 /out
+/nsight
 
 # Output image
 output.ppm

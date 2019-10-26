@@ -28,7 +28,7 @@ void main() {
 	//
 	// interesting stuff happens here later
 	//
-	pixel = vec4(1, 1, 1, 1.0);
+	pixel = vec4(vec2(gl_GlobalInvocationID.xy) / vec2(gl_WorkGroupSize.xy), 1, 1.0);
 
 
 	// output to a specific pixel in the image
