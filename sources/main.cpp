@@ -5,9 +5,8 @@
 
 std::unordered_map<uintptr_t, Tachyon::Rendering::Renderer*> windowToRenderer;
 
-std::string print_opengl_compute_info() {
-	std::string result;
-	std::ostringstream builder(result);
+std::string get_opengl_compute_info() {
+	std::ostringstream stringstream;
 
 	int work_grp_cnt[3];
 
@@ -15,8 +14,7 @@ std::string print_opengl_compute_info() {
 	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
 	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
 
-	printf("max global (total) work group size x:%i y:%i z:%i\n",
-		work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
+	stringstream << "max global (total) work group size x:" << work_grp_cnt[0] << " y:" << work_grp_cnt[1] << " z:" << work_grp_cnt[2] << std::endl;
 
 	int work_grp_size[3];
 
@@ -24,13 +22,13 @@ std::string print_opengl_compute_info() {
 	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
 	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
 
-	builder << "max local (in one shader) work group sizes x:" << work_grp_size[0] << " y:" << work_grp_size[1]  << " z:" << work_grp_size[2] << std::endl;
+	stringstream << "max local (in one shader) work group sizes x:" << work_grp_size[0] << " y:" << work_grp_size[1]  << " z:" << work_grp_size[2] << std::endl;
 
 	int work_grp_inv;
 	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_grp_inv);
-	builder << "max local work group invocations " << work_grp_inv << std::endl;
+	stringstream << "max local work group invocations " << work_grp_inv << std::endl;
 
-	return result;
+	return stringstream.str();
 }
 
 void window_size_callback(GLFWwindow* window, int width, int height);

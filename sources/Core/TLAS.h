@@ -14,10 +14,10 @@ namespace Tachyon {
 		 * so that during a ray-geometry test the geometry to be intersected is transformab using the (M * V) matrix.
 		 */
 		class TLAS :
-			public BVHLinearTree<BLAS, 3> {
+			public BVHLinearTree<BLAS, expOfTwoOfMaxBLASElementsInTLAS> {
 
 		public:
-			using BVHLinearTree<BLAS, 3>::BVHLinearTree;
+			using BVHLinearTree<BLAS, expOfTwoOfMaxBLASElementsInTLAS>::BVHLinearTree;
 		};
 	}
 }

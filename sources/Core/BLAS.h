@@ -12,10 +12,10 @@ namespace Tachyon {
 		 * this way the ray-geometry intersaction will be performed with the geometry transformed by the Model matrix as calculated by a physics engin for example.
 		 */
         class BLAS :
-            public BVHLinearTree<GeometryCollection, 3> {
+            public BVHLinearTree<GeometryCollection, expOfTwoOfMaxCollectionElementsInBLAS> {
 
         public:
-            using BVHLinearTree<GeometryCollection, 3>::BVHLinearTree;
+            using BVHLinearTree<GeometryCollection, expOfTwoOfMaxCollectionElementsInBLAS>::BVHLinearTree;
 
 			AABB bvBase() const noexcept;
         };

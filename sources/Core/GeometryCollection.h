@@ -6,11 +6,12 @@
 namespace Tachyon {
 	namespace Core {
 		class GeometryCollection :
-			public Collection<Geometry, 3>,
+			public Collection<Geometry, expOfTwoOfMaxGeometryElementsInCollection>,
 			virtual public RayInterceptable {
+
 		public:
 
-			using Collection<Geometry, 3>::Collection;
+			using Collection<Geometry, expOfTwoOfMaxGeometryElementsInCollection>::Collection;
 
 			AABB bvBase() const noexcept;
 
@@ -19,7 +20,7 @@ namespace Tachyon {
 			 *
 			 * @return true on match
 			 */
-			bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept override;
+			bool isHitBy(const Ray& ray, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
 			/**
 			 * Check if any of the stored elements is hit by the given ray and the hitpoint distance is between minDistance and MaxDistance,
@@ -32,7 +33,9 @@ namespace Tachyon {
 			 *
 			 * @return true on match
 			 */
-			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept override;
+			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
+
+			
 		};
 	}
 }

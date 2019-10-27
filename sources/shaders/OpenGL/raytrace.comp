@@ -2,6 +2,10 @@
 
 #define COMP_SIZE 32
 
+#define expOfTwoOfMaxGeometryElementsInCollection 3
+#define expOfTwoOfMaxCollectionElementsInBLAS 3
+#define expOfTwoOfMaxBLASElementsInTLAS 3
+
 // This gets adjusted on each call by the OpenGL core
 layout(local_size_x = COMP_SIZE, local_size_y = COMP_SIZE, local_size_z = 1) in;
 
@@ -10,12 +14,28 @@ layout(rgba32f, binding = 0) uniform image2D img_output;
 uniform uint width;
 uniform uint height;
 
-/*
-buffer ModelMatrices
-{
-	mat4 Model[];
+struct Geometry {
+	float data[4];
 };
-*/
+
+struct GeometryCollection {
+	Geometry geometry[1 << expOfTwoOfMaxGeometryElementsInCollection]; // geometry slots
+	uint geometryCount; // Number of used geometry slots
+};
+
+struct BLAS {
+	mat4x4 ModelMatrix;
+	GeometryCollection collection[1 << expOfTwoOfMaxCollectionElementsInBLAS];
+};
+
+struct TLAS {
+	mat4x4 ViewMatrix;
+	BLAS blas[1 << expOfTwoOfMaxBLASElementsInTLAS];
+};
+
+layout(std140, binding = 0) buffer scene {
+	TLAS tlas[];
+};
 
 void main() {
 	// base pixel colour for image
@@ -32,7 +52,7 @@ void main() {
 	//
 	pixel = vec4(gl_LocalInvocationID.x, gl_LocalInvocationID.y, 1, 1.0);
 
-/*
+  /*
   In order to fit the work into workgroups, some unnecessary threads are launched.
   We terminate those threads here. 
   */

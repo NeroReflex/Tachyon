@@ -43,6 +43,9 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
         glm::vec4(1.0f,  1.0f, 0.5f, 1.0f),
         glm::vec4(-1.0f,  1.0f, 0.5f, 1.0f),
 	};
+	
+	// Set OpenGL clear color
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
 	// Create the final VAO
 	glCreateVertexArrays(1, &mQuadVAO);
@@ -79,10 +82,13 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 }
 
 void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
+	// Clear the previously rendered scene
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	const auto& scene = getSceneToBeRendered();
 
 	// Fill the AS structure on the GPU
-	auto mappedMemory = glMapNamedBufferRange(mTLAS, 0, Core::TLAS::getBufferSize(), GL_MAP_WRITE_BIT /* | GL_MAP_INVALIDATE_RANGE_BIT */);
+	auto mappedMemory = glMapNamedBufferRange(mTLAS, 0, Core::TLAS::getBufferSize(), GL_MAP_WRITE_BIT  | GL_MAP_INVALIDATE_RANGE_BIT );
 	DBG_ASSERT( (mappedMemory != nullptr) );
 	Core::TLAS::linearizeToBuffer(scene.getRaytracingAS(), mappedMemory);
 	glUnmapNamedBuffer(mTLAS);
@@ -127,6 +133,7 @@ OpenGLRenderer::~OpenGLRenderer() {
 	// Avoid removing a VAO while it is currently bound
 	glBindVertexArray(0);
 
+	// Remove main VAO
 	glDeleteVertexArrays(1, &mQuadVAO);
 
 	// Remove VBO
