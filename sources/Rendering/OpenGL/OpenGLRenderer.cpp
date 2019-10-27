@@ -118,17 +118,17 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 		glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
 		glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
 		glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, mOutputWidth, mOutputHeight);
-		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mOutputWidth, mOutputHeight, 0, GL_RGBA, GL_FLOAT, NULL);*/
-		//glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	}
 	/*
 	// Fill the AS structure on the GPU
@@ -149,12 +149,12 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 	mRaytracer->setUniform("height", glm::uint32(mOutputHeight));
 
 	// Dispatch the compute work!
-	//glDispatchCompute((GLuint)mOutputWidth, (GLuint)mOutputHeight, 1);
+	glDispatchCompute((GLuint)mOutputWidth, (GLuint)mOutputHeight, 1);
 
 	// make sure writing to image has finished before read
-	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-	std::vector<glm::vec4> texture(mOutputWidth * mOutputHeight);
+	/*std::vector<glm::vec4> texture(mOutputWidth * mOutputHeight);
 	for (int i = 0; i < mOutputHeight; ++i)
 		for (int j = 0; j < mOutputWidth; ++j) {
 			texture[(mOutputWidth * i)+j] = glm::vec4((float)i / (float)mOutputHeight, (float)j / (float)mOutputWidth, 1, 1);
@@ -165,7 +165,7 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
                             mOutputHeight,
                             GL_RGBA,
                             GL_FLOAT,
-                            texture.data());
+                            texture.data());*/
 
 	// Switch to the tone mapper program
 	Program::use(*mDisplayWriter);
