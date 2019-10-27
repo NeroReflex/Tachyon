@@ -7,8 +7,7 @@ using namespace Tachyon::Rendering::CPU;
 RenderSurface::RenderSurface(glm::uint32 width, glm::uint32 height) noexcept
 	: mWidth(width),
 	mHeight(height),
-	mColorBuffer(static_cast<size_t>(mWidth)* static_cast<size_t>(mHeight), glm::vec3(0, 0, 0)),
-	mDepthBuffer(static_cast<size_t>(mWidth)* static_cast<size_t>(mHeight), std::numeric_limits<glm::float32>::infinity()) {}
+	mColorBuffer(static_cast<size_t>(mWidth)* static_cast<size_t>(mHeight), glm::vec4(0, 0, 0, 0)) {}
 
 RenderSurface::RenderSurface(const RenderSurface& src) noexcept
 	: mWidth(src.mWidth),
@@ -25,6 +24,19 @@ RenderSurface& RenderSurface::operator=(const RenderSurface& src) noexcept {
 	return *this;
 }
 
+void RenderSurface::resize(glm::uint32 width, glm::uint32 height) noexcept {
+	mWidth = width;
+	mHeight = height;
+
+	const auto area = getArea();
+
+	mColorBuffer.clear();
+	mColorBuffer.resize(area);
+	
+	for (int i = 0; i < area; ++i)
+		mColorBuffer.emplace_back(glm::vec4(0, 0, 0, 0));
+}
+
 glm::uint32 RenderSurface::getWidth() const noexcept {
 	return mWidth;
 }
@@ -37,30 +49,24 @@ glm::uint32 RenderSurface::getArea() const noexcept {
 	return mWidth * mHeight;
 }
 
-void RenderSurface::reset() noexcept {
+void RenderSurface::clear() noexcept {
 	for (size_t j = 0; j < getHeight(); ++j) {
 		for (size_t i = 0; i < getWidth(); ++i) {
 			auto& surfacePointColor = mColorBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)];
-			auto& surfaceDepth = mDepthBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)];
 
-			surfacePointColor = glm::vec3(0, 0, 0);
-			surfaceDepth = std::numeric_limits<glm::float32>::infinity();
+			surfacePointColor = glm::vec4(0, 0, 0, 0);
 		}
 	}
 }
 
-void RenderSurface::transferTo(PPMImage& destination, ToneMapping::ToneMapper& tm) const noexcept {
+void RenderSurface::transferTo(PPMImage& destination) const noexcept {
 	destination.resize(mWidth, mHeight);
 
 	for (size_t j = 0; j < getHeight(); ++j)
 		for (size_t i = 0; i < getWidth(); ++i)
-			destination.setPixel(i, j, tm(mColorBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)]));
+			destination.setPixel(i, j, mColorBuffer[(static_cast<size_t>(j)* static_cast<size_t>(mWidth)) + static_cast<size_t>(i)]);
 }
 
-void RenderSurface::store(const glm::uint32& width, const glm::uint32& height, const glm::vec3& color, const glm::float32& depth) noexcept {
-	auto& surfacePointColor = mColorBuffer[(static_cast<size_t>(height)* static_cast<size_t>(mWidth)) + static_cast<size_t>(width)];
-	auto& surfaceDepth = mDepthBuffer[(static_cast<size_t>(height)* static_cast<size_t>(mWidth)) + static_cast<size_t>(width)];
-
-	surfacePointColor = (surfaceDepth > depth) ? color : surfacePointColor;
-	surfaceDepth = (surfaceDepth > depth) ? depth : surfaceDepth;
+void RenderSurface::store(const glm::uint32& width, const glm::uint32& height, const glm::vec4& color) noexcept {
+	mColorBuffer[(static_cast<size_t>(height)* static_cast<size_t>(mWidth)) + static_cast<size_t>(width)] = color;
 }

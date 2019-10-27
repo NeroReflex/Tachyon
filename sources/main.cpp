@@ -3,6 +3,10 @@
 
 #include "PPMImage.h"
 
+std::unordered_map<uintptr_t, Tachyon::Rendering::Renderer*> windowToRenderer;
+
+void window_size_callback(GLFWwindow* window, int width, int height);
+
 int main(int argc, char** argv) {
 	Tachyon::PPMImage image(480, 360);
 	
@@ -27,16 +31,6 @@ int main(int argc, char** argv) {
 	);
 	ctx.getRaytracingAS().insert(sphericBLAS);
 
-
-	/*
-	// Execute raytracing on the CPU
-	Tachyon::Rendering::CPU::CPURenderer renderer;
-	renderer.render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
-	renderer.transfertResult(image);
-	image.write("output.ppm");
-	*/
-
-
 	// OpenGL Raytracing
 	DBG_ASSERT( (glfwInit() != 0) );
 
@@ -58,20 +52,54 @@ int main(int argc, char** argv) {
 
 	DBG_ASSERT( (gl3wIsSupported(4, 5)) );
 
+	// Retrieve the initial window size to initialize the renderer
+	int initialWidth, initialHeight;
+	glfwGetWindowSize(window, &initialWidth, &initialHeight);
+
 	// Now it is safe to create the renderer
-	Tachyon::Rendering::OpenGL::OpenGLRenderer raytracer;
+	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLRenderer> raytracer(new Tachyon::Rendering::OpenGL::OpenGLRenderer(initialWidth, initialHeight));
+
+	// Register the current windows <=> renderer association
+	windowToRenderer.emplace(std::make_pair<uintptr_t, Tachyon::Rendering::Renderer*>((uintptr_t)window, raytracer.get()));
+
+	// Register the window resize callback
+	glfwSetWindowSizeCallback(window, window_size_callback);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		raytracer.render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
+		raytracer->render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
 
 		glfwSwapBuffers(window);
 	}
 
+	// Destroy the renderer and remove each reference to it
+	raytracer.reset();
+	windowToRenderer.clear();
+
+	// Destroy the renderer surface
 	glfwDestroyWindow(window);
 
+	// Terminate GLFW
 	glfwTerminate();
 
+	/*
+	// Execute raytracing on the CPU
+	Tachyon::Rendering::CPU::CPURenderer renderer(480, 360);
+	renderer.render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
+	renderer.transfertResult(image);
+	image.write("output.ppm");
+	*/
+
     return EXIT_SUCCESS;
+}
+
+
+void window_size_callback(GLFWwindow* window, int width, int height)
+{
+	const auto rendererCit = windowToRenderer.find((uintptr_t)window);
+
+	if (rendererCit != windowToRenderer.cend()) {
+		rendererCit->second->resize(width, height);
+	}
 }

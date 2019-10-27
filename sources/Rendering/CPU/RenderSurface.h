@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Rendering/CPU/ToneMapping/ToneMapper.h"
-
 #include "PPMImage.h"
 
 namespace Tachyon {
@@ -16,7 +14,9 @@ namespace Tachyon {
 
 				RenderSurface(const RenderSurface&) noexcept;
 
-				void transferTo(PPMImage& destination, ToneMapping::ToneMapper& tm) const noexcept;
+				void transferTo(PPMImage& destination) const noexcept;
+
+				void resize(glm::uint32 width, glm::uint32 height) noexcept;
 
 				glm::uint32 getWidth() const noexcept;
 
@@ -24,9 +24,9 @@ namespace Tachyon {
 
 				glm::uint32 getArea() const noexcept;
 
-				void reset() noexcept;
+				void clear() noexcept;
 
-				void store(const glm::uint32& width, const glm::uint32& height, const glm::vec3& color, const glm::float32& depth) noexcept;
+				void store(const glm::uint32& width, const glm::uint32& height, const glm::vec4& color) noexcept;
 
 			protected:
 				glm::uint32 mWidth, mHeight;
@@ -34,12 +34,7 @@ namespace Tachyon {
 				/**
 				 * This is the buffer containing the color data.
 				 */
-				std::vector<glm::vec3> mColorBuffer;
-
-				/**
-				 * This is the buffer containing the depth data.
-				 */
-				std::vector<glm::float32> mDepthBuffer;
+				std::vector<glm::vec4> mColorBuffer;
 			};
 
 		}

@@ -12,18 +12,25 @@ namespace Tachyon {
 				virtual public Rendering::Renderer {
 
 			public:
-				OpenGLRenderer() noexcept;
+				OpenGLRenderer(const OpenGLRenderer&) = delete;
+
+				OpenGLRenderer(OpenGLRenderer&&) = delete;
+
+				OpenGLRenderer& operator=(const OpenGLRenderer&) = delete;
 
 				~OpenGLRenderer() override;
+
+				OpenGLRenderer(glm::uint32 width, glm::uint32 height) noexcept;
 				
 				void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
+
+			protected:
+				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept override;
 
 			private:
 				std::unique_ptr<Pipeline::Program> mRaytracer;
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
-
-				glm::uint32 mOutputWidth, mOutputHeight;
 
 				GLuint mTLAS;
 
@@ -37,12 +44,12 @@ namespace Tachyon {
 				/**
 				 * This VAO is used for the final result rendering process (the one involving tonemapping).
 				 */
-				GLuint mFinalVAO;
+				GLuint mQuadVAO;
 
 				/**
 				 * This VBO holds two triangles that directly map to the screen
 				 */
-				std::array<GLuint, 2> mVerticesVBO;
+				GLuint mQuadVBO;
 			};
 		}
 	}

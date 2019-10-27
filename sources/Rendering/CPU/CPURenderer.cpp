@@ -2,7 +2,7 @@
 
 #include "Rendering/CPU/Shading/DistanceShader.h"
 
-#include "Rendering/CPU/ToneMapping/ExposureToneMapper.h"
+#include "Rendering/CPU/ExposureToneMapper.h"
 
 // Removed macros that generate compile errors
 #undef max
@@ -12,20 +12,23 @@ using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::CPU;
 
-CPURenderer::CPURenderer() noexcept
-	: mRenderingSurface(RenderSurface(480, 360)) {}
+CPURenderer::CPURenderer(glm::uint32 width, glm::uint32 height) noexcept
+	: Renderer(std::move(width), std::move(height)),
+	mRenderingSurface(RenderSurface(getWidth(), getHeight())) {}
 
 void CPURenderer::render(const Core::RenderContext& scene, const ShaderAlgorithm& shadingAlgo) noexcept {
 	const Core::Camera& camera = scene.getCamera();
 	const Core::TLAS& as = scene.getRaytracingAS();
 
 	// Reset the render target surface
-	mRenderingSurface.reset();
+	mRenderingSurface.clear();
 
 	std::shared_ptr<Rendering::CPU::Shading::Shader> shader;
 	if (shadingAlgo == ShaderAlgorithm::DistanceShader) {
 		shader.reset(new Tachyon::Rendering::CPU::Shading::DistanceShader());
 	}
+	
+	const ExposureToneMapper gammaCorrector(scene.getGammaCorrection(), scene.getExposure());
 
 	for (size_t j = 0; j < mRenderingSurface.getHeight(); ++j) {
 		for (size_t i = 0; i < mRenderingSurface.getWidth(); ++i) {
@@ -42,13 +45,15 @@ void CPURenderer::render(const Core::RenderContext& scene, const ShaderAlgorithm
 				? (*shader)(isect)  // HIT: shade the point
 				: glm::vec3(0, 0, 0); // MISS
 
-			mRenderingSurface.store(i, j, currentColor, isect.getDistance());
+			mRenderingSurface.store(i, j, glm::vec4(gammaCorrector(currentColor), 1.0));
 		}
 	}
 }
 
 void CPURenderer::transfertResult(PPMImage& image) const noexcept {
-	Tachyon::Rendering::CPU::ToneMapping::ExposureToneMapper toneMapper(0.1);
+	mRenderingSurface.transferTo(image);
+}
 
-	mRenderingSurface.transferTo(image, toneMapper);
+void CPURenderer::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
+	mRenderingSurface.resize(newWidth, newHeight);
 }
