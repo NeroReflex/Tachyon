@@ -20,9 +20,9 @@ namespace Tachyon {
 
 				~OpenGLRenderer() override;
 
-				OpenGLRenderer(glm::uint32 width, glm::uint32 height) noexcept;
+				OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept;
 				
-				void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
+				void render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
 
 			protected:
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept override;

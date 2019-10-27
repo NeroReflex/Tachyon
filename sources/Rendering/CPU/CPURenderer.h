@@ -20,9 +20,9 @@ namespace Tachyon {
 
 				~CPURenderer() override = default;
 
-				CPURenderer(glm::uint32 width, glm::uint32 height) noexcept;
+				CPURenderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept;
 
-				void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
+				void render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
 
 				void transfertResult(PPMImage& image) const noexcept;
 

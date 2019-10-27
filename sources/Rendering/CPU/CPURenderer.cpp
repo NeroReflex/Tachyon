@@ -12,11 +12,13 @@ using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::CPU;
 
-CPURenderer::CPURenderer(glm::uint32 width, glm::uint32 height) noexcept
-	: Renderer(std::move(width), std::move(height)),
+CPURenderer::CPURenderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept
+	: Renderer(scene, std::move(width), std::move(height)),
 	mRenderingSurface(RenderSurface(getWidth(), getHeight())) {}
 
-void CPURenderer::render(const Core::RenderContext& scene, const ShaderAlgorithm& shadingAlgo) noexcept {
+void CPURenderer::render(const ShaderAlgorithm& shadingAlgo) noexcept {
+	const auto& scene = getSceneToBeRendered();
+
 	const Core::Camera& camera = scene.getCamera();
 	const Core::TLAS& as = scene.getRaytracingAS();
 

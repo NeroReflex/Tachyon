@@ -22,11 +22,11 @@ namespace Tachyon {
 
 			virtual ~Renderer() = default;
 
-			Renderer(glm::uint32 width, glm::uint32 height) noexcept;
+			Renderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept;
 
 			void resize(glm::uint32 width, glm::uint32 height) noexcept;
 
-			virtual void render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept = 0;
+			virtual void render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept = 0;
 
 		protected:
 			virtual void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
@@ -35,7 +35,11 @@ namespace Tachyon {
 
 			glm::uint32 getHeight() const noexcept;
 
+			const Core::RenderContext& getSceneToBeRendered() const noexcept;
+
 		private:
+			const Core::RenderContext& mScene;
+
 			glm::size_t mWindowWidth, mWindowHeight;
 		};
 		

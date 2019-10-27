@@ -3,6 +3,7 @@
 // STL streams
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 // STL data types
 #include <functional>

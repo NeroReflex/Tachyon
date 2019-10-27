@@ -5,6 +5,34 @@
 
 std::unordered_map<uintptr_t, Tachyon::Rendering::Renderer*> windowToRenderer;
 
+std::string print_opengl_compute_info() {
+	std::string result;
+	std::ostringstream builder(result);
+
+	int work_grp_cnt[3];
+
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
+
+	printf("max global (total) work group size x:%i y:%i z:%i\n",
+		work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
+
+	int work_grp_size[3];
+
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
+	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
+
+	builder << "max local (in one shader) work group sizes x:" << work_grp_size[0] << " y:" << work_grp_size[1]  << " z:" << work_grp_size[2] << std::endl;
+
+	int work_grp_inv;
+	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_grp_inv);
+	builder << "max local work group invocations " << work_grp_inv << std::endl;
+
+	return result;
+}
+
 void window_size_callback(GLFWwindow* window, int width, int height);
 
 int main(int argc, char** argv) {
@@ -31,8 +59,12 @@ int main(int argc, char** argv) {
 	);
 	ctx.getRaytracingAS().insert(sphericBLAS);
 
-	// OpenGL Raytracing
-	DBG_ASSERT( (glfwInit() != 0) );
+	// Initialize GLFW
+	if (glfwInit() == 0) {
+		std::cout << "Error: cannot initialize GLFW" << std::endl;
+
+		return EXIT_FAILURE;
+	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -41,23 +73,36 @@ int main(int argc, char** argv) {
 	// TODO: let the user decide the input antialiasing
 	glfwWindowHint(GLFW_SAMPLES, 16);
 
+	// TODO: let the user specify preferred resolution
 	GLFWwindow* window = glfwCreateWindow(480, 360, "Tachyon Raytracer", nullptr, nullptr);
 
-	DBG_ASSERT( (window != nullptr) );
+	if (!window) {
+		std::cout << "Error: cannot open a window" << std::endl;
+
+		return EXIT_FAILURE;
+	}
 
 	// Make the window's context current
 	glfwMakeContextCurrent(window);
 
-	assert( (!gl3wInit()) );
+	if (gl3wInit()) {
+		std::cout << "Error: cannot initialize OpenGL context" << std::endl;
 
-	DBG_ASSERT( (gl3wIsSupported(4, 5)) );
+		return EXIT_FAILURE;
+	}
+
+	if (!gl3wIsSupported(4, 5)) {
+		std::cout << "Error: OpenGL 4.5 is required to run this application. Please, update your video driver!" << std::endl;
+
+		return EXIT_FAILURE;
+	}
 
 	// Retrieve the initial window size to initialize the renderer
 	int initialWidth, initialHeight;
 	glfwGetWindowSize(window, &initialWidth, &initialHeight);
 
 	// Now it is safe to create the renderer
-	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLRenderer> raytracer(new Tachyon::Rendering::OpenGL::OpenGLRenderer(initialWidth, initialHeight));
+	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLRenderer> raytracer(new Tachyon::Rendering::OpenGL::OpenGLRenderer(ctx, initialWidth, initialHeight));
 
 	// Register the current windows <=> renderer association
 	windowToRenderer.emplace(std::make_pair<uintptr_t, Tachyon::Rendering::Renderer*>((uintptr_t)window, raytracer.get()));
@@ -65,10 +110,18 @@ int main(int argc, char** argv) {
 	// Register the window resize callback
 	glfwSetWindowSizeCallback(window, window_size_callback);
 
+	std::string rendererId =
+		std::string("OpenGL v") +
+		std::string((const char*)glGetString(GL_VERSION)) +
+		std::string(", GLSL ") +
+		std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+	std::cout << "Rendering with: " << rendererId << std::endl << get_opengl_compute_info() << std::endl;
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		raytracer->render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
+		raytracer->render(Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
 
 		glfwSwapBuffers(window);
 	}
@@ -85,8 +138,8 @@ int main(int argc, char** argv) {
 
 	/*
 	// Execute raytracing on the CPU
-	Tachyon::Rendering::CPU::CPURenderer renderer(480, 360);
-	renderer.render(ctx, Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
+	Tachyon::Rendering::CPU::CPURenderer renderer(ctx, 480, 360);
+	renderer.render(Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
 	renderer.transfertResult(image);
 	image.write("output.ppm");
 	*/
@@ -99,7 +152,9 @@ void window_size_callback(GLFWwindow* window, int width, int height)
 {
 	const auto rendererCit = windowToRenderer.find((uintptr_t)window);
 
-	if (rendererCit != windowToRenderer.cend()) {
+	DBG_ASSERT( (rendererCit != windowToRenderer.cend()) );
+
+	if (rendererCit != windowToRenderer.cend())
 		rendererCit->second->resize(width, height);
-	}
+	
 }

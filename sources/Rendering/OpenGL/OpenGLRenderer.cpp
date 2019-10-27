@@ -13,8 +13,8 @@ using namespace Tachyon::Rendering::OpenGL::Pipeline;
 #include "shaders/tonemapping.frag.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
 #include "shaders/raytrace.comp.h" // SHADER_RAYTRACE_COMP, SHADER_RAYTRACE_COMP_size
 
-OpenGLRenderer::OpenGLRenderer(glm::uint32 width, glm::uint32 height) noexcept
-    : Renderer(std::move(width), std::move(height)),
+OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept
+    : Renderer(scene, std::move(width), std::move(height)),
 	mRaytracer(new Pipeline::Program(
         std::initializer_list<std::shared_ptr<const Shader>>{
             std::static_pointer_cast<const Shader>(
@@ -76,33 +76,11 @@ OpenGLRenderer::OpenGLRenderer(glm::uint32 width, glm::uint32 height) noexcept
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-
-	// Print info about OpenGL Compute
-	int work_grp_cnt[3];
-
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &work_grp_cnt[0]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_cnt[1]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_cnt[2]);
-
-	printf("max global (total) work group size x:%i y:%i z:%i\n",
-		work_grp_cnt[0], work_grp_cnt[1], work_grp_cnt[2]);
-
-	int work_grp_size[3];
-
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
-	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
-
-	printf("max local (in one shader) work group sizes x:%i y:%i z:%i\n",
-		work_grp_size[0], work_grp_size[1], work_grp_size[2]);
-
-	int work_grp_inv;
-	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_grp_inv);
-	printf("max local work group invocations %i\n", work_grp_inv);
-
 }
 
-void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
+void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
+	const auto& scene = getSceneToBeRendered();
+
 	// Fill the AS structure on the GPU
 	auto mappedMemory = glMapNamedBufferRange(mTLAS, 0, Core::TLAS::getBufferSize(), GL_MAP_WRITE_BIT /* | GL_MAP_INVALIDATE_RANGE_BIT */);
 	DBG_ASSERT( (mappedMemory != nullptr) );
