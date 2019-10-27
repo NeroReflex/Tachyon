@@ -38,28 +38,11 @@ OpenGLRenderer::OpenGLRenderer() noexcept
 	mOutputHeight(0),
 	mRaytracerOutputTexture(0) {
 
-	std::array<glm::vec2, 3 * 2> screenTrianglesPosition = {
-		// Lower triangle
-		glm::vec2(-1, -1),
-		glm::vec2(1, -1),
-		glm::vec2(1, 1),
-
-		// Higher triangle
-		glm::vec2(-1, -1),
-		glm::vec2(-1, 1),
-		glm::vec2(1, 1)
-	};
-
-	std::array<glm::vec2, 3 * 2> screenTrianglesUV = {
-		// Lower triangle
-		glm::vec2(0, 0),
-		glm::vec2(1, 0),
-		glm::vec2(1, 1),
-
-		// Higher triangle
-		glm::vec2(0, 0),
-		glm::vec2(0, 1),
-		glm::vec2(1, 1)
+	std::array<glm::vec4, 4> screenTrianglesPosition = {
+		glm::vec4(-1.0f, -1.0f, 0.5f, 1.0f),
+        glm::vec4(1.0f, -1.0f, 0.5f, 1.0f),
+        glm::vec4(1.0f,  1.0f, 0.5f, 1.0f),
+        glm::vec4(-1.0f,  1.0f, 0.5f, 1.0f),
 	};
 
 	// Create the final VAO
@@ -71,15 +54,16 @@ OpenGLRenderer::OpenGLRenderer() noexcept
 
 	// Finalize VBOs
 	glBindBuffer(GL_ARRAY_BUFFER, mVerticesVBO[0]);
-	glNamedBufferStorage(mVerticesVBO[0], sizeof(glm::vec2) * screenTrianglesPosition.size(), screenTrianglesPosition.data(), 0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glNamedBufferStorage(mVerticesVBO[0], sizeof(glm::vec4) * screenTrianglesPosition.size(), screenTrianglesPosition.data(), 0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexArrayAttrib(mFinalVAO, 0);
 
+/*
 	glBindBuffer(GL_ARRAY_BUFFER, mVerticesVBO[1]);
 	glNamedBufferStorage(mVerticesVBO[1], sizeof(glm::vec2) * screenTrianglesUV.size(), screenTrianglesUV.data(), 0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexArrayAttrib(mFinalVAO, 1);
-
+*/
 	// Create the VBO used to store the raytrace structure
 	glCreateBuffers(1, &mTLAS);
 	glNamedBufferStorage(mTLAS, Core::TLAS::getBufferSize(), NULL, GL_MAP_WRITE_BIT);
@@ -124,6 +108,8 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 		mOutputWidth = tex_w;
 		mOutputHeight = tex_h;
 
+		glViewport(0, 0, mOutputWidth, mOutputHeight);
+
 		// Remove the previous texture to avoid GPU memory leak(s)
 		if ((mOutputWidth > 0) || (mOutputHeight > 0))
 			glDeleteTextures(1, &mRaytracerOutputTexture);
@@ -132,17 +118,17 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 		glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
 		glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
 		glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, mOutputWidth, mOutputHeight);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mOutputWidth, mOutputHeight, 0, GL_RGBA, GL_FLOAT, NULL);*/
-		glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		//glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	}
 	/*
 	// Fill the AS structure on the GPU
@@ -163,12 +149,23 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 	mRaytracer->setUniform("height", glm::uint32(mOutputHeight));
 
 	// Dispatch the compute work!
-	glDispatchCompute((GLuint)mOutputWidth, (GLuint)mOutputHeight, 1);
+	//glDispatchCompute((GLuint)mOutputWidth, (GLuint)mOutputHeight, 1);
 
 	// make sure writing to image has finished before read
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-	
+	std::vector<glm::vec4> texture(mOutputWidth * mOutputHeight);
+	for (int i = 0; i < mOutputHeight; ++i)
+		for (int j = 0; j < mOutputWidth; ++j) {
+			texture[(mOutputWidth * i)+j] = glm::vec4((float)i / (float)mOutputHeight, (float)j / (float)mOutputWidth, 1, 1);
+		}
+
+	glTextureSubImage2D(mRaytracerOutputTexture, 0, 0, 0,
+                            mOutputWidth,
+                            mOutputHeight,
+                            GL_RGBA,
+                            GL_FLOAT,
+                            texture.data());
 
 	// Switch to the tone mapper program
 	Program::use(*mDisplayWriter);
@@ -184,7 +181,7 @@ void OpenGLRenderer::render(const Core::RenderContext& scene, const Renderer::Sh
 	glBindVertexArray(mFinalVAO);
 
 	// Draw the generated image (gamma corrected, hopefully...)
-	glDrawArrays(GL_TRIANGLES, 0, 3 * 2);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 OpenGLRenderer::~OpenGLRenderer() {

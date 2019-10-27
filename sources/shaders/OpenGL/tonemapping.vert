@@ -1,14 +1,8 @@
-#version 450
+#version 450 core
 
-layout(location = 0) in vec2 VertexPosition;
-layout(location = 1) in vec2 VertexTextureCoord;
-
-out vec2 UV;
+layout(location = 0) in vec4 VertexPosition;
 
 void main() {
-	// Write out UV coordinates
-	UV = VertexTextureCoord;
-
 	// Place the verted in the screen
-	gl_Position = vec4(VertexPosition, 0, 0);
+	gl_Position = VertexPosition;
 }
