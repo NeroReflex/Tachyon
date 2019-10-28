@@ -3,6 +3,20 @@
 
 #include "PPMImage.h"
 
+void GLAPIENTRY
+MessageCallback(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+		type, severity, message);
+}
+
 std::unordered_map<uintptr_t, Tachyon::Rendering::Renderer*> windowToRenderer;
 
 std::string get_opengl_compute_info() {
@@ -42,9 +56,9 @@ int main(int argc, char** argv) {
 		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, -100.5, 0), 100)
 	});
 
-	Tachyon::Core::BLAS sphericBLAS;
-	sphericBLAS.setTransform(glm::translate(glm::vec3(0, 0, -1)));
-	sphericBLAS.insert(sphereTest);
+	std::unique_ptr<Tachyon::Core::BLAS> sphericBLAS(new Tachyon::Core::BLAS());
+	sphericBLAS->setTransform(glm::translate(glm::vec3(0, 0, -1)));
+	sphericBLAS->insert(sphereTest);
 
 	Tachyon::Core::RenderContext ctx(
 		Tachyon::Core::Camera(
@@ -55,7 +69,7 @@ int main(int argc, char** argv) {
 			static_cast<glm::float32>(image.getWidth()) / static_cast<glm::float32>(image.getHeight()) // Aspect Ratio
 		)
 	);
-	ctx.getRaytracingAS().insert(sphericBLAS);
+	ctx.getRaytracingAS().insert(*sphericBLAS);
 
 	// Initialize GLFW
 	if (glfwInit() == 0) {
@@ -95,6 +109,10 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
+	// During init, enable debug output
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(MessageCallback, 0);
+
 	// Retrieve the initial window size to initialize the renderer
 	int initialWidth, initialHeight;
 	glfwGetWindowSize(window, &initialWidth, &initialHeight);
@@ -115,6 +133,16 @@ int main(int argc, char** argv) {
 		std::string((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 	std::cout << "Rendering with: " << rendererId << std::endl << get_opengl_compute_info() << std::endl;
+
+	int uboMaxSize = 0;
+	glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &uboMaxSize);
+
+	std::cout << "Max UBO length in bytes: " << uboMaxSize << std::endl;
+
+	int textureDimensionMaxSize = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &textureDimensionMaxSize);
+
+	std::cout << "Max texture dimension: " << textureDimensionMaxSize << std::endl;
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();

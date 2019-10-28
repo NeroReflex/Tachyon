@@ -44,9 +44,12 @@ glm::float32 Geometry::Sphere::getRadius() const noexcept {
 
 bool Geometry::Sphere::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
 	const glm::vec3 origin = transform * mOrigin;
+	const auto radius = this->getRadius();
+
+	if (radius == 0.0) return false;
 
 	glm::vec3 oc = ray.getOrigin() - this->getOrigin();
-	const auto radius = this->getRadius();
+	
 	const auto a = glm::dot(ray.getDirection(), ray.getDirection());
 	const auto b = glm::dot(oc, ray.getDirection());
 	const auto c = glm::dot(oc, oc) - radius * radius;
@@ -59,6 +62,8 @@ bool Geometry::Sphere::intersection(const Ray& ray, glm::float32 minDistance, gl
 	const glm::vec3 center = transform * mOrigin;
 	const auto radius = this->getRadius();
 	const auto direction = ray.getDirection();
+
+	if (radius == 0.0) return false;
 
 	glm::vec3 oc = ray.getOrigin() - center;
 	

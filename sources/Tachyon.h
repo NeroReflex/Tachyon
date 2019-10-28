@@ -49,9 +49,9 @@ typedef glm::float32 NumericType;
 #undef min
 
 // Configuration parameters
-constexpr static glm::uint32 expOfTwoOfMaxGeometryElementsInCollection = 3;
-constexpr static glm::uint32 expOfTwoOfMaxCollectionElementsInBLAS = 3;
-constexpr static glm::uint32 expOfTwoOfMaxBLASElementsInTLAS = 3;
+constexpr static glm::uint32 expOfTwoOfMaxGeometryElementsInCollection = 3; // Max tested working size: 4
+constexpr static glm::uint32 expOfTwoOfMaxCollectionElementsInBLAS = 3; // Max tested working size: 10
+constexpr static glm::uint32 expOfTwoOfMaxBLASElementsInTLAS = 3; // Max tested working size: 5
 
 constexpr size_t roundupToMultipleOfVec4(size_t in) {
 	return (in / sizeof(glm::vec4)) + sizeof(glm::vec4);

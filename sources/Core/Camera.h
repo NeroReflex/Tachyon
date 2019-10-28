@@ -12,7 +12,16 @@ namespace Tachyon {
 
 			glm::vec3 getCameraPosition() const noexcept;
 
+			glm::vec3 getUp() const noexcept;
+
+			glm::vec3 getLowerLeftCorner() const noexcept;
+
+			glm::vec3 getHorizontal() const noexcept;
+
+			glm::vec3 getVertical() const noexcept;
+
 		private:
+			glm::vec3 mUPVector;
 			glm::vec3 mOrigin;
 			glm::vec3 mLowerLeftCorner;
 			glm::vec3 mHorizontal;

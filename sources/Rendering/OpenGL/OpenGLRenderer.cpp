@@ -60,10 +60,6 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexArrayAttrib(mQuadVAO, 0);
 
-	// Create the VBO used to store the raytrace structure
-	glCreateBuffers(1, &mTLAS);
-	glNamedBufferStorage(mTLAS, Core::RenderContext::linearSizeInVec4() * sizeof(glm::vec4), NULL, GL_MAP_WRITE_BIT);
-
 	// Active the texture unit
 	glActiveTexture(GL_TEXTURE0);
 
@@ -87,24 +83,21 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 
 	const auto& scene = getSceneToBeRendered();
 
-	// Fill the AS structure on the GPU
-	auto mappedMemory = glMapNamedBufferRange(mTLAS, 0, Core::RenderContext::linearSizeInVec4() * sizeof(glm::vec4), GL_MAP_WRITE_BIT  | GL_MAP_INVALIDATE_RANGE_BIT );
-	DBG_ASSERT( (mappedMemory != nullptr) );
-	Core::RenderContext::linearize(scene, reinterpret_cast<glm::vec4*>(mappedMemory));
-	glUnmapNamedBuffer(mTLAS);
-
 	// Set the raytracer program as the active one
 	Program::use(*mRaytracer);
 
 	// Bind the texture to be written by the raytracer
 	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-	// Bind the AS to the current compute shader
-	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, mTLAS, 0, Core::RenderContext::linearSizeInVec4() * sizeof(glm::vec4));
-
 	// Set rendering information
 	mRaytracer->setUniform("width", getWidth());
 	mRaytracer->setUniform("height", getHeight());
+
+	// Set Camera parameters
+	mRaytracer->setUniform("mOrigin", scene.getCamera().getCameraPosition());
+	mRaytracer->setUniform("mLowerLeftCorner", scene.getCamera().getLowerLeftCorner());
+	mRaytracer->setUniform("mHorizontal", scene.getCamera().getHorizontal());
+	mRaytracer->setUniform("mVertical", scene.getCamera().getVertical());
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);

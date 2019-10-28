@@ -8,7 +8,7 @@ AABB BLAS::bvBase() const noexcept
 	AABB globalBaseAABB;
 	bool first = true;
 
-	BVHLinearTree<GeometryCollection, 3>::traverse([this, &first, &globalBaseAABB](const GeometryCollection& collection) {
+	traverse([this, &first, &globalBaseAABB](const GeometryCollection& collection) {
 		globalBaseAABB = (first) ? collection.bvBase() : AABB(globalBaseAABB, collection.bvBase());
 
 		// The following won't be the first geometric collection

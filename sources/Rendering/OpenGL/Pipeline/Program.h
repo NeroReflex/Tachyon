@@ -7,6 +7,10 @@ namespace Tachyon {
 		namespace OpenGL {
 			namespace Pipeline {
 				class Program {
+
+					// TODO: think about this...
+					friend class OpenGL;
+
 				public:
 					Program() = delete;
 
@@ -65,7 +69,7 @@ namespace Tachyon {
 					GLint getUniformLocation(const std::string& name) const noexcept;
 
 					mutable std::unordered_map<std::string, GLint> uniformLocations;
-
+					
 					GLuint program;
 				};
 			}

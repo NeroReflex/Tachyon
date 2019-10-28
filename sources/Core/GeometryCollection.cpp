@@ -6,7 +6,7 @@ using namespace Tachyon::Core;
 bool GeometryCollection::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
 	bool hit = false;
 
-	Collection<Geometry, 3>::foreach([&hit, ray, transform](const Geometry& geometry) {
+	foreach([&hit, ray, transform](const Geometry& geometry) {
 		hit = (geometry.isHitBy(ray, transform)) ? true : hit;
 	});
 
@@ -17,7 +17,7 @@ bool GeometryCollection::intersection(const Ray& ray, glm::float32 minDistance, 
 	bool hit = false;
 	RayGeometryIntersection closestHit;
 
-	Collection<Geometry, 3>::foreach([&hit, ray, &closestHit, &isecInfo, minDistance, maxDistance, transform](const Geometry& geometry) {
+	foreach([&hit, ray, &closestHit, &isecInfo, minDistance, maxDistance, transform](const Geometry& geometry) {
 		bool currentHit = geometry.intersection(ray, minDistance, maxDistance, isecInfo, transform);
 
 		if ((currentHit) && (closestHit.getDistance() > isecInfo.getDistance())) {

@@ -32,8 +32,6 @@ namespace Tachyon {
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
 
-				GLuint mTLAS;
-
 				/**
 				 * This is the output texture of the raytraing.
 				 * This texture is not ready to be rendered as it is in RGBA32F format and pixels solors can exceed 1.0,
