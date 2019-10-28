@@ -39,12 +39,10 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 				
-				static void linearizeToBuffer(const Triangle& src, void* dst) noexcept {
-					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
-
+				static void linearize(const Triangle& src, glm::vec4* dst) noexcept {
 					size_t i = 0;
-					std::for_each(src.mVertices.cbegin(), src.mVertices.cend(), [&bufferAsVectors, &i](const glm::vec4& vertex) {
-						bufferAsVectors[i++] = vertex;
+					std::for_each(src.mVertices.cbegin(), src.mVertices.cend(), [&dst, &i](const glm::vec4& vertex) {
+						dst[i++] = vertex;
 					});
 				}
 
@@ -71,10 +69,9 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-				static void linearizeToBuffer(const Sphere& src, void* dst) noexcept {
-					glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
-					bufferAsVectors[0] =src. mOrigin;
-					bufferAsVectors[1].x = src.mRadius;
+				static void linearize(const Sphere& src, glm::vec4* dst) noexcept {
+					dst[0] = src. mOrigin;
+					dst[1].x = src.mRadius;
 				}
 
 			private:
@@ -103,25 +100,21 @@ namespace Tachyon {
 
 			static Geometry makeTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept;
 
-			static constexpr size_t getBufferSize() noexcept {
-				// the linearization of a geometric shape is split in a series of FOUR vec4 components.
-				// Last three depends on the particular shape being serialized, while the first one is the shape signature.
-				return sizeof(glm::vec4) * 4;
-			};
+			constexpr static size_t linearSizeInVec4() noexcept {
+				return 4;
+			}
 
-			static void linearizeToBuffer(const Geometry& src, void* dst) noexcept {
-				glm::vec4* bufferAsVectors = reinterpret_cast<glm::vec4*>(dst);
-
+			static void linearize(const Geometry& src, glm::vec4* destination) noexcept {
 				if (src.mType == Type::Sphere) {
 					// This is the sphere signature
-					bufferAsVectors[0] = glm::vec4(0, 0, 0, 0);
+					destination[0] = glm::vec4(0, 0, 0, 0);
 
-					Sphere::linearizeToBuffer(src.mGeometryAsSphere, reinterpret_cast<void*>(&bufferAsVectors[1]));
+					Sphere::linearize(src.mGeometryAsSphere, &destination[1]);
 				} else if (src.mType == Type::Triangle) {
 					// This is the triangle signature
-					bufferAsVectors[0] = glm::vec4(0, 0, 0, 1);
+					destination[0] = glm::vec4(0, 0, 0, 1);
 
-					Triangle::linearizeToBuffer(src.mGeometryAsTriangle, reinterpret_cast<void*>(&bufferAsVectors[1]));
+					Triangle::linearize(src.mGeometryAsTriangle, &destination[1]);
 				}
 			}
 

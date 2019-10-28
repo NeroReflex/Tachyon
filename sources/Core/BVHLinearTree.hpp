@@ -70,19 +70,6 @@ namespace Tachyon {
 			bool intersects(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1), UnsignedType root = 0) const noexcept;
 
 		protected:
-			const ContentType& getElementAtIndex(glm::uint32 index) const noexcept;
-
-			bool isRoot(UnsignedType index) const noexcept;
-
-			bool isLeaf(UnsignedType index) const noexcept;
-
-			AABB& bv(UnsignedType index) noexcept;
-
-			const AABB& bv(UnsignedType index) const noexcept;
-
-			bool isFree(UnsignedType index) const noexcept;
-
-			void refreshBVH(UnsignedType index) noexcept;
 			struct NodeData {
 				AABB bvh;
 
@@ -111,28 +98,32 @@ namespace Tachyon {
 
 				static NodeData createLeaf(UnsignedType contentLocation) noexcept;
 
-				static constexpr size_t getBufferSize() noexcept {
-					// To store a node data we need two vec4 and two uint32 elements:
-					// One vec4 is the minimum vertex, the other is vec4(length, depth, width, 0)
-					// The first uint32 is the left node index / content, the other is the right node index, or zero if the node is a leaf
+				constexpr static size_t linearSizeInVec4() noexcept {
+					return 3;
+				}
 
-					// TODO: change the (4) with the amound of bytes needed to store a node
-					return 2 * sizeof(glm::vec4) + 2 * sizeof(glm::uint32);
-				};
-
-				static void linearizeToBuffer(const NodeData& src, void* dst) noexcept {
-					// Make sure the linearization won't take more space than what it is necessary
-					static_assert((sizeof(glm::vec4) / 4) == sizeof(glm::uint32));
-
-					glm::vec4* bufferAsVector = reinterpret_cast<glm::vec4*>(dst);
-					bufferAsVector[0] = glm::vec4(src.bvh.getPosition(), 1.0);
-					bufferAsVector[1] = glm::vec4(src.bvh.getLength(), src.bvh.getDepth(), src.bvh.getWidth(), 0);
-
-					glm::uint32* bufferAsUint = reinterpret_cast<glm::uint32*>(&bufferAsVector[2]);
-					bufferAsUint[0] = src.tree.mLeft;
-					bufferAsUint[1] = src.tree.mRight;
+				static void linearize(const NodeData& src, glm::vec4* destination) noexcept {
+					destination[0] = glm::vec4(src.tree.mLeft, src.tree.mRight, 0, 0);
+					destination[1] = glm::vec4(src.bvh.getPosition(), 1);
+					destination[1] = glm::vec4(src.bvh.getLength(), src.bvh.getDepth(), src.bvh.getWidth(), 0);
 				}
 			};
+
+			const BVHLinearTree<ContentType, N>::NodeData& getNodeIndex(glm::uint32 index) const noexcept;
+
+			const ContentType& getElementAtIndex(glm::uint32 index) const noexcept;
+
+			bool isRoot(UnsignedType index) const noexcept;
+
+			bool isLeaf(UnsignedType index) const noexcept;
+
+			AABB& bv(UnsignedType index) noexcept;
+
+			const AABB& bv(UnsignedType index) const noexcept;
+
+			bool isFree(UnsignedType index) const noexcept;
+
+			void refreshBVH(UnsignedType index) noexcept;
 
 			UnsignedType insert(NodeData node, UnsignedType root = 0) noexcept;
 
@@ -182,6 +173,11 @@ namespace Tachyon {
 		template <class ContentType, size_t N>
 		const ContentType& BVHLinearTree<ContentType, N>::getElementAtIndex(glm::uint32 index) const noexcept {
 			return mContentCollection[index];
+		}
+
+		template <class ContentType, size_t N>
+		const typename BVHLinearTree<ContentType, N>::NodeData& BVHLinearTree<ContentType, N>::getNodeIndex(glm::uint32 index) const noexcept {
+			return mLinearTree[index];
 		}
 
 		template <class ContentType, size_t N>
@@ -249,8 +245,7 @@ namespace Tachyon {
 
 				// remove root from the list of free nodes as we have occupied it right now
 				mFreeNodes.remove(root);
-			}
-			else {
+			} else {
 				if (isLeaf(root)) { // convert the leaf on root position to a tree
 					auto freeNodeCIt = mFreeNodes.cbegin();
 					const auto newNode = *freeNodeCIt;
@@ -299,11 +294,9 @@ namespace Tachyon {
 		template <class ContentType, size_t N>
 		void BVHLinearTree<ContentType, N>::refreshBVH(UnsignedType index) noexcept {
 			if (isLeaf(index)) {
-				// sync this BV shape to the base rigid object BV multiplied by the rigid body current Model latrix ...
 				const auto& element = mContentCollection[mLinearTree[index].content];
 
-				// TODO: update the AABB using the tranformation matrix OF THE current BVH tree
-				bv(index) = element.bvBase(); // AABB(element.bvBase(), getTransform());
+				bv(index) = element.bvBase();
 			}
 			else {
 				bv(index) = AABB(bv(mLinearTree[index].tree.mLeft), bv(mLinearTree[index].tree.mRight));
@@ -323,8 +316,7 @@ namespace Tachyon {
 
 			if (isLeaf(root)) {
 				fn(mContentCollection[mLinearTree[root].content]);
-			}
-			else {
+			} else {
 				traverse(fn, mLinearTree[root].tree.mLeft);
 				traverse(fn, mLinearTree[root].tree.mRight);
 			}

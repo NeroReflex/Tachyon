@@ -62,7 +62,7 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 
 	// Create the VBO used to store the raytrace structure
 	glCreateBuffers(1, &mTLAS);
-	glNamedBufferStorage(mTLAS, Core::TLAS::getBufferSize(), NULL, GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(mTLAS, Core::RenderContext::linearSizeInVec4() * sizeof(glm::vec4), NULL, GL_MAP_WRITE_BIT);
 
 	// Active the texture unit
 	glActiveTexture(GL_TEXTURE0);
@@ -88,9 +88,9 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 	const auto& scene = getSceneToBeRendered();
 
 	// Fill the AS structure on the GPU
-	auto mappedMemory = glMapNamedBufferRange(mTLAS, 0, Core::TLAS::getBufferSize(), GL_MAP_WRITE_BIT  | GL_MAP_INVALIDATE_RANGE_BIT );
+	auto mappedMemory = glMapNamedBufferRange(mTLAS, 0, Core::RenderContext::linearSizeInVec4() * sizeof(glm::vec4), GL_MAP_WRITE_BIT  | GL_MAP_INVALIDATE_RANGE_BIT );
 	DBG_ASSERT( (mappedMemory != nullptr) );
-	Core::TLAS::linearizeToBuffer(scene.getRaytracingAS(), mappedMemory);
+	Core::RenderContext::linearize(scene, reinterpret_cast<glm::vec4*>(mappedMemory));
 	glUnmapNamedBuffer(mTLAS);
 
 	// Set the raytracer program as the active one
@@ -100,7 +100,7 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	// Bind the AS to the current compute shader
-	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, mTLAS, 0, Core::TLAS::getBufferSize());
+	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, mTLAS, 0, Core::RenderContext::linearSizeInVec4() * sizeof(glm::vec4));
 
 	// Set rendering information
 	mRaytracer->setUniform("width", getWidth());

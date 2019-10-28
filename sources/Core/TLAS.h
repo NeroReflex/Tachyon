@@ -19,20 +19,30 @@ namespace Tachyon {
 		public:
 			using BVHLinearTree<BLAS, expOfTwoOfMaxBLASElementsInTLAS>::BVHLinearTree;
 
-			static constexpr size_t getBufferSize() noexcept {
-				// To store a linear tree we need the space of the internal transformation matrix (a 4x4 matrix of floats),
-				// plus the space to linearize all contained elements, plus the space to linarize all tree nodes
-				return sizeof(glm::mat4) +
-					(GeometryCollection::getBufferSize() * TLAS::maxNumberOfElements) +
-					(NodeData::getBufferSize() * TLAS::maxNumberOfTreeElements);
-			};
+			constexpr static size_t linearSizeInVec4() noexcept {
+				// The first 4 are the view matrix
+				return 4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (BLAS::linearSizeInVec4() * TLAS::maxNumberOfElements);
+			}
 
-			static void linearizeToBuffer(const TLAS& src, void* dst) noexcept {
-				glm::mat4* bufferAsTransformationMatrix = reinterpret_cast<glm::mat4*>(dst);
-				bufferAsTransformationMatrix[0] = src.getTransform();
+			static void linearize(const TLAS& src, glm::vec4* destination) noexcept {
+				// linearize the view matrix
+				const auto transformMatrix = src.getTransform();
+				destination[0] = transformMatrix[0];
+				destination[1] = transformMatrix[1];
+				destination[2] = transformMatrix[2];
+				destination[3] = transformMatrix[3];
 
+				for (size_t i = 0; i < TLAS::maxNumberOfTreeElements; ++i) {
+					NodeData::linearize(
+						src.getNodeIndex(i), 
+						&destination[4 + (NodeData::linearSizeInVec4() * i)]);
+				}
 
-				// TODO: continue to implement linearization...
+				for (size_t j = 0; j < TLAS::maxNumberOfTreeElements; ++j) {
+					BLAS::linearize(
+						src.getElementAtIndex(j), 
+						&destination[4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (BLAS::linearSizeInVec4() * j)]);
+				}
 			}
 		};
 	}
