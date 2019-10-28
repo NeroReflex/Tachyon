@@ -104,14 +104,14 @@ namespace Tachyon {
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>
 		const T& Collection<T, expOfTwoOfMaxNumberOfElements>::operator[](const UnsignedType& index) const noexcept {
-			DBG_ASSERT((index < mElementsCount));
+			//DBG_ASSERT((index < mElementsCount));
 
 			return mElements[index];
 		}
 
 		template <class T, size_t expOfTwoOfMaxNumberOfElements>
 		T& Collection<T, expOfTwoOfMaxNumberOfElements>::operator[](const UnsignedType& index) noexcept {
-			DBG_ASSERT((index < mElementsCount));
+			//DBG_ASSERT((index < mElementsCount));
 
 			return mElements[index];
 		}

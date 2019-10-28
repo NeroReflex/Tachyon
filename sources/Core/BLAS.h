@@ -21,7 +21,7 @@ namespace Tachyon {
 
 			constexpr static size_t linearSizeInVec4() noexcept {
 				// The first 4 are the model matrix
-				return 4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (GeometryCollection::linearSizeInVec4() * BLAS::maxNumberOfElements);
+				return 4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (GeometryCollection::linearSizeInVec4() * maxNumberOfElements);
 			}
 
 			static void linearize(const BLAS& src, glm::vec4* destination) noexcept {
@@ -32,13 +32,13 @@ namespace Tachyon {
 				destination[2] = transformMatrix[2];
 				destination[3] = transformMatrix[3];
 
-				for (size_t i = 0; i < BLAS::maxNumberOfTreeElements; ++i) {
+				for (size_t i = 0; i < maxNumberOfTreeElements; ++i) {
 					NodeData::linearize(
 						src.getNodeIndex(i), 
 						&destination[4 + (NodeData::linearSizeInVec4() * i)]);
 				}
 
-				for (size_t j = 0; j < BLAS::maxNumberOfTreeElements; ++j) {
+				for (size_t j = 0; j < maxNumberOfElements; ++j) {
 					GeometryCollection::linearize(
 						src.getElementAtIndex(j), 
 						&destination[4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (GeometryCollection::linearSizeInVec4() * j)]);

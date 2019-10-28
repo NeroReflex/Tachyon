@@ -39,7 +39,7 @@ namespace Tachyon {
 			 * @return the number of vec4 occupied elements.
 			 */
 			constexpr static size_t linearSizeInVec4() noexcept {
-				return 1;
+				return TLAS::linearSizeInVec4();
 			}
 
 			/**
@@ -49,7 +49,7 @@ namespace Tachyon {
 			 * @param destination a buffer of linearSizeInVec4() vec4 elements to be filled
 			 */
 			static void linearize(const RenderContext& src, glm::vec4* destination) noexcept {
-
+				TLAS::linearize(src.getRaytracingAS(), destination);
 			}
 
 		private:
