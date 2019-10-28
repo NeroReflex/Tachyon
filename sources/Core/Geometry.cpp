@@ -102,7 +102,7 @@ Geometry Geometry::makeTriangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexce
 
 Geometry::Geometry() noexcept
 	: mType(Geometry::Type::Sphere),
-	mGeometryAsSphere(glm::vec3(0, 0, 0), 1) {}
+	mGeometryAsSphere(glm::vec3(0, 0, 0), 0) {}
 
 Geometry::Geometry(const Geometry& src) noexcept
 	: mType(src.mType), mGeometryAsTriangle(src.mGeometryAsTriangle) {} // I do copy the geometry as a triangle because it is the largest data buffer :)
