@@ -1,0 +1,21 @@
+#version 450
+
+#define COMP_SIZE 32
+
+const float PI = 3.14159265359;
+const float infinity = 1. / 0.;
+const mat4 identityTransform = mat4(1);
+
+// This gets adjusted on each call by the OpenGL core
+layout(local_size_x = COMP_SIZE, local_size_y = COMP_SIZE, local_size_z = 1) in;
+
+layout(rgba32f, binding = 0) uniform image2D linearize_input;
+
+// Output buffer object to be written
+layout(std430, binding = 0) buffer structurized_output {
+	float a[1000];
+};
+
+void main() {
+	
+}

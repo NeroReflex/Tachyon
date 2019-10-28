@@ -89,6 +89,21 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 	// Bind the texture to be written by the raytracer
 	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
+	// Set the shading algorithm
+	glm::uint algoUniform = 0;
+	switch (shadingAlgo) {
+	case Renderer::ShaderAlgorithm::HitOrMiss:
+		algoUniform = 0;
+		break;
+	case Renderer::ShaderAlgorithm::DistanceShader:
+		algoUniform = 1;
+		break;
+	default:
+		algoUniform = 0;
+	}
+
+	mRaytracer->setUniform("shadingAlgorithm", algoUniform);
+
 	// Set rendering information
 	mRaytracer->setUniform("width", getWidth());
 	mRaytracer->setUniform("height", getHeight());

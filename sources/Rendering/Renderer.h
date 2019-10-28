@@ -8,7 +8,8 @@ namespace Tachyon {
 		class Renderer {
 		public:
 			enum class ShaderAlgorithm {
-				DistanceShader = 0,
+				HitOrMiss = 0, // a simple cameraRay-geometry intersection algorithm
+				DistanceShader = 1, // shade the geometry with the distance to the camera
 
 			};
 
