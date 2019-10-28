@@ -38,11 +38,12 @@ namespace Tachyon {
 
 			T& operator[](const UnsignedType& index) noexcept;
 
+			/*
 			static constexpr size_t getBufferSize() noexcept {
 				// The required memory space in bytes is the number of bytes required by the serialization of the template type,
 				// multiplied by the maximum number of serializable elements, plus an uint32 used to store the number of effectively serialized elements,
 				// all rounded up to respect std140 packing
-				return(T::getBufferSize() * Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber) + 
+				return(T::getBufferSize() * Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber) +
 					roundupToMultipleOfVec4(sizeof(glm::uint));
 			};
 
@@ -55,9 +56,10 @@ namespace Tachyon {
 				}
 
 				// Append the number of linearized elements at the beginning...
-				glm::uint32* bufferSerializedCount = reinterpret_cast<void*>(reinterpret_cast<char*>(dst) + (T::getBufferSize() * src.mElementsCount));
+				glm::uint32* bufferSerializedCount = reinterpret_cast<void*>(reinterpret_cast<char*>(dst) + (Collection<T, expOfTwoOfMaxNumberOfElements>::maxNumber * src.mElementsCount));
 				*bufferSerializedCount = src.mElementsCount;
 			}
+			*/
 
 		private:
 			std::array<T, maxNumber> mElements;

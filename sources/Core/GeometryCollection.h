@@ -35,7 +35,26 @@ namespace Tachyon {
 			 */
 			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-			
+			static constexpr size_t getBufferSize() noexcept {
+				// The required memory space in bytes is the number of bytes required by the serialization of the template type,
+				// multiplied by the maximum number of serializable elements, plus an uint32 used to store the number of effectively serialized elements.
+				return(Geometry::getBufferSize() * Collection<Geometry, expOfTwoOfMaxGeometryElementsInCollection>::maxNumber) + sizeof(glm::uint);
+			};
+
+			static void linearizeToBuffer(const GeometryCollection& src, void* dst) noexcept {
+				const glm::uint occupiedElementsCount = src.getSize();
+
+				// Linearize elements of collection (according to std140 rules)
+				for (size_t i = 0; i < occupiedElementsCount; ++i) {
+					void* bufferLocation = reinterpret_cast<void*>(reinterpret_cast<char*>(dst) + (Geometry::getBufferSize() * i));
+
+					Geometry::linearizeToBuffer(src[i], bufferLocation);
+				}
+
+				// Append the number of linearized elements at the beginning...
+				glm::uint32* bufferSerializedCount = reinterpret_cast<glm::uint32*>(reinterpret_cast<char*>(dst) + (Geometry::getBufferSize() * Collection<Geometry, expOfTwoOfMaxGeometryElementsInCollection>::maxNumber));
+				*bufferSerializedCount = occupiedElementsCount;
+			}
 		};
 	}
 }

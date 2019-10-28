@@ -23,17 +23,27 @@ struct GeometryCollection {
 	uint geometryCount; // Number of used geometry slots
 };
 
+struct NodeData {
+	vec4 aabbVertex; // this is the point of the aabb with min x, y and z components
+	vec4 aabbDimensions; // this is the amount to be added to aabbVertex to obtain the point with max x, y and z in the aabb
+	uint left; // this can also be the content if right is zero
+	uint right; // this is zero if the node is a leaf
+};
+
 struct BLAS {
-	mat4x4 ModelMatrix;
 	GeometryCollection collection[1 << expOfTwoOfMaxCollectionElementsInBLAS];
+	
+	NodeData tree[((1 << expOfTwoOfMaxCollectionElementsInBLAS) * 2) - 1];
+	mat4x4 ModelMatrix;
 };
 
 struct TLAS {
 	mat4x4 ViewMatrix;
+	NodeData tree[((1 << expOfTwoOfMaxBLASElementsInTLAS) * 2) - 1];
 	BLAS blas[1 << expOfTwoOfMaxBLASElementsInTLAS];
 };
 
-layout(std140, binding = 0) buffer scene {
+layout(std430, binding = 0) buffer scene {
 	TLAS tlas[];
 };
 

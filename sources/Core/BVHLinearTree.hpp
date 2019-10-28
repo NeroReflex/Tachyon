@@ -14,6 +14,7 @@ namespace Tachyon {
 		class BVHLinearTree :
 			virtual public RayInterceptable {
 
+		protected:
 			constexpr static glm::uint16 twoExpOfMaxElementsNumber = N;
 			constexpr static size_t maxNumberOfElements = 1 << twoExpOfMaxElementsNumber;
 			constexpr static size_t maxNumberOfTreeElements = (maxNumberOfElements * 2) - 1;
@@ -69,6 +70,8 @@ namespace Tachyon {
 			bool intersects(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1), UnsignedType root = 0) const noexcept;
 
 		protected:
+			const ContentType& getElementAtIndex(glm::uint32 index) const noexcept;
+
 			bool isRoot(UnsignedType index) const noexcept;
 
 			bool isLeaf(UnsignedType index) const noexcept;
@@ -135,22 +138,6 @@ namespace Tachyon {
 
 			Collection<ContentType, N> mContentCollection;
 			std::array<NodeData, maxNumberOfTreeElements> mLinearTree;
-
-
-		public:
-			static constexpr size_t getBufferSize() noexcept {
-				// To store a linear tree we need the space of the internal transformation matrix (a 4x4 matrix of floats),
-				// plus the space to linearize all contained elements, plus the space to linarize all tree nodes
-				return sizeof(glm::mat4) + (ContentType::getBufferSize() * maxNumberOfElements) + (NodeData::getBufferSize() * maxNumberOfTreeElements);
-			};
-
-			static void linearizeToBuffer(const BVHLinearTree<ContentType, N>& src, void* dst) noexcept {
-				glm::mat4* bufferAsTransformationMatrix = reinterpret_cast<glm::mat4*>(dst);
-				bufferAsTransformationMatrix[0] = src.mTransformationMatrix;
-
-
-				// TODO: continue to implement linearization...
-			}
 		};
 
 		template <class ContentType, size_t N>
@@ -190,6 +177,11 @@ namespace Tachyon {
 		template <class ContentType, size_t N>
 		const glm::mat4& BVHLinearTree<ContentType, N>::getTransform() const noexcept {
 			return mTransformationMatrix;
+		}
+
+		template <class ContentType, size_t N>
+		const ContentType& BVHLinearTree<ContentType, N>::getElementAtIndex(glm::uint32 index) const noexcept {
+			return mContentCollection[index];
 		}
 
 		template <class ContentType, size_t N>
