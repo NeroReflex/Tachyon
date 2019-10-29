@@ -20,9 +20,19 @@ namespace Tachyon {
 
 			glm::vec3 getVertical() const noexcept;
 
+			void setAspect(glm::float32 aspect) noexcept;
+
 		private:
+			void update() noexcept;
+
+			/**
+			 * Field of View in degrees.
+			 */
+			glm::float32 mFoV;
+			glm::float32 mAspectRatio;
 			glm::vec3 mUPVector;
 			glm::vec3 mOrigin;
+			glm::vec3 mLookingDir;
 			glm::vec3 mLowerLeftCorner;
 			glm::vec3 mHorizontal;
 			glm::vec3 mVertical;
