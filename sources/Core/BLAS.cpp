@@ -19,3 +19,15 @@ AABB BLAS::bvBase() const noexcept
 
 	return globalBaseAABB;
 }
+
+void BLAS::linearize(Tachyon::Rendering::BLAS& blas) const noexcept {
+	blas.ModelMatrix = getTransform();
+
+	for (size_t i = 0; i < maxNumberOfTreeElements; ++i) {
+		// tree elements are 2*N - 1 .....
+		getNodeIndex(i).linearize(blas.tree[i]);
+
+		//.... but content is just N so a check is requred
+		if (i < maxNumberOfElements) getElementAtIndex(i).linearize(blas.collection[i]);
+	}
+}

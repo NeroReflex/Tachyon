@@ -5,6 +5,7 @@
 
 namespace Tachyon {
 	namespace Core {
+
 		/**
 		 * This class is used to store a simple geometric shape that can be intersected by a ray.
 		 * As the raytracer algorithm can be executed on specilized hardware (GPU) linearization is a necessity.
@@ -39,11 +40,17 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 				
-				static void linearize(const Triangle& src, glm::vec4* dst) noexcept {
+				static void linearizeToVec4(const Triangle& src, glm::vec4* dst) noexcept {
 					size_t i = 0;
 					std::for_each(src.mVertices.cbegin(), src.mVertices.cend(), [&dst, &i](const glm::vec4& vertex) {
 						dst[i++] = vertex;
 					});
+				}
+
+				void linearize(Tachyon::Rendering::Geometry& geometry) const noexcept {
+					geometry.vertex1_or_sphere_center = mVertices[0];
+					geometry.vertex2_or_sphere_radius = mVertices[1];
+					geometry.vertex3_or_nothing = mVertices[2];
 				}
 
 			private:
@@ -69,9 +76,15 @@ namespace Tachyon {
 
 				bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept final;
 
-				static void linearize(const Sphere& src, glm::vec4* dst) noexcept {
+				static void linearizeToVec4(const Sphere& src, glm::vec4* dst) noexcept {
 					dst[0] = src. mOrigin;
 					dst[1].x = src.mRadius;
+				}
+
+				void linearize(Tachyon::Rendering::Geometry& geometry) const noexcept {
+					geometry.vertex1_or_sphere_center = mOrigin;
+					geometry.vertex2_or_sphere_radius = glm::vec4(mRadius, 0, 0, 0);
+					geometry.vertex3_or_nothing = glm::vec4(0, 0, 0, 0);
 				}
 
 			private:
@@ -104,17 +117,17 @@ namespace Tachyon {
 				return 4;
 			}
 
-			static void linearize(const Geometry& src, glm::vec4* destination) noexcept {
+			static void linearizeToVec4(const Geometry& src, glm::vec4* destination) noexcept {
 				if (src.mType == Type::Sphere) {
 					// This is the sphere signature
 					destination[0] = glm::vec4(0, 0, 0, 0);
 
-					Sphere::linearize(src.mGeometryAsSphere, &destination[1]);
+					Sphere::linearizeToVec4(src.mGeometryAsSphere, &destination[1]);
 				} else if (src.mType == Type::Triangle) {
 					// This is the triangle signature
 					destination[0] = glm::vec4(0, 0, 0, 1);
 
-					Triangle::linearize(src.mGeometryAsTriangle, &destination[1]);
+					Triangle::linearizeToVec4(src.mGeometryAsTriangle, &destination[1]);
 				}
 			}
 
@@ -123,6 +136,8 @@ namespace Tachyon {
 			bool intersection(const Ray& ray, glm::float32 minDistance, glm::float32 maxDistance, RayGeometryIntersection& isecInfo, glm::mat4 transform = glm::mat4(1)) const noexcept override;
 
 			AABB bvBase() const noexcept;
+
+			void linearize(Tachyon::Rendering::Geometry& geometry) const noexcept;
 
 		protected:
 			/**
@@ -151,5 +166,6 @@ namespace Tachyon {
 			
 
 		};
+
 	}
 }

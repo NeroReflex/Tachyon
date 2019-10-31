@@ -33,6 +33,12 @@ namespace Tachyon {
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
 
 				/**
+				 * This is the input data for the GPU raytracer algorithm.
+				 * See raytracer compute shader for more details.
+				 */
+				GLuint mRaytracingSSBO;
+
+				/**
 				 * This is the output texture of the raytraing.
 				 * This texture is not ready to be rendered as it is in RGBA32F format and pixels solors can exceed 1.0,
 				 * so it has to be tone mapped.

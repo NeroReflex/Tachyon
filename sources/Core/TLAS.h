@@ -19,12 +19,14 @@ namespace Tachyon {
 		public:
 			using BVHLinearTree<BLAS, expOfTwoOfMaxBLASElementsInTLAS>::BVHLinearTree;
 
+			void linearize(Tachyon::Rendering::TLAS& tlas) const noexcept;
+
 			constexpr static size_t linearSizeInVec4() noexcept {
 				// The first 4 are the view matrix
 				return 4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (BLAS::linearSizeInVec4() * maxNumberOfElements);
 			}
 
-			static void linearize(const TLAS& src, glm::vec4* destination) noexcept {
+			static void linearizeToVec4(const TLAS& src, glm::vec4* destination) noexcept {
 				// linearize the view matrix
 				const auto transformMatrix = src.getTransform();
 				destination[0] = transformMatrix[0];
@@ -33,17 +35,19 @@ namespace Tachyon {
 				destination[3] = transformMatrix[3];
 
 				for (size_t i = 0; i < maxNumberOfTreeElements; ++i) {
-					NodeData::linearize(
+					NodeData::linearizeToVec4(
 						src.getNodeIndex(i), 
 						&destination[4 + (NodeData::linearSizeInVec4() * i)]);
 				}
 
 				for (size_t j = 0; j < maxNumberOfElements; ++j) {
-					BLAS::linearize(
+					BLAS::linearizeToVec4(
 						src.getElementAtIndex(j), 
 						&destination[4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (BLAS::linearSizeInVec4() * j)]);
 				}
 			}
+
+
 		};
 	}
 }

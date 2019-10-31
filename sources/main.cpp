@@ -58,6 +58,9 @@ int main(int argc, char** argv) {
 
 	std::unique_ptr<Tachyon::Core::BLAS> sphericBLAS(new Tachyon::Core::BLAS());
 	sphericBLAS->setTransform(glm::translate(glm::vec3(0, 0, -1)));
+
+	// TODO: try to enable this!
+	//sphericBLAS->insert(Tachyon::Core::GeometryCollection());
 	sphericBLAS->insert(sphereTest);
 
 	Tachyon::Core::RenderContext ctx(
@@ -162,13 +165,13 @@ int main(int argc, char** argv) {
 	// Terminate GLFW
 	glfwTerminate();
 
-	/*
+	
 	// Execute raytracing on the CPU
 	Tachyon::Rendering::CPU::CPURenderer renderer(ctx, 480, 360);
 	renderer.render(Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
 	renderer.transfertResult(image);
 	image.write("output.ppm");
-	*/
+	
 
     return EXIT_SUCCESS;
 }

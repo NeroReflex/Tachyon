@@ -2,9 +2,9 @@
 
 #define COMP_SIZE 32
 
-#define expOfTwoOfMaxGeometryElementsInCollection 3
-#define expOfTwoOfMaxCollectionElementsInBLAS 3
-#define expOfTwoOfMaxBLASElementsInTLAS 3
+#define expOfTwoOfMaxGeometryElementsInCollection 4
+#define expOfTwoOfMaxCollectionElementsInBLAS 5
+#define expOfTwoOfMaxBLASElementsInTLAS 4
 
 const float PI = 3.14159265359;
 const float infinity = 1. / 0.;
@@ -54,7 +54,10 @@ struct TLAS {
 	BLAS blas[1 << expOfTwoOfMaxBLASElementsInTLAS];
 };
 
-uniform TLAS tlas;
+// Output buffer object to be written
+layout(std430, binding = 3) buffer scene {
+	TLAS tlas[];
+};
 
 uniform uint shadingAlgorithm;
 
@@ -105,6 +108,84 @@ vec3 applyShading(RayGeometryIntersection isect, uint algorithm) {
 	}
 
 	return vec3(0.5, 0.5, 0.5); // this is to get attention as this should never verify
+}
+
+vec4 getInvDirection(Ray ray) {
+	return 1.0/ray.direction;
+}
+
+AABB transformAABB(AABB starting, mat4 transformMatrix) {
+	vec4 v[8] = {
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+	};
+
+	float maxX = 1.0/0.0, maxY = 1.0/0.0, maxZ=1.0/0.0, minX=-1.0/0.0, minY=-1.0/0.0, minZ=-1.0/0.0;
+
+	for (uint i = 0; i < 8; ++i) {
+		maxX = (v[i].x > maxX) ? v[i].x : maxX;
+		maxY = (v[i].y > maxY) ? v[i].y : maxY;
+		maxZ = (v[i].z > maxZ) ? v[i].z : maxZ;
+		minX = (v[i].x < minX) ? v[i].x : minX;
+		minY = (v[i].y < minY) ? v[i].y : minY;
+		minZ = (v[i].z < minZ) ? v[i].z : minZ;
+	}
+
+	return AABB(vec4(minX, minY, minZ, 1), vec4(maxX-minX, maxY-minY, maxZ-minZ, 0));
+}
+
+struct raySigns {
+	bool[3] signs;
+};
+
+bool intersectAABB(Ray ray, AABB aabb, mat4 transformMatrix) {
+	AABB transformedAABB = /*(transformMatrix != identityTransform) ? */transformAABB(aabb, transformMatrix) /*: *this*/;
+
+	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+	vec3 orig = ray.origin.xyz;
+	vec3 invdir = getInvDirection(ray).xyz;
+
+	vec3 bounds[2] = {
+		transformedAABB.position.xyz,
+		(transformedAABB.position.xyz) + (transformedAABB.dimensions.xyz)
+	};
+
+	const int[3] raySigns = int[3](
+		(invdir.x < 0) ? 1 : 0,
+		(invdir.y < 0) ? 1 : 0,
+		(invdir.z < 0) ? 1 : 0
+	);
+
+	tmin = (bounds[raySigns[0]].x - orig.x) * invdir.x;
+	tmax = (bounds[1 - raySigns[0]].x - orig.x) * invdir.x;
+	tymin = (bounds[raySigns[1]].y - orig.y) * invdir.y;
+	tymax = (bounds[1 - raySigns[1]].y - orig.y) * invdir.y;
+
+	if ((tmin > tymax) || (tymin > tmax))
+		return false;
+	if (tymin > tmin)
+		tmin = tymin;
+	if (tymax < tmax)
+		tmax = tymax;
+
+	tzmin = (bounds[raySigns[2]].z - orig.z) * invdir.z;
+	tzmax = (bounds[1 - raySigns[2]].z - orig.z) * invdir.z;
+
+	if ((tmin > tzmax) || (tzmin > tmax))
+		return false;
+	if (tzmin > tmin)
+		tmin = tzmin;
+	if (tzmax < tmax)
+		tmax = tzmax;
+
+	return true;
 }
 
 RayGeometryIntersection intersect(Ray ray, Geometry geometry, mat4 transformMatrix, float minDistance, float maxDistance) {
@@ -192,34 +273,16 @@ void main() {
 	// TODO: Remove this, here for debug
 	const RayGeometryIntersection testSphereIntersection = intersect(
 		cameraRay,
-		GeometryCollection(
-			Geometry[1 << expOfTwoOfMaxGeometryElementsInCollection](
-			Geometry(
-				vec4(0, 0, 0, 0),
-				vec4(0, 0, -1, 1),
-				vec4(0.5, 0, 0, 0),
-				vec4(0, 0, 0, 0)
-			),
-			Geometry(
-				vec4(0, 0, 0, 0),
-				vec4(0, -100.5, -1, 1),
-				vec4(100, 0, 0, 0),
-				vec4(0, 0, 0, 0)
-			),
-			emptyGeometry,
-			emptyGeometry,
-			emptyGeometry,
-			emptyGeometry,
-			emptyGeometry,
-			emptyGeometry
-		)),
-		identityTransform, //identity matrix
+		tlas[0].blas[0].collection[0],
+		tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix, //identity matrix
 		0.001,
 		1000.0
 	);
 
 	// white pixel = hit, black pixel = miss
-	pixel = vec4(applyShading(testSphereIntersection, shadingAlgorithm), 1.0);
+	if (intersectAABB(cameraRay, tlas[0].blas[0].tree[0].aabb, tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix)) {
+		pixel = vec4(applyShading(testSphereIntersection, shadingAlgorithm), 1.0);
+	}
   
 	// output to a specific pixel in the image
 	imageStore(img_output, pixel_coords, pixel);

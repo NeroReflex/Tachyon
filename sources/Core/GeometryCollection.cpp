@@ -49,3 +49,8 @@ AABB GeometryCollection::bvBase() const noexcept {
 
 	return AABB(vertices);
 }
+
+void GeometryCollection::linearize(Tachyon::Rendering::GeometryCollection& gCollection) const noexcept {
+	for (size_t i = 0; i < maxNumber; ++i)
+		((*this)[i]).linearize(gCollection.geometry[i]);
+}

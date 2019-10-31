@@ -10,10 +10,11 @@ namespace Tachyon {
 			virtual public RayInterceptable {
 
 		public:
-
 			using Collection<Geometry, expOfTwoOfMaxGeometryElementsInCollection>::Collection;
 
 			AABB bvBase() const noexcept;
+
+			void linearize(Tachyon::Rendering::GeometryCollection& gCollection) const noexcept;
 
 			/**
 			 * Check if any of the stored elements is hit by the given ray.
@@ -40,9 +41,9 @@ namespace Tachyon {
 				return Geometry::linearSizeInVec4() * GeometryCollection::maxNumber;
 			}
 
-			static void linearize(const GeometryCollection& src, glm::vec4* destination) noexcept {
+			static void linearizeToVec4(const GeometryCollection& src, glm::vec4* destination) noexcept {
 				for (size_t i = 0; i < GeometryCollection::maxNumber; ++i)
-					Geometry::linearize(src[i], &destination[Geometry::linearSizeInVec4() * i]);
+					Geometry::linearizeToVec4(src[i], &destination[Geometry::linearSizeInVec4() * i]);
 			}
 		};
 	}

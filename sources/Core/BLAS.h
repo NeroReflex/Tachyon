@@ -19,12 +19,14 @@ namespace Tachyon {
 
 			AABB bvBase() const noexcept;
 
+			void linearize(Tachyon::Rendering::BLAS& blas) const noexcept;
+
 			constexpr static size_t linearSizeInVec4() noexcept {
 				// The first 4 are the model matrix
 				return 4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (GeometryCollection::linearSizeInVec4() * maxNumberOfElements);
 			}
 
-			static void linearize(const BLAS& src, glm::vec4* destination) noexcept {
+			static void linearizeToVec4(const BLAS& src, glm::vec4* destination) noexcept {
 				// linearize the view matrix
 				const auto transformMatrix = src.getTransform();
 				destination[0] = transformMatrix[0];
@@ -33,13 +35,13 @@ namespace Tachyon {
 				destination[3] = transformMatrix[3];
 
 				for (size_t i = 0; i < maxNumberOfTreeElements; ++i) {
-					NodeData::linearize(
+					NodeData::linearizeToVec4(
 						src.getNodeIndex(i), 
 						&destination[4 + (NodeData::linearSizeInVec4() * i)]);
 				}
 
 				for (size_t j = 0; j < maxNumberOfElements; ++j) {
-					GeometryCollection::linearize(
+					GeometryCollection::linearizeToVec4(
 						src.getElementAtIndex(j), 
 						&destination[4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (GeometryCollection::linearSizeInVec4() * j)]);
 				}

@@ -48,9 +48,11 @@ namespace Tachyon {
 			 * @param src the render context to be linearized
 			 * @param destination a buffer of linearSizeInVec4() vec4 elements to be filled
 			 */
-			static void linearize(const RenderContext& src, glm::vec4* destination) noexcept {
-				TLAS::linearize(src.getRaytracingAS(), destination);
+			static void linearizeToVec4(const RenderContext& src, glm::vec4* destination) noexcept {
+				TLAS::linearizeToVec4(src.getRaytracingAS(), destination);
 			}
+
+			void linearize(Tachyon::Rendering::TLAS& tlas) const noexcept;
 
 		private:
 			std::unique_ptr<TLAS> mTLAS;

@@ -158,8 +158,7 @@ bool AABB::intersection(const Ray& ray, glm::float32 minDistance, glm::float32 m
 }
 
 bool AABB::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
-	AABB transformedAABB = (transform != glm::mat4(1)) ?
-		transformedAABB = AABB(transformedAABB, transform) : *this;
+	AABB transformedAABB = (transform != glm::mat4(1)) ? AABB(*this, transform) : *this;
 
 	float tmin, tmax, tymin, tymax, tzmin, tzmax;
 
@@ -194,4 +193,9 @@ bool AABB::isHitBy(const Ray& ray, glm::mat4 transform) const noexcept {
 		tmax = tzmax;
 
 	return true;
+}
+
+void AABB::linearize(Tachyon::Rendering::AABB& aabb) const noexcept {
+	aabb.position = glm::vec4(this->getPosition(), 1.0);
+	aabb.dimensions = glm::vec4(this->getLength(), this->getDepth(), this->getWidth(), 1.0);
 }

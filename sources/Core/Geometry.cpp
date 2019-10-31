@@ -171,3 +171,18 @@ AABB Geometry::bvBase() const noexcept
 
 	return AABB();
 }
+
+void Geometry::linearize(Tachyon::Rendering::Geometry& geometry) const noexcept {
+	if (mType == Type::Sphere) {
+		// This is the sphere signature
+		geometry.signature = glm::vec4(0, 0, 0, 0);
+
+		mGeometryAsSphere.linearize(geometry);
+	}
+	else if (mType == Type::Triangle) {
+		// This is the triangle signature
+		geometry.signature = glm::vec4(0, 0, 0, 1);
+
+		mGeometryAsTriangle.linearize(geometry);
+	}
+}

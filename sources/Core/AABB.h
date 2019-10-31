@@ -44,6 +44,8 @@ namespace Tachyon {
 
 			~AABB();
 
+			void linearize(Tachyon::Rendering::AABB& aabb) const noexcept;
+
 			/**
 			 * Check if the given ray intersects the AABB.
 			 *

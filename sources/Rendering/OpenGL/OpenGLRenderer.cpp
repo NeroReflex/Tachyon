@@ -75,6 +75,11 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+
+	//Create the raytracer SSBO, with corret dimensions
+	glGenBuffers(1, &mRaytracingSSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, mRaytracingSSBO);
+	glNamedBufferStorage(mRaytracingSSBO, sizeof(Tachyon::Rendering::TLAS), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT);
 }
 
 void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
@@ -83,8 +88,17 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 
 	const auto& scene = getSceneToBeRendered();
 
+	void* mappedMemory = glMapNamedBufferRange(mRaytracingSSBO, 0, sizeof(Tachyon::Rendering::TLAS), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
+	DBG_ASSERT((mappedMemory));
+	Tachyon::Rendering::TLAS* tlas = reinterpret_cast<Tachyon::Rendering::TLAS*>(mappedMemory);
+	scene.linearize(*tlas);
+	glUnmapNamedBuffer(mRaytracingSSBO);
+
 	// Set the raytracer program as the active one
 	Program::use(*mRaytracer);
+
+	// Bind the raytracer SSBO (the rendering context)
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, mRaytracingSSBO);
 
 	// Bind the texture to be written by the raytracer
 	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
