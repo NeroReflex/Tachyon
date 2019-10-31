@@ -115,7 +115,7 @@ vec3 applyShading(RayGeometryIntersection isect, uint algorithm) {
 }
 
 vec4 getInvDirection(Ray ray) {
-	return 1.0/ray.direction;
+	return vec4(1.0/ray.direction.x, 1.0/ray.direction.y, 1.0/ray.direction.z, 0);
 }
 
 AABB transformAABB(AABB starting, mat4 transformMatrix) {
@@ -253,6 +253,31 @@ RayGeometryIntersection intersect(Ray ray, GeometryCollection collection, mat4 t
 	return bestHit;
 }
 
+RayGeometryIntersection intersect(Ray ray, BLAS blas, NodeData node, mat4 transformMatrix, float minDistance, float maxDistance) {
+	RayGeometryIntersection bestHit = miss;
+
+	if (!intersectAABB(ray, node.aabb, transformMatrix))
+		return bestHit;
+
+	if (isLeaf(node)) {
+		return intersect(ray, blas.collection[node.left], transformMatrix, minDistance, maxDistance);
+	} else {
+		RayGeometryIntersection leftHit = intersect(ray, blas, blas.tree[node.left], transformMatrix, minDistance, maxDistance);
+		if (bestHit.dist > leftHit.dist) bestHit = leftHit;
+
+		RayGeometryIntersection rightHit = intersect(ray, blas, blas.tree[node.left], transformMatrix, minDistance, maxDistance);
+		if (bestHit.dist > rightHit.dist) bestHit = rightHit;
+	}
+
+	return bestHit;
+}
+
+RayGeometryIntersection intersect(Ray ray, BLAS blas, mat4 transformMatrix, float minDistance, float maxDistance) {
+	RayGeometryIntersection bestHit = intersect(ray, blas, blas.tree[0], transformMatrix, minDistance, maxDistance);
+
+	return bestHit;
+}
+
 Ray generateCameraRay(float s, float t) {
 	return Ray(vec4(mOrigin, 1), vec4(mLowerLeftCorner + s * mHorizontal + t * mVertical - mOrigin, 0));
 }
@@ -275,6 +300,7 @@ void main() {
 	Ray cameraRay = generateCameraRay(u, v);
 	
 	// TODO: Remove this, here for debug
+	/*
 	const RayGeometryIntersection testSphereIntersection = intersect(
 		cameraRay,
 		tlas[0].blas[0].collection[0],
@@ -287,6 +313,9 @@ void main() {
 	if (intersectAABB(cameraRay, tlas[0].blas[0].tree[0].aabb, tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix)) {
 		pixel = vec4(applyShading(testSphereIntersection, shadingAlgorithm), 1.0);
 	}
+	*/
+
+	pixel = vec4(applyShading(intersect(cameraRay, tlas[0].blas[0], tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix, 0.001, 1000.0), shadingAlgorithm), 1.0);
   
 	// output to a specific pixel in the image
 	imageStore(img_output, pixel_coords, pixel);
