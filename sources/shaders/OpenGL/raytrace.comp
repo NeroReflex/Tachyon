@@ -253,27 +253,51 @@ RayGeometryIntersection intersect(Ray ray, GeometryCollection collection, mat4 t
 	return bestHit;
 }
 
-RayGeometryIntersection intersect(Ray ray, BLAS blas, NodeData node, mat4 transformMatrix, float minDistance, float maxDistance) {
+RayGeometryIntersection intersect(Ray ray, BLAS blas, mat4 transformMatrix, float minDistance, float maxDistance) {
 	RayGeometryIntersection bestHit = miss;
 
-	if (!intersectAABB(ray, node.aabb, transformMatrix))
-		return bestHit;
+	int currentDepth = 0;
+	uint currentPath = 0;
 
-	if (isLeaf(node)) {
-		return intersect(ray, blas.collection[node.left], transformMatrix, minDistance, maxDistance);
-	} else {
-		RayGeometryIntersection leftHit = intersect(ray, blas, blas.tree[node.left], transformMatrix, minDistance, maxDistance);
-		if (bestHit.dist > leftHit.dist) bestHit = leftHit;
+	while ((currentDepth < 32) && (currentDepth >= 0)) {
+		uint currentNodeIndex = 0;
 
-		RayGeometryIntersection rightHit = intersect(ray, blas, blas.tree[node.left], transformMatrix, minDistance, maxDistance);
-		if (bestHit.dist > rightHit.dist) bestHit = rightHit;
+		// This for cycles is used to reach the interesting node
+		for (uint i = 0; i < currentDepth; ++i) {
+			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? blas.tree[currentNodeIndex].left : blas.tree[currentNodeIndex].left;
+		}
+
+		if ((!isLeaf(blas.tree[currentNodeIndex])) && (intersectAABB(ray, blas.tree[currentNodeIndex].aabb, transformMatrix))) {
+			// Go one level deeper
+			currentDepth += 1;
+		} else {
+			// This is a leaf that should be tested...
+			if ((isLeaf(blas.tree[currentNodeIndex])) && (intersectAABB(ray, blas.tree[currentNodeIndex].aabb, transformMatrix))) {
+				RayGeometryIntersection currentHit = intersect(ray, blas.collection[blas.tree[currentNodeIndex].left], transformMatrix, minDistance, maxDistance);
+
+				if (currentHit.dist < bestHit.dist) bestHit = currentHit;
+			}
+
+			// in either case: subtree discarded or visited leaf the algorithm should reduce the depth and change the path
+			currentDepth -= 1;
+
+			while (((currentPath & (1 << currentDepth)) == 1) && (currentDepth >= 0)) {
+				//set the bit at currentDepth position to 0
+				currentPath &= ~(1 << currentDepth);
+
+				// and decrease currentDepth
+				currentDepth -= 1;
+			}
+
+			if (currentDepth >= 0) {
+				// set the bit at currentDepth position to 1 (the next visit will choose another path)
+				currentPath |= (1 << currentDepth);
+			} else {
+				// the visited node was the very last one (the right-most) and the iteration should come to an end
+				break;
+			}
+		}
 	}
-
-	return bestHit;
-}
-
-RayGeometryIntersection intersect(Ray ray, BLAS blas, mat4 transformMatrix, float minDistance, float maxDistance) {
-	RayGeometryIntersection bestHit = intersect(ray, blas, blas.tree[0], transformMatrix, minDistance, maxDistance);
 
 	return bestHit;
 }
