@@ -165,13 +165,13 @@ int main(int argc, char** argv) {
 	// Terminate GLFW
 	glfwTerminate();
 
-	
+	/*
 	// Execute raytracing on the CPU
 	Tachyon::Rendering::CPU::CPURenderer renderer(ctx, 480, 360);
 	renderer.render(Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
 	renderer.transfertResult(image);
 	image.write("output.ppm");
-	
+	*/
 
     return EXIT_SUCCESS;
 }

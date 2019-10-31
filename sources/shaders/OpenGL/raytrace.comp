@@ -91,6 +91,10 @@ const Geometry emptyGeometry = Geometry(
 
 const RayGeometryIntersection miss = RayGeometryIntersection(infinity, vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
 
+bool isLeaf(NodeData node) {
+	return node.right == 0;
+}
+
 bool hasMissed(RayGeometryIntersection test) {
 	return isinf(test.dist) || isnan(test.dist);
 }
