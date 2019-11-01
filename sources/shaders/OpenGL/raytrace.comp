@@ -1,4 +1,4 @@
-#version 450
+#version 450 core
 
 #define COMP_SIZE 32
 
@@ -12,11 +12,6 @@ const mat4 identityTransform = mat4(1);
 
 // This gets adjusted on each call by the OpenGL core
 layout(local_size_x = COMP_SIZE, local_size_y = COMP_SIZE, local_size_z = 1) in;
-
-layout(rgba32f, binding = 0) uniform image2D img_output;
-
-uniform uint width; // Render target surface width
-uniform uint height; // Render target surface height
 
 struct Geometry {
 	vec4 signature;
@@ -59,12 +54,17 @@ layout(std430, binding = 3) buffer scene {
 	TLAS tlas[];
 };
 
-uniform uint shadingAlgorithm;
+layout(rgba32f, binding = 0) uniform image2D img_output; // Raytracing output texture
 
-uniform vec3 mOrigin;
-uniform vec3 mLowerLeftCorner;
-uniform vec3 mHorizontal;
-uniform vec3 mVertical;
+layout(location = 0) uniform uint width; // Render target surface width
+layout(location = 1) uniform uint height; // Render target surface height
+
+layout(location = 2) uniform uint shadingAlgorithm;
+
+layout(location = 3) uniform vec3 mOrigin;
+layout(location = 4) uniform vec3 mLowerLeftCorner;
+layout(location = 5) uniform vec3 mHorizontal;
+layout(location = 6) uniform vec3 mVertical;
 
 /*************************************************************************************************************************
  *                                                  Algorithms                                                           *

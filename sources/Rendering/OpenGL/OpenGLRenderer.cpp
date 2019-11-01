@@ -9,30 +9,30 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::OpenGL;
 using namespace Tachyon::Rendering::OpenGL::Pipeline;
 
-#include "shaders/tonemapping.vert.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
-#include "shaders/tonemapping.frag.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
-#include "shaders/raytrace.comp.h" // SHADER_RAYTRACE_COMP, SHADER_RAYTRACE_COMP_size
+#include "shaders/tonemapping.vert.spv.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
+#include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
+#include "shaders/raytrace.comp.spv.h" // SHADER_RAYTRACE_COMP, SHADER_RAYTRACE_COMP_size
 
 OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept
     : Renderer(scene, std::move(width), std::move(height)),
 	mRaytracer(new Pipeline::Program(
         std::initializer_list<std::shared_ptr<const Shader>>{
             std::static_pointer_cast<const Shader>(
-                    std::make_shared<const ComputeShader>(Shader::SourceType::GLSL,
-                            reinterpret_cast<const char *>(SHADER_RAYTRACE_COMP),
-							SHADER_RAYTRACE_COMP_size))
+                    std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV,
+						reinterpret_cast<const char *>(raytrace_compOGL),
+						raytrace_compOGL_size))
 	    })
 	),
 	mDisplayWriter(new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{
 			std::static_pointer_cast<const Shader>(
-				std::make_shared<const VertexShader>(Shader::SourceType::GLSL,
-					reinterpret_cast<const char*>(SHADER_TONEMAPPING_VERT),
-					SHADER_TONEMAPPING_VERT_size)),
+				std::make_shared<const VertexShader>(Shader::SourceType::SPIRV,
+					reinterpret_cast<const char*>(tonemapping_vertOGL),
+					tonemapping_vertOGL_size)),
 				std::static_pointer_cast<const Shader>(
-					std::make_shared<const FragmentShader>(Shader::SourceType::GLSL,
-						reinterpret_cast<const char*>(SHADER_TONEMAPPING_FRAG),
-						SHADER_TONEMAPPING_FRAG_size))
+					std::make_shared<const FragmentShader>(Shader::SourceType::SPIRV,
+						reinterpret_cast<const char*>(tonemapping_fragOGL),
+						tonemapping_fragOGL_size))
 		})
     ),
 	mRaytracerOutputTexture(0) {

@@ -7,6 +7,9 @@ project (SparkEngine)
 
 include(${PROJECT_SOURCE_DIR}/cmake/file2c.cmake)
 
+# add the bin2c_serialize target
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/bin2c)
+
 # Set new policy when searching for external libs
 cmake_policy(SET CMP0074 NEW)
 

@@ -101,10 +101,10 @@ main(int argc, char *argv[])
     }
     fprintf(f_output, "\n};\n\n");
 
-    fprintf(f_output, "const int %s_length = %i;\n", ident, file_size);
+    fprintf(f_output, "const int %s_size = %i;\n", ident, file_size);
 
 #ifdef USE_BZ2
-    fprintf(f_output, "const int %s_length_uncompressed = %i;\n", ident,
+    fprintf(f_output, "const int %s_size_uncompressed = %i;\n", ident,
             uncompressed_size);
 #endif
 
