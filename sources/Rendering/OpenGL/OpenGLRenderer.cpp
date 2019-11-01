@@ -77,28 +77,41 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 
 	//Create the raytracer SSBO, with corret dimensions
-	glGenBuffers(1, &mRaytracingSSBO);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, mRaytracingSSBO);
-	glNamedBufferStorage(mRaytracingSSBO, sizeof(Tachyon::Rendering::TLAS), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT);
+	glGenBuffers(mRaytracingSSBO.size(), mRaytracingSSBO.data());
+	std::for_each(mRaytracingSSBO.cbegin(), mRaytracingSSBO.cend(), [](const GLuint& ssbo) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	});
+	
+	glNamedBufferStorage(mRaytracingSSBO[0], sizeof(Tachyon::Rendering::BLAS) * (1 << expOfTwoOfMaxBLASElementsInTLAS), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * ((2*(expOfTwoOfMaxBLASElementsInTLAS)) - 1), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 }
 
 void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
-	// Clear the previously rendered scene
-	glClear(GL_COLOR_BUFFER_BIT);
-
 	const auto& scene = getSceneToBeRendered();
 
-	void* mappedMemory = glMapNamedBufferRange(mRaytracingSSBO, 0, sizeof(Tachyon::Rendering::TLAS), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
-	DBG_ASSERT((mappedMemory));
-	Tachyon::Rendering::TLAS* tlas = reinterpret_cast<Tachyon::Rendering::TLAS*>(mappedMemory);
-	scene.linearize(*tlas);
-	glUnmapNamedBuffer(mRaytracingSSBO);
+	// frame-by-frame reserialization
+	void* blasMappedMemory = glMapNamedBufferRange(mRaytracingSSBO[0], 0, sizeof(Tachyon::Rendering::BLAS) * (1 << expOfTwoOfMaxBLASElementsInTLAS), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
+	DBG_ASSERT((blasMappedMemory));
+	Tachyon::Rendering::BLAS* blasMapped = reinterpret_cast<Tachyon::Rendering::BLAS*>(blasMappedMemory);
 
+	void* treeMappedMemory = glMapNamedBufferRange(mRaytracingSSBO[1], 0, sizeof(Tachyon::Rendering::NodeData) * ((2 * (expOfTwoOfMaxBLASElementsInTLAS)) - 1), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
+	DBG_ASSERT((treeMappedMemory));
+	Tachyon::Rendering::NodeData* treeMapped = reinterpret_cast<Tachyon::Rendering::NodeData*>(treeMappedMemory);
+
+	// Linearize data
+	scene.getRaytracingAS().linearize(blasMapped, treeMapped);
+
+	// Unmap memory
+	glUnmapNamedBuffer(mRaytracingSSBO[0]);
+	glUnmapNamedBuffer(mRaytracingSSBO[1]);
+	
 	// Set the raytracer program as the active one
 	Program::use(*mRaytracer);
 
 	// Bind the raytracer SSBO (the rendering context)
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, mRaytracingSSBO);
+	for (GLuint k = 0; k < mRaytracingSSBO.size(); ++k) {
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, k, mRaytracingSSBO[k]);
+	}
 
 	// Bind the texture to be written by the raytracer
 	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -127,6 +140,12 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 	mRaytracer->setUniform("mLowerLeftCorner", scene.getCamera().getLowerLeftCorner());
 	mRaytracer->setUniform("mHorizontal", scene.getCamera().getHorizontal());
 	mRaytracer->setUniform("mVertical", scene.getCamera().getVertical());
+
+	// Set the View Matrix of the TLAS
+	mRaytracer->setUniform("tlasViewMatrix", scene.getRaytracingAS().getTransform());
+
+	// Clear the previously rendered scene
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);

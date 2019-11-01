@@ -21,6 +21,8 @@ namespace Tachyon {
 
 			void linearize(Tachyon::Rendering::TLAS& tlas) const noexcept;
 
+			void linearize(Tachyon::Rendering::BLAS* blas, Tachyon::Rendering::NodeData* tree) const noexcept;
+
 			constexpr static size_t linearSizeInVec4() noexcept {
 				// The first 4 are the view matrix
 				return 4 + (NodeData::linearSizeInVec4() * maxNumberOfTreeElements) + (BLAS::linearSizeInVec4() * maxNumberOfElements);

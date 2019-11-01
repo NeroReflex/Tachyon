@@ -36,7 +36,7 @@ namespace Tachyon {
 				 * This is the input data for the GPU raytracer algorithm.
 				 * See raytracer compute shader for more details.
 				 */
-				GLuint mRaytracingSSBO;
+				std::array<GLuint, 2> mRaytracingSSBO;
 
 				/**
 				 * This is the output texture of the raytraing.
