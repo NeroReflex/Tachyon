@@ -1,4 +1,3 @@
-# The SeaDragon resources library
 file(GLOB_RECURSE TACHYON_SOURCES *.cpp)
 add_executable(Tachyon ${TACHYON_SOURCES})
 
