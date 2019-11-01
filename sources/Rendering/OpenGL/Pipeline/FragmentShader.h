@@ -14,9 +14,9 @@ namespace Tachyon {
 					FragmentShader& operator=(const FragmentShader&) = delete;
 					~FragmentShader() final = default;
 
-					FragmentShader(const char* src, size_t srcSize) noexcept;
+					FragmentShader(SourceType srcType, const char* src, size_t srcSize) noexcept;
 
-					FragmentShader(const std::string& src) noexcept;
+					FragmentShader(SourceType srcType, const std::string& src) noexcept;
 				};
 			}
 		}

@@ -18,7 +18,7 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	mRaytracer(new Pipeline::Program(
         std::initializer_list<std::shared_ptr<const Shader>>{
             std::static_pointer_cast<const Shader>(
-                    std::make_shared<const ComputeShader>(
+                    std::make_shared<const ComputeShader>(Shader::SourceType::GLSL,
                             reinterpret_cast<const char *>(SHADER_RAYTRACE_COMP),
 							SHADER_RAYTRACE_COMP_size))
 	    })
@@ -26,11 +26,11 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	mDisplayWriter(new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{
 			std::static_pointer_cast<const Shader>(
-				std::make_shared<const VertexShader>(
+				std::make_shared<const VertexShader>(Shader::SourceType::GLSL,
 					reinterpret_cast<const char*>(SHADER_TONEMAPPING_VERT),
 					SHADER_TONEMAPPING_VERT_size)),
 				std::static_pointer_cast<const Shader>(
-					std::make_shared<const FragmentShader>(
+					std::make_shared<const FragmentShader>(Shader::SourceType::GLSL,
 						reinterpret_cast<const char*>(SHADER_TONEMAPPING_FRAG),
 						SHADER_TONEMAPPING_FRAG_size))
 		})

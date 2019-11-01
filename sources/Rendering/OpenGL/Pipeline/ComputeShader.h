@@ -14,9 +14,9 @@ namespace Tachyon {
 					ComputeShader& operator=(const ComputeShader&) = delete;
 					~ComputeShader() final = default;
 
-					ComputeShader(const char* src, size_t srcSize) noexcept;
+					ComputeShader(SourceType srcType, const char* src, size_t srcSize) noexcept;
 
-					ComputeShader(const std::string& src) noexcept;
+					ComputeShader(SourceType srcType, const std::string& src) noexcept;
 				};
 			}
 		}

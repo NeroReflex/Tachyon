@@ -5,16 +5,29 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::OpenGL;
 using namespace Tachyon::Rendering::OpenGL::Pipeline;
 
-Shader::Shader(GLuint shader, const std::string& src) noexcept
-    : Shader(shader, src.c_str(), src.size()) {}
+Shader::Shader(GLuint shader, SourceType srcType, const std::string& src) noexcept
+    : Shader(shader, srcType, src.c_str(), src.size()) {}
 
-Shader::Shader(GLuint shader, const char* src, size_t srcSize) noexcept
+Shader::Shader(GLuint shader, SourceType srcType, const char* src, size_t srcSize) noexcept
     : shader(shader) {
 	const auto size = static_cast<GLint>(srcSize);
-	glShaderSource(shader, 1, &src, &size);
 
-	// Compile the vertex shader
-	glCompileShader(shader);
+	if (srcType == SourceType::GLSL) {
+		// Set the shader source code
+		glShaderSource(shader, 1, &src, &size);
+
+		// Compile the vertex shader
+		glCompileShader(shader);
+	} else if (srcType == SourceType::SPIRV) {
+		// Apply the vertex shader SPIR-V to the shader object.
+		glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, src, size);
+
+		// Specialize the shader
+		std::string vsEntrypoint = "main";
+		glSpecializeShader(shader, (const GLchar*)vsEntrypoint.c_str(), 0, nullptr, nullptr);
+	} else {
+		DBG_ASSERT(false);
+	}
 
 	GLint isCompiled = 0;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);

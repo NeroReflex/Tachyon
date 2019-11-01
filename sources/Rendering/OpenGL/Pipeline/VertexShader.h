@@ -15,9 +15,9 @@ namespace Tachyon {
 					VertexShader& operator=(const VertexShader&) = delete;
 					~VertexShader() final = default;
 
-					VertexShader(const char* src, size_t srcSize) noexcept;
+					VertexShader(SourceType srcType, const char* src, size_t srcSize) noexcept;
 
-					VertexShader(const std::string& src) noexcept;
+					VertexShader(SourceType srcType, const std::string& src) noexcept;
 				};
 			}
 		}
