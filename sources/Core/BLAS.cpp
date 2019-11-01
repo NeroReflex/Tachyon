@@ -23,9 +23,11 @@ AABB BLAS::bvBase() const noexcept
 void BLAS::linearize(Tachyon::Rendering::BLAS* blas) const noexcept {
 	blas->ModelMatrix = getTransform();
 
-	for (size_t i = 0; i < maxNumberOfTreeElements; ++i) {
+	size_t maxNumberOfObjectsToSerialize = std::max<size_t>(maxNumberOfTreeElements, maxNumberOfElements);
+
+	for (size_t i = 0; i < maxNumberOfObjectsToSerialize; ++i) {
 		// tree elements are 2*N - 1 .....
-		getNodeIndex(i).linearize(blas->tree[i]);
+		if (i < maxNumberOfTreeElements) getNodeIndex(i).linearize(blas->tree[i]);
 
 		//.... but content is just N so a check is requred
 		if (i < maxNumberOfElements) getElementAtIndex(i).linearize(blas->collection[i]);

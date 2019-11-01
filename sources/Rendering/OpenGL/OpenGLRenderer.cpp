@@ -87,6 +87,9 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 }
 
 void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
+	// Clear the previously rendered scene
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	const auto& scene = getSceneToBeRendered();
 
 	// frame-by-frame reserialization
@@ -143,9 +146,6 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 
 	// Set the View Matrix of the TLAS
 	mRaytracer->setUniform("tlasViewMatrix", scene.getRaytracingAS().getTransform());
-
-	// Clear the previously rendered scene
-	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
