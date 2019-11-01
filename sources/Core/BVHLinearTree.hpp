@@ -103,16 +103,6 @@ namespace Tachyon {
 					node.right = tree.mRight;
 					bvh.linearize(node.aabb);
 				}
-
-				constexpr static size_t linearSizeInVec4() noexcept {
-					return 3;
-				}
-
-				static void linearizeToVec4(const NodeData& src, glm::vec4* destination) noexcept {
-					destination[0] = glm::vec4(src.tree.mLeft, src.tree.mRight, 0, 0);
-					destination[1] = glm::vec4(src.bvh.getPosition(), 1);
-					destination[2] = glm::vec4(src.bvh.getLength(), src.bvh.getDepth(), src.bvh.getWidth(), 0);
-				}
 			};
 
 			const BVHLinearTree<ContentType, N>::NodeData& getNodeIndex(glm::uint32 index) const noexcept;

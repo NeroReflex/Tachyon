@@ -33,27 +33,6 @@ namespace Tachyon {
 
 			glm::float32 getExposure() const noexcept;
 
-			/**
-			 * Returns the number of vec4 needed to linearize the render context.
-			 *
-			 * @return the number of vec4 occupied elements.
-			 */
-			constexpr static size_t linearSizeInVec4() noexcept {
-				return TLAS::linearSizeInVec4();
-			}
-
-			/**
-			 * Linearize the given render context to a buffer of vec4 elements.
-			 *
-			 * @param src the render context to be linearized
-			 * @param destination a buffer of linearSizeInVec4() vec4 elements to be filled
-			 */
-			static void linearizeToVec4(const RenderContext& src, glm::vec4* destination) noexcept {
-				TLAS::linearizeToVec4(src.getRaytracingAS(), destination);
-			}
-
-			void linearize(Tachyon::Rendering::TLAS& tlas) const noexcept;
-
 		private:
 			std::unique_ptr<TLAS> mTLAS;
 

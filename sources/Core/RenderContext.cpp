@@ -40,7 +40,3 @@ void RenderContext::setExposure(const glm::float32& exposure) noexcept {
 glm::float32 RenderContext::getExposure() const noexcept {
 	return mExposure;
 }
-
-void RenderContext::linearize(Tachyon::Rendering::TLAS& tlas) const noexcept {
-	mTLAS->linearize(tlas);
-}
