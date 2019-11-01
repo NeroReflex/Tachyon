@@ -2,9 +2,9 @@
 
 #define COMP_SIZE 32
 
-#define expOfTwoOfMaxGeometryElementsInCollection 4
+#define expOfTwoOfMaxGeometryElementsInCollection 3
 #define expOfTwoOfMaxCollectionElementsInBLAS 5
-#define expOfTwoOfMaxBLASElementsInTLAS 4
+#define expOfTwoOfMaxBLASElementsInTLAS 5
 
 const float PI = 3.14159265359;
 const float infinity = 1. / 0.;
@@ -254,6 +254,9 @@ RayGeometryIntersection intersect(Ray ray, GeometryCollection collection, mat4 t
 }
 
 RayGeometryIntersection intersect(Ray ray, BLAS blas, mat4 transformMatrix, float minDistance, float maxDistance) {
+	// Adjust transformation matrix to consider the BLAS model matrix
+	transformMatrix = transformMatrix * blas.ModelMatrix;
+
 	RayGeometryIntersection bestHit = miss;
 
 	int currentDepth = 0;
@@ -302,6 +305,58 @@ RayGeometryIntersection intersect(Ray ray, BLAS blas, mat4 transformMatrix, floa
 	return bestHit;
 }
 
+RayGeometryIntersection intersect(Ray ray, TLAS tlas, mat4 transformMatrix, float minDistance, float maxDistance) {
+	// Adjust transformation matrix to consider the BLAS model matrix
+	transformMatrix = transformMatrix * tlas.ViewMatrix;
+
+	RayGeometryIntersection bestHit = miss;
+
+	int currentDepth = 0;
+	uint currentPath = 0;
+
+	while ((currentDepth < 32) && (currentDepth >= 0)) {
+		uint currentNodeIndex = 0;
+
+		// This for cycles is used to reach the interesting node
+		for (uint i = 0; i < currentDepth; ++i) {
+			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? tlas.tree[currentNodeIndex].left : tlas.tree[currentNodeIndex].left;
+		}
+
+		if ((!isLeaf(tlas.tree[currentNodeIndex])) && (intersectAABB(ray, tlas.tree[currentNodeIndex].aabb, transformMatrix))) {
+			// Go one level deeper
+			currentDepth += 1;
+		} else {
+			// This is a leaf that should be tested...
+			if ((isLeaf(tlas.tree[currentNodeIndex])) && (intersectAABB(ray, tlas.tree[currentNodeIndex].aabb, transformMatrix))) {
+				RayGeometryIntersection currentHit = intersect(ray, tlas.blas[tlas.tree[currentNodeIndex].left], transformMatrix, minDistance, maxDistance);
+
+				if (currentHit.dist < bestHit.dist) bestHit = currentHit;
+			}
+
+			// in either case: subtree discarded or visited leaf the algorithm should reduce the depth and change the path
+			currentDepth -= 1;
+
+			while (((currentPath & (1 << currentDepth)) == 1) && (currentDepth >= 0)) {
+				//set the bit at currentDepth position to 0
+				currentPath &= ~(1 << currentDepth);
+
+				// and decrease currentDepth
+				currentDepth -= 1;
+			}
+
+			if (currentDepth >= 0) {
+				// set the bit at currentDepth position to 1 (the next visit will choose another path)
+				currentPath |= (1 << currentDepth);
+			} else {
+				// the visited node was the very last one (the right-most) and the iteration should come to an end
+				break;
+			}
+		}
+	}
+
+	return bestHit;
+}
+
 Ray generateCameraRay(float s, float t) {
 	return Ray(vec4(mOrigin, 1), vec4(mLowerLeftCorner + s * mHorizontal + t * mVertical - mOrigin, 0));
 }
@@ -322,24 +377,8 @@ void main() {
 
 	// Generate camera ray
 	Ray cameraRay = generateCameraRay(u, v);
-	
-	// TODO: Remove this, here for debug
-	/*
-	const RayGeometryIntersection testSphereIntersection = intersect(
-		cameraRay,
-		tlas[0].blas[0].collection[0],
-		tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix, //identity matrix
-		0.001,
-		1000.0
-	);
 
-	// white pixel = hit, black pixel = miss
-	if (intersectAABB(cameraRay, tlas[0].blas[0].tree[0].aabb, tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix)) {
-		pixel = vec4(applyShading(testSphereIntersection, shadingAlgorithm), 1.0);
-	}
-	*/
-
-	pixel = vec4(applyShading(intersect(cameraRay, tlas[0].blas[0], tlas[0].ViewMatrix * tlas[0].blas[0].ModelMatrix, 0.001, 1000.0), shadingAlgorithm), 1.0);
+	pixel = vec4(applyShading(intersect(cameraRay, tlas[0], identityTransform, 0.001, 1000.0), shadingAlgorithm), 1.0);
   
 	// output to a specific pixel in the image
 	imageStore(img_output, pixel_coords, pixel);
