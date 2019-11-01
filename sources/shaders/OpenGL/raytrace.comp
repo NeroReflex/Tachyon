@@ -121,13 +121,13 @@ vec4 getInvDirection(Ray ray) {
 AABB transformAABB(AABB starting, mat4 transformMatrix) {
 	vec4 v[8] = {
 		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
+		vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
+		vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
+		vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z, 1),
+		vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
+		vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
+		vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
 	};
 
 	float maxX = 1.0/0.0, maxY = 1.0/0.0, maxZ=1.0/0.0, minX=-1.0/0.0, minY=-1.0/0.0, minZ=-1.0/0.0;
