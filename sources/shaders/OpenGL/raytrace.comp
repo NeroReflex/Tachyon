@@ -118,14 +118,14 @@ vec3 getInvDirection(const Ray ray) {
 
 AABB transformAABB(const AABB starting, const mat4 transformMatrix) {
 	vec4 v[8] = {
-		vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
-		vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
-		vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
-		vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z, 1),
-		vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
-		vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
-		vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
+		transformMatrix * vec4(starting.position.x, starting.position.y, starting.position.z, 1),
+		transformMatrix * vec4(starting.position.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
+		transformMatrix * vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
+		transformMatrix * vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
+		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z, 1),
+		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
+		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
+		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
 	};
 
 	float maxX = minusInfinity, maxY = minusInfinity, maxZ=minusInfinity, minX=infinity, minY=infinity, minZ=infinity;

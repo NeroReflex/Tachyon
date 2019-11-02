@@ -83,7 +83,7 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	});
 	
 	glNamedBufferStorage(mRaytracingSSBO[0], sizeof(Tachyon::Rendering::BLAS) * (1 << expOfTwoOfMaxBLASElementsInTLAS), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
-	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * ((2*(expOfTwoOfMaxBLASElementsInTLAS)) - 1), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * ((2*(1 << expOfTwoOfMaxBLASElementsInTLAS)) - 1), NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 }
 
 void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
@@ -97,7 +97,7 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 	DBG_ASSERT((blasMappedMemory));
 	Tachyon::Rendering::BLAS* blasMapped = reinterpret_cast<Tachyon::Rendering::BLAS*>(blasMappedMemory);
 
-	void* treeMappedMemory = glMapNamedBufferRange(mRaytracingSSBO[1], 0, sizeof(Tachyon::Rendering::NodeData) * ((2 * (expOfTwoOfMaxBLASElementsInTLAS)) - 1), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
+	void* treeMappedMemory = glMapNamedBufferRange(mRaytracingSSBO[1], 0, sizeof(Tachyon::Rendering::NodeData) * ((2 * (1 << expOfTwoOfMaxBLASElementsInTLAS)) - 1), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
 	DBG_ASSERT((treeMappedMemory));
 	Tachyon::Rendering::NodeData* treeMapped = reinterpret_cast<Tachyon::Rendering::NodeData*>(treeMappedMemory);
 
