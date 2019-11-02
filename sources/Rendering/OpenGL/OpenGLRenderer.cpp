@@ -104,7 +104,7 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 
 	void* modelMappedMemory = glMapNamedBufferRange(mRaytracingSSBO[2], 0, sizeof(glm::mat4) * maxNumberOfBLASInTLAS, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
 	DBG_ASSERT((modelMappedMemory));
-	glm::mat4* modelMapped = reinterpret_cast<glm::mat4*>(treeMappedMemory);
+	glm::mat4* modelMapped = reinterpret_cast<glm::mat4*>(modelMappedMemory);
 
 	// Linearize data
 	scene.getRaytracingAS().linearize(blasMapped, modelMapped, treeMapped);

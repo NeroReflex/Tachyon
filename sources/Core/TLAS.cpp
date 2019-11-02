@@ -16,4 +16,3 @@ void TLAS::linearize(Tachyon::Rendering::BLAS* blas, glm::mat4* blasModelMatrix,
 			getElementAtIndex(i).linearize(&blas[i], &(blasModelMatrix[i]));
 	}
 }
-
