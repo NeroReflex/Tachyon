@@ -50,8 +50,6 @@ void window_size_callback(GLFWwindow* window, int width, int height);
 int main(int argc, char** argv) {
 	Tachyon::PPMImage image(480, 360);
 	
-	std::cout << "Size of AS: " << sizeof(Tachyon::Rendering::TLAS) << std::endl;
-
 	const auto sphereTest = Tachyon::Core::GeometryCollection({
 		Tachyon::Core::Geometry::makeSphere(glm::vec3(0, 0, 0), 0.5),
 		Tachyon::Core::Geometry::makeSphere(glm::vec3(0.75, 0, -0.5), 0.25),

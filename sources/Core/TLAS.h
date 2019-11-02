@@ -19,7 +19,7 @@ namespace Tachyon {
 		public:
 			using BVHLinearTree<BLAS, expOfTwoOfMaxBLASElementsInTLAS>::BVHLinearTree;
 
-			void linearize(Tachyon::Rendering::BLAS* blas, Tachyon::Rendering::NodeData* tree) const noexcept;
+			void linearize(Tachyon::Rendering::BLAS* blas, glm::mat4* blasModelMatrix, Tachyon::Rendering::NodeData* tree) const noexcept;
 		};
 	}
 }

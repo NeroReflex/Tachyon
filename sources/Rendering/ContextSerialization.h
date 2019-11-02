@@ -30,18 +30,12 @@ namespace Tachyon {
 		};
 
 		struct BLAS {
-			glm::mat4 ModelMatrix;
-
 			GeometryCollection collection[1 << expOfTwoOfMaxCollectionElementsInBLAS];
 
 			NodeData tree[((1 << expOfTwoOfMaxCollectionElementsInBLAS) * 2) - 1];
 		};
 
-		struct TLAS {
-			glm::mat4 ViewMatrix;
-			NodeData tree[((1 << expOfTwoOfMaxBLASElementsInTLAS) * 2) - 1];
-			BLAS blas[1 << expOfTwoOfMaxBLASElementsInTLAS];
-		};
-
+		constexpr static glm::uint maxNumberOfTreeElementsInTLAS = 2 * (1 << expOfTwoOfMaxBLASElementsInTLAS) - 1;
+		constexpr static glm::uint maxNumberOfBLASInTLAS = 1 << expOfTwoOfMaxBLASElementsInTLAS;
 	}
 }

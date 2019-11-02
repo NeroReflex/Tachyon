@@ -20,8 +20,8 @@ AABB BLAS::bvBase() const noexcept
 	return globalBaseAABB;
 }
 
-void BLAS::linearize(Tachyon::Rendering::BLAS* blas) const noexcept {
-	blas->ModelMatrix = getTransform();
+void BLAS::linearize(Tachyon::Rendering::BLAS* blas, glm::mat4* blasModelMatrix) const noexcept {
+	*blasModelMatrix = getTransform();
 
 	size_t maxNumberOfObjectsToSerialize = std::max<size_t>(maxNumberOfTreeElements, maxNumberOfElements);
 

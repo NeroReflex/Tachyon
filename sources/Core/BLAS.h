@@ -19,7 +19,7 @@ namespace Tachyon {
 
 			AABB bvBase() const noexcept;
 
-			void linearize(Tachyon::Rendering::BLAS* blas) const noexcept;
+			void linearize(Tachyon::Rendering::BLAS* blas, glm::mat4* blasModelMatrix) const noexcept;
         };
     }
 }

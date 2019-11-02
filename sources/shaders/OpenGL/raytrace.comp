@@ -2,7 +2,6 @@
 
 #define expOfTwoOfMaxGeometryElementsInCollection 3
 #define expOfTwoOfMaxCollectionElementsInBLAS 5
-#define expOfTwoOfMaxBLASElementsInTLAS 5
 
 const float PI = 3.14159265359;
 const float infinity = (1.0) / 0.0;
@@ -35,19 +34,21 @@ struct NodeData {
 };
 
 struct BLAS {
-	mat4 ModelMatrix;
-
 	GeometryCollection collection[1 << expOfTwoOfMaxCollectionElementsInBLAS];
 	
 	NodeData tree[((1 << expOfTwoOfMaxCollectionElementsInBLAS) * 2) - 1];
 };
 
 layout(std430, binding = 0) buffer sceneBLAS {
-	BLAS tlasBLAS[];
+	BLAS tlasBLAS[]; // This is the BLAS collection
 };
 
 layout(std430, binding = 1) buffer sceneTree {
-	NodeData tlasTree[];
+	NodeData tlasTree[]; // This is the TLAS tree that reference the whole BLAS collection
+};
+
+layout(std430, binding = 2) buffer sceneModelMatrix {
+	mat4 blasModelMatrix[]; // This is the ModelMatrix collection for BLAS, given an index i ModelMatrix[i] is the model matrix of the object represented by tlasBLAS[i]
 };
 
 layout(rgba32f, binding = 0) uniform image2D img_output; // Raytracing output texture
@@ -247,9 +248,9 @@ RayGeometryIntersection intersectCollection(const Ray ray, const GeometryCollect
 	return bestHit;
 }
 
-RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const mat4 upperTransformMatrix, const float minDistance, const float maxDistance) {
+RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const mat4 ViewMatrix, const float minDistance, const float maxDistance) {
 	// Adjust transformation matrix to consider the BLAS model matrix
-	mat4 transformMatrix = upperTransformMatrix * tlasBLAS[blasIndex].ModelMatrix;
+	mat4 transformMatrix = ViewMatrix * blasModelMatrix[blasIndex];
 
 	RayGeometryIntersection bestHit = miss;
 
