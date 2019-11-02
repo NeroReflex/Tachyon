@@ -85,6 +85,9 @@ OpenGLRenderer::OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 wid
 	glNamedBufferStorage(mRaytracingSSBO[0], sizeof(Tachyon::Rendering::BLAS) * maxNumberOfBLASInTLAS, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * maxNumberOfTreeElementsInTLAS, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 	glNamedBufferStorage(mRaytracingSSBO[2], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+
+	// Bind the final VAO
+	glBindVertexArray(mQuadVAO);
 }
 
 void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept {
@@ -169,7 +172,7 @@ void OpenGLRenderer::render(const Renderer::ShaderAlgorithm& shadingAlgo) noexce
 	glBindTextureUnit(0, mRaytracerOutputTexture);
 
 	// Bind the final VAO
-	glBindVertexArray(mQuadVAO);
+	//glBindVertexArray(mQuadVAO);
 
 	// Draw the generated image while gamma-correcting it
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);

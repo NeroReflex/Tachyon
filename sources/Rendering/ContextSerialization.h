@@ -7,6 +7,9 @@
 namespace Tachyon {
 	namespace Rendering {
 
+		constexpr static glm::uint maxNumberOfTreeElementsInTLAS = 2 * (1 << expOfTwoOfMaxBLASElementsInTLAS) - 1;
+		constexpr static glm::uint maxNumberOfBLASInTLAS = 1 << expOfTwoOfMaxBLASElementsInTLAS;
+
 		struct Geometry {
 			glm::vec4 signature;
 			glm::vec4 vertex1_or_sphere_center;
@@ -35,7 +38,6 @@ namespace Tachyon {
 			NodeData tree[((1 << expOfTwoOfMaxCollectionElementsInBLAS) * 2) - 1];
 		};
 
-		constexpr static glm::uint maxNumberOfTreeElementsInTLAS = 2 * (1 << expOfTwoOfMaxBLASElementsInTLAS) - 1;
-		constexpr static glm::uint maxNumberOfBLASInTLAS = 1 << expOfTwoOfMaxBLASElementsInTLAS;
+		
 	}
 }
