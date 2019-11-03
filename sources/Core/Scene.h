@@ -19,7 +19,6 @@ namespace Tachyon {
 			constexpr static glm::uint maxNumberOfBLASInTLAS = 1 << expOfTwoOfMaxBLASElementsInTLAS;
 			constexpr static glm::uint maxTLASTreeDepth = 32; // As the TLAS-tree traverse algorithm is iterative and of contant size there is a maximum supported depth.
 
-		private:
 			/**
 			 * This is the geometry as it is represented on the GPU
 			 * or whatever device is used to perform the raytracing algorithm.
@@ -127,10 +126,11 @@ namespace Tachyon {
 
 			template <glm::uint N>
 			struct AccelerationStructure {
-				NodeData tree[(1 << (N+1))-1];
+				NodeData tree[(1 << (N + 1)) - 1];
 
 				inline AccelerationStructure() noexcept {}
 
+				inline bool isRoot(glm::uint index) const noexcept { return index == 0; }
 			};
 
 			typedef AccelerationStructure<expOfTwoOfMaxCollectionElementsInBLAS> BLAS;

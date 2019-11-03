@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Rendering/Renderer.h"
+#include "Rendering/RenderingPipeline.h"
 
 #include "Rendering/OpenGL/Pipeline/Program.h"
 
@@ -9,7 +9,9 @@ namespace Tachyon {
 		namespace OpenGL {
 
 			class OpenGLRenderer :
-				virtual public Rendering::Renderer {
+				virtual public Rendering::RenderingPipeline {
+
+				static const std::array<const char*, 2> shadingAlgoEntry;
 
 			public:
 				OpenGLRenderer(const OpenGLRenderer&) = delete;
@@ -20,15 +22,17 @@ namespace Tachyon {
 
 				~OpenGLRenderer() override;
 
-				OpenGLRenderer(const Core::RenderContext& scene, glm::uint32 width, glm::uint32 height) noexcept;
+				OpenGLRenderer(ShadingAlgorithm shadingAlgo = ShadingAlgorithm::DistanceShader) noexcept;
 				
-				void render(const Renderer::ShaderAlgorithm& shadingAlgo) noexcept final;
-
 			protected:
-				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept override;
+				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
+
+				void onRender() noexcept final;
 
 			private:
-				std::unique_ptr<Pipeline::Program> mRaytracer;
+				std::unique_ptr<Pipeline::Program> mRaytracerInit;
+
+				std::unique_ptr<Pipeline::Program> mRaytracerRender;
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
 
@@ -36,7 +40,7 @@ namespace Tachyon {
 				 * This is the input data for the GPU raytracer algorithm.
 				 * See raytracer compute shader for more details.
 				 */
-				std::array<GLuint, 3> mRaytracingSSBO;
+				std::array<GLuint, 4> mRaytracingSSBO;
 
 				/**
 				 * This is the output texture of the raytraing.

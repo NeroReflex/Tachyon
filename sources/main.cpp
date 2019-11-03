@@ -1,4 +1,3 @@
-#include "Rendering/CPU/CPURenderer.h"
 #include "Rendering/OpenGL/OpenGLRenderer.h"
 
 #include "PPMImage.h"
@@ -16,8 +15,6 @@ MessageCallback(GLenum source,
 		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
 		type, severity, message);
 }
-
-std::unordered_map<uintptr_t, Tachyon::Rendering::Renderer*> windowToRenderer;
 
 std::string get_opengl_compute_info() {
 	std::ostringstream stringstream;
@@ -44,8 +41,6 @@ std::string get_opengl_compute_info() {
 
 	return stringstream.str();
 }
-
-void window_size_callback(GLFWwindow* window, int width, int height);
 
 int main(int argc, char** argv) {
 	Tachyon::PPMImage image(480, 360);
@@ -121,13 +116,7 @@ int main(int argc, char** argv) {
 	glfwGetWindowSize(window, &initialWidth, &initialHeight);
 
 	// Now it is safe to create the renderer
-	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLRenderer> raytracer(new Tachyon::Rendering::OpenGL::OpenGLRenderer(ctx, initialWidth, initialHeight));
-
-	// Register the current windows <=> renderer association
-	windowToRenderer.emplace(std::make_pair<uintptr_t, Tachyon::Rendering::Renderer*>((uintptr_t)window, raytracer.get()));
-
-	// Register the window resize callback
-	glfwSetWindowSizeCallback(window, window_size_callback);
+	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLRenderer> raytracer(new Tachyon::Rendering::OpenGL::OpenGLRenderer());
 
 	std::string rendererId =
 		std::string("OpenGL v") +
@@ -150,14 +139,16 @@ int main(int argc, char** argv) {
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		raytracer->render(Tachyon::Rendering::Renderer::ShaderAlgorithm::DistanceShader);
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+		raytracer->render(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
 		glfwSwapBuffers(window);
 	}
 
-	// Destroy the renderer and remove each reference to it
+	// Destroy the renderer
 	raytracer.reset();
-	windowToRenderer.clear();
 
 	// Destroy the renderer surface
 	glfwDestroyWindow(window);
@@ -174,16 +165,4 @@ int main(int argc, char** argv) {
 	*/
 
     return EXIT_SUCCESS;
-}
-
-
-void window_size_callback(GLFWwindow* window, int width, int height)
-{
-	const auto rendererCit = windowToRenderer.find((uintptr_t)window);
-
-	DBG_ASSERT( (rendererCit != windowToRenderer.cend()) );
-
-	if (rendererCit != windowToRenderer.cend())
-		rendererCit->second->resize(width, height);
-	
 }
