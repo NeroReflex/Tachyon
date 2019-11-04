@@ -355,13 +355,6 @@ struct NodeData {
 	 *     - The union of left and right AABBs
 	 */
 	AABB aabb;
-
-	/**
-	 * The index of the referenced content.
-	 *
-	 * A node can reference content (and therefore be a leaf) only if its position is on the last level.
-	 */
-	uint contentIndex;
 };
 
 /**
@@ -373,8 +366,6 @@ struct GeometryCollection {
 
 struct BLAS {
 	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_numberOfLeafsOnBLAS )];
-
-	GeometryCollection geometryCollection[expOfTwo_numberOfLeafsOnBLAS];
 
 	mat4 ModelMatrix;
 };
@@ -403,16 +394,6 @@ bool isTLASNodeLeaf_ByIndex(uint leafIndex) {
 	return leafIndex >= (1 << expOfTwo_maxModels) - 1;
 }
 
-/**
- * Check if the TLAS node at the given index is a leaf.
- *
- * @param index the node index on the linearized BVH-tree
- * @return TRUE iif the node is a leaf
- */
-bool isTLASNodeLeaf_ByIndex(uint leafIndex) {
-	return leafIndex >= (1 << expOfTwo_numberOfLeafsOnTLAS) - 1;
-}
-
 /*=======================================================================================================
   ===                                  Core SSBOs & Related Data                                      ===
   =======================================================================================================*/
@@ -426,7 +407,7 @@ layout(std430, binding = 1) buffer sceneBLAS {
 };
 
 layout(std430, binding = 2) buffer sceneTLAS {
-	TLAS tlas[]; // This is the BLAS collection
+	TLAS tlas; // This is the BLAS collection
 };
 
 bool isEmptyBLAS_ByIndex(uint index) {
@@ -475,8 +456,8 @@ uint morton3D(const vec3 point)
 AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(uint baseIndexOnGeometrySSBO) {
 	AABB bounding = emptyAABB;
 
-	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection)); ++i) {
-		bounding = (bounding, geometry[baseIndexOnGeometrySSBO + i]);
+	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
+		bounding = expandAABBWithGeometry(bounding, geometry[baseIndexOnGeometrySSBO + i]);
 	}
 
 	return bounding;
@@ -532,7 +513,7 @@ void mainInsert() {
 	// At the very end, flag the BLAS as used/occupied
 	tlasBLAS[IndexOfEmptyBLAS].ModelMatrix = identityTransform;
 
-	const uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + IndexOfEmptyBLAS;
+	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + IndexOfEmptyBLAS;
 
 	rootUpdated = false;
 	while (!rootUpdated) {
