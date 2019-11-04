@@ -1,4 +1,4 @@
-#include "Rendering/OpenGL/OpenGLRenderer.h"
+#include "Rendering/OpenGL/OpenGLPipeline.h"
 
 #include "Rendering/OpenGL/Pipeline/VertexShader.h"
 #include "Rendering/OpenGL/Pipeline/FragmentShader.h"
@@ -11,33 +11,29 @@ using namespace Tachyon::Rendering::OpenGL::Pipeline;
 
 #include "shaders/tonemapping.vert.spv.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
 #include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
-#include "shaders/raytrace.comp.spv.h" // SHADER_RAYTRACE_COMP, SHADER_RAYTRACE_COMP_size
+#include "shaders/raytrace_insert.comp.spv.h" // raytrace_insert_compOGL, raytrace_insert_compOGL_size
 
-const std::array<const char*, 2> OpenGLRenderer::shadingAlgoEntry = {
+const std::array<const char*, 2> OpenGLPipeline::shadingAlgoEntry = {
 	"renderHitOrMiss",
 	"renderDistanceShading"
 };
 
-OpenGLRenderer::OpenGLRenderer(ShadingAlgorithm shadingAlgo) noexcept
-    : RenderingPipeline(shadingAlgo),
-	mRaytracerRender(new Pipeline::Program(
-        std::initializer_list<std::shared_ptr<const Shader>>{
-            std::static_pointer_cast<const Shader>(
-                    std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV,
-						reinterpret_cast<const char *>(raytrace_compOGL),
-						raytrace_compOGL_size, shadingAlgoEntry[static_cast<int>(shadingAlgo)]))
-	    })
+OpenGLPipeline::OpenGLPipeline() noexcept
+    : RenderingPipeline(),
+	mRaytracerInsert(new Pipeline::Program(
+		std::initializer_list<std::shared_ptr<const Shader>>{
+				std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_insert_compOGL), raytrace_insert_compOGL_size)
+		})
 	),
+	/*mRaytracerRender(new Pipeline::Program(
+        std::initializer_list<std::shared_ptr<const Shader>>{
+			std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char *>(raytrace_compOGL), raytrace_compOGL_size, shadingAlgoEntry[static_cast<int>(shadingAlgo)])
+		})
+	),*/
 	mDisplayWriter(new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{
-			std::static_pointer_cast<const Shader>(
-				std::make_shared<const VertexShader>(Shader::SourceType::SPIRV,
-					reinterpret_cast<const char*>(tonemapping_vertOGL),
-					tonemapping_vertOGL_size)),
-				std::static_pointer_cast<const Shader>(
-					std::make_shared<const FragmentShader>(Shader::SourceType::SPIRV,
-						reinterpret_cast<const char*>(tonemapping_fragOGL),
-						tonemapping_fragOGL_size))
+			std::make_shared<const VertexShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(tonemapping_vertOGL), tonemapping_vertOGL_size),
+			std::make_shared<const FragmentShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(tonemapping_fragOGL), tonemapping_fragOGL_size)
 		})
     ),
 	mRaytracerOutputTexture(0) {
@@ -88,19 +84,19 @@ OpenGLRenderer::OpenGLRenderer(ShadingAlgorithm shadingAlgo) noexcept
 	});
 	
 	// This is the collection of BLAS
-	glNamedBufferStorage(mRaytracingSSBO[0], sizeof(Tachyon::Rendering::BLAS) * maxNumberOfBLASInTLAS, NULL, 0);
+	//glNamedBufferStorage(mRaytracingSSBO[0], sizeof(Tachyon::Rendering::BLAS) * maxNumberOfBLASInTLAS, NULL, 0);
 	// This is the TLAS tree
-	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * maxNumberOfTreeElementsInTLAS, NULL, 0);
+	//glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * maxNumberOfTreeElementsInTLAS, NULL, 0);
 	// This is the collection of Model Matrices corresponding to each BLAS
-	glNamedBufferStorage(mRaytracingSSBO[2], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, 0);
+	//glNamedBufferStorage(mRaytracingSSBO[2], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, 0);
 	// This is the global collection of geometry
-	glNamedBufferStorage(mRaytracingSSBO[3], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, 0);
+	//glNamedBufferStorage(mRaytracingSSBO[3], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, 0);
 
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
 	glBindVertexArray(mQuadVAO);
 }
 
-void OpenGLRenderer::onRender() noexcept {
+void OpenGLPipeline::onRender() noexcept {
 	// Clear the previously rendered scene
 	glClear(GL_COLOR_BUFFER_BIT);
 	/*
@@ -138,26 +134,6 @@ void OpenGLRenderer::onRender() noexcept {
 	// Set rendering information
 	mRaytracerRender->setUniform("width", getWidth());
 	mRaytracerRender->setUniform("height", getHeight());
-	
-	// Set Camera parameters
-	mRaytracerRender->setUniform("mOrigin", scene.getCamera().getCameraPosition());
-	mRaytracerRender->setUniform("mLowerLeftCorner", scene.getCamera().getLowerLeftCorner());
-	mRaytracerRender->setUniform("mHorizontal", scene.getCamera().getHorizontal());
-	mRaytracerRender->setUniform("mVertical", scene.getCamera().getVertical());
-
-	// Set the View Matrix of the TLAS
-	mRaytracerRender->setUniform("tlasViewMatrix", scene.getRaytracingAS().getTransform());
-
-	/*
-	// Set Camera parameters
-	mRaytracerRender->setUniform("mOrigin", scene.getCamera().getCameraPosition());
-	mRaytracerRender->setUniform("mLowerLeftCorner", scene.getCamera().getLowerLeftCorner());
-	mRaytracerRender->setUniform("mHorizontal", scene.getCamera().getHorizontal());
-	mRaytracerRender->setUniform("mVertical", scene.getCamera().getVertical());
-
-	// Set the View Matrix of the TLAS
-	mRaytracerRender->setUniform("tlasViewMatrix", scene.getRaytracingAS().getTransform());
-	*/
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
@@ -170,8 +146,8 @@ void OpenGLRenderer::onRender() noexcept {
 	Program::use(*mDisplayWriter);
 
 	// Set parameters to obtain hdr
-	mDisplayWriter->setUniform("gamma", scene.getGammaCorrection());
-	mDisplayWriter->setUniform("exposure", scene.getExposure());
+	//mDisplayWriter->setUniform("gamma", scene.getGammaCorrection());
+	//mDisplayWriter->setUniform("exposure", scene.getExposure());
 
 	// Bind the texture generated by raytracing
 	glBindTextureUnit(0, mRaytracerOutputTexture);
@@ -180,7 +156,7 @@ void OpenGLRenderer::onRender() noexcept {
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
-OpenGLRenderer::~OpenGLRenderer() {
+OpenGLPipeline::~OpenGLPipeline() {
 	// Avoid removing a VAO while it is currently bound
 	glBindVertexArray(0);
 
@@ -191,7 +167,7 @@ OpenGLRenderer::~OpenGLRenderer() {
 	glDeleteBuffers(1, &mQuadVBO);
 }
 
-void OpenGLRenderer::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
+void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
 	glViewport(0, 0, getWidth(), getHeight());
 
 	// Remove the previous texture to avoid GPU memory leak(s)

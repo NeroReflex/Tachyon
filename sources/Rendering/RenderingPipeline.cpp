@@ -3,7 +3,7 @@
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 
-RenderingPipeline::RenderingPipeline(RenderingPipeline::ShadingAlgorithm shadingAlgo) noexcept
+RenderingPipeline::RenderingPipeline() noexcept
 	: mWindowWidth(0), mWindowHeight(0) {}
 
 void RenderingPipeline::resize(glm::uint32 width, glm::uint32 height) noexcept {

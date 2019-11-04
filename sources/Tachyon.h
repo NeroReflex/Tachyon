@@ -56,6 +56,3 @@ constexpr static glm::uint32 expOfTwoOfMaxBLASElementsInTLAS = 5;
 constexpr size_t roundupToMultipleOfVec4(size_t in) {
 	return (in / sizeof(glm::vec4)) + sizeof(glm::vec4);
 }
-
-// Serialization structures for GPU
-#include "Rendering/ContextSerialization.h"

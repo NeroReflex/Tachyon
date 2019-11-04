@@ -1,18 +1,13 @@
 #pragma once
 
-#include "Core/RenderContext.h"
+#include "Tachyon.h"
 
 namespace Tachyon {
 	namespace Rendering {
 
 		class RenderingPipeline {
 		public:
-			enum ShadingAlgorithm {
-				HitOrMiss = 0, // a simple cameraRay-geometry intersection algorithm
-				DistanceShader = 1, // shade the geometry with the distance to the camera
-			};
-			
-			RenderingPipeline(ShadingAlgorithm shadingAlgo = ShadingAlgorithm::DistanceShader) noexcept;
+			RenderingPipeline() noexcept;
 
 			RenderingPipeline(const RenderingPipeline&) = delete;
 

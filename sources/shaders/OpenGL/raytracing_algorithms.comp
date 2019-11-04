@@ -1,6 +1,3 @@
-#version 450 core
-
-layout(local_size_x = 48, local_size_y = 32, local_size_z = 1) in;
 
 #define expOfTwo_maxModels 10
 #define expOfTwo_maxGeometryOnCollection 3
@@ -373,7 +370,7 @@ struct TLAS {
  * @param index the node index on the linearized BVH-tree
  * @return TRUE iif the node is a leaf
  */
-bool isBLASNodeLeaf_ByIndex(const uint leafIndex) {
+bool isBLASNodeLeaf_ByIndex(uint leafIndex) {
 	return leafIndex > (1 << expOfTwo_numberOfLeafsOnBLAS) - 1;
 }
 
@@ -383,161 +380,6 @@ bool isBLASNodeLeaf_ByIndex(const uint leafIndex) {
  * @param index the node index on the linearized BVH-tree
  * @return TRUE iif the node is a leaf
  */
-bool isTLASNodeLeaf_ByIndex(const uint leafIndex) {
+bool isTLASNodeLeaf_ByIndex(uint leafIndex) {
 	return leafIndex >= (1 << expOfTwo_maxModels) - 1;
 }
-
-
-/*=======================================================================================================
-  ===                                  Core SSBOs & Related Data                                      ===
-  =======================================================================================================*/
-
-layout(std430, binding = 0) buffer sceneGeometry {
-	Geometry geometry[]; // This is the BLAS collection
-};
-
-layout(std430, binding = 1) buffer sceneBLAS {
-	BLAS tlasBLAS[]; // This is the BLAS collection
-};
-
-layout(std430, binding = 2) buffer sceneTLAS {
-	TLAS tlas; // This is the BLAS collection
-};
-
-bool isEmptyBLAS_ByIndex(uint index) {
-	return tlasBLAS[index].ModelMatrix == emptyTransform;
-}
-
-#if defined(BVH_INSERT)
-/*=======================================================================================================
-  ===                                  BVH-Tree Construction                                          ===
-  =======================================================================================================*/
-
-struct InputGeometry {
-	vec4 centroid_radius;
-};
-
-Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
-	Geometry outGeometry = Geometry(vec4(inGeometry.centroid_radius.xyz, 1), inGeometry.centroid_radius.w);
-
-	return outGeometry;
-}
-
-layout(std430, binding = 3) buffer insertionGeometry {
-	uint targetBLAS; // The index of the BLAS to be updated (rewritted if occupied)
-	uint numberOfGeometryToInsert; // Number of geometric primitives to be inserted
-	InputGeometry geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
-};
-
-layout(std430, binding = 4) buffer insertionGeometryMorton {
-	uint mortonCode[]; // This is the BLAS collection
-};
-
-// Expands a 10-bit integer into 30 bits
-// by inserting 2 zeros after each bit.
-uint expandBits(uint v)
-{
-    v = (v * 0x00010001u) & 0xFF0000FFu;
-    v = (v * 0x00000101u) & 0x0F00F00Fu;
-    v = (v * 0x00000011u) & 0xC30C30C3u;
-    v = (v * 0x00000005u) & 0x49249249u;
-    return v;
-}
-
-/**
- * Calculates a 30-bit Morton code for the given 3D point located within the unit cube [0,1].
- */
-uint morton3D(const vec3 point)
-{
-    const float x = min(max(point.x * 1024.0f, 0.0f), 1023.0f);
-    const float y = min(max(point.y * 1024.0f, 0.0f), 1023.0f);
-    const float z = min(max(point.z * 1024.0f, 0.0f), 1023.0f);
-    const uint xx = expandBits(uint(point.x));
-    const uint yy = expandBits(uint(point.y));
-    const uint zz = expandBits(uint(point.z));
-    return xx * 4 + yy * 2 + zz;
-}
-
-AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(uint baseIndexOnGeometrySSBO) {
-	AABB bounding = emptyAABB;
-
-	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
-		bounding = expandAABBWithGeometry(bounding, geometry[baseIndexOnGeometrySSBO + i]);
-	}
-
-	return bounding;
-}
-
-/**
- * This is the entry point for the geometry insertion program.
- * The basic idea is that we want to insert the geometry on the final position
- * (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x
- * and then build the tree back to the root.
- *                                                                    ! not necessary, but not an error
- * Usage: the compute shader MUST be dispatched as glDispatchCompute((max)numOfGeometry / numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1),
- *        also the geometry must be aligned with mortoncodes such as mortonCode[i] is the morton code of the geometry at geometry[i]
- */
-void main() {
-	const uint indexOfGeometryToInsert = (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x;
-
-	// No need to execute. Stop.
-	if (indexOfGeometryToInsert >= numberOfGeometryToInsert) return;
-
-	// So... now I calculate the BASE index on the geometry SSBO...
-	const uint baseIndexOnGeometrySSBO = targetBLAS * ((1 << expOfTwo_maxGeometryOnCollection) * (1 << expOfTwo_maxCollectionsForModel));
-
-	// ... Now the final index on the SSBO!
-	const uint indexOnGeometrySSBO = baseIndexOnGeometrySSBO + indexOfGeometryToInsert;
-
-	// Copy the geometry on the final destination.
-	geometry[indexOnGeometrySSBO] = transformToGPURepresentation(geometryToInsert[indexOfGeometryToInsert]);
-
-	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
-	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
-
-	bool rootUpdated = false;
-	while (!rootUpdated) {
-		tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = (isBLASNodeLeaf_ByIndex(indexOfNodeInBLASToUpdate))
-			? generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(baseIndexOnGeometrySSBO)
-			: joinAABBs(tlasBLAS[targetBLAS].tree[leftNode(indexOfNodeInBLASToUpdate)].aabb, tlasBLAS[targetBLAS].tree[rightNode(indexOfNodeInBLASToUpdate)].aabb);
-
-		rootUpdated = isRootNode(indexOfNodeInBLASToUpdate);
-
-		// Get to the parent for the next iteration
-		indexOfNodeInBLASToUpdate = parentNode(indexOfNodeInBLASToUpdate);
-	}
-
-	// At the very end, flag the BLAS as used/occupied
-	tlasBLAS[targetBLAS].ModelMatrix = identityTransform;
-
-	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + targetBLAS;
-
-	rootUpdated = false;
-	while (!rootUpdated) {
-		tlas.tree[indexOfNodeInTLAS].aabb = (isTLASNodeLeaf_ByIndex(indexOfNodeInBLASToUpdate))
-			? tlasBLAS[targetBLAS].tree[0].aabb
-			: joinAABBs(
-				tlas.tree[leftNode(indexOfNodeInTLAS)].aabb,
-				tlas.tree[rightNode(indexOfNodeInTLAS)].aabb);
-
-		rootUpdated = isRootNode(indexOfNodeInTLAS);
-		
-		// Get to the parent for the next iteration
-		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
-	}
-}
-
-#elif defined(TLAS_FLUSH)
-
-/**
- * This is the entry point for the TLAS nuke program.
- * The basic idea is that we want to empty all geometry and then (re-)build the tree back to the root.
- *
- * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxNumOfGeometry / numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1).
- */
-void main() {
-	const uint indexOfGeometryToClear = (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x;
-
-}
-
-#endif

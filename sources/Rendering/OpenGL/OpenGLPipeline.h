@@ -8,21 +8,21 @@ namespace Tachyon {
 	namespace Rendering {
 		namespace OpenGL {
 
-			class OpenGLRenderer :
+			class OpenGLPipeline :
 				virtual public Rendering::RenderingPipeline {
 
 				static const std::array<const char*, 2> shadingAlgoEntry;
 
 			public:
-				OpenGLRenderer(const OpenGLRenderer&) = delete;
+				OpenGLPipeline(const OpenGLPipeline&) = delete;
 
-				OpenGLRenderer(OpenGLRenderer&&) = delete;
+				OpenGLPipeline(OpenGLPipeline&&) = delete;
 
-				OpenGLRenderer& operator=(const OpenGLRenderer&) = delete;
+				OpenGLPipeline& operator=(const OpenGLPipeline&) = delete;
 
-				~OpenGLRenderer() override;
+				~OpenGLPipeline() override;
 
-				OpenGLRenderer(ShadingAlgorithm shadingAlgo = ShadingAlgorithm::DistanceShader) noexcept;
+				OpenGLPipeline() noexcept;
 				
 			protected:
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
@@ -30,7 +30,7 @@ namespace Tachyon {
 				void onRender() noexcept final;
 
 			private:
-				std::unique_ptr<Pipeline::Program> mRaytracerInit;
+				std::unique_ptr<Pipeline::Program> mRaytracerInsert;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerRender;
 

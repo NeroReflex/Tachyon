@@ -24,8 +24,11 @@ add_custom_target(
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}/shaders
 
-	COMMAND glslangValidator -G -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
-	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace.comp.spv.h" "raytrace_compOGL"
+	COMMAND glslangValidator -G -DTLAS_FLUSH -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace_flush.comp.spv.h" "raytrace_flush_compOGL"
+
+	COMMAND glslangValidator -G -DBVH_INSERT -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace_insert.comp.spv.h" "raytrace_insert_compOGL"
 
 	COMMAND glslangValidator -G -o "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.vert.spv" "${OPENGL_SHADERS_SOURCE_DIR}/tonemapping.vert"
 	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.vert.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/tonemapping.vert.spv.h" "tonemapping_vertOGL"
