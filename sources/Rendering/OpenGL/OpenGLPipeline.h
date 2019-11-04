@@ -30,6 +30,9 @@ namespace Tachyon {
 				void onRender() noexcept final;
 
 			private:
+				void flush() noexcept;
+
+			private:
 				std::unique_ptr<Pipeline::Program> mRaytracerInsert;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerRender;

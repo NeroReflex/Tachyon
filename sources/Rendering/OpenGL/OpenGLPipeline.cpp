@@ -140,7 +140,6 @@ void OpenGLPipeline::onRender() noexcept {
 
 	// make sure writing to image has finished before read
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	// Switch to the tone mapper program
 	Program::use(*mDisplayWriter);
@@ -171,7 +170,8 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 	glViewport(0, 0, getWidth(), getHeight());
 
 	// Remove the previous texture to avoid GPU memory leak(s)
-	glDeleteTextures(1, &mRaytracerOutputTexture);
+	if (mRaytracerOutputTexture)
+		glDeleteTextures(1, &mRaytracerOutputTexture);
 
 	// Create a new 2D texture used to store the raw raytrace result (without gamma correction)
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
@@ -182,4 +182,12 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+}
+
+void OpenGLPipeline::flush() noexcept {
+	// Dispatch the compute work!
+	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
+
+	// synchronize with the GPU
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
