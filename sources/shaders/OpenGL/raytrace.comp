@@ -473,15 +473,14 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(uint baseIndexOnGe
  * The basic idea is that we want to insert the geometry on the final position
  * (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x
  * and then build the tree back to the root.
- *                                                                    ! not necessary, but not an error
- * Usage: the compute shader MUST be dispatched as glDispatchCompute((max)numOfGeometry / numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1),
+ * 
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxNumOfGeometry / numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1),
  *        also the geometry must be aligned with mortoncodes such as mortonCode[i] is the morton code of the geometry at geometry[i]
  */
 void main() {
-	const uint indexOfGeometryToInsert = (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x;
+	if ((gl_GlobalInvocationID.y >= (1 << expOfTwo_maxCollectionsForModel)) || (gl_GlobalInvocationID.x >= (1 << expOfTwo_maxGeometryOnCollection))) return;
 
-	// No need to execute. Stop.
-	if (indexOfGeometryToInsert >= numberOfGeometryToInsert) return;
+	const uint indexOfGeometryToInsert = (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x;
 
 	// So... now I calculate the BASE index on the geometry SSBO...
 	const uint baseIndexOnGeometrySSBO = targetBLAS * ((1 << expOfTwo_maxGeometryOnCollection) * (1 << expOfTwo_maxCollectionsForModel));
@@ -490,7 +489,9 @@ void main() {
 	const uint indexOnGeometrySSBO = baseIndexOnGeometrySSBO + indexOfGeometryToInsert;
 
 	// Copy the geometry on the final destination.
-	geometry[indexOnGeometrySSBO] = transformToGPURepresentation(geometryToInsert[indexOfGeometryToInsert]);
+	geometry[indexOnGeometrySSBO] = (indexOfGeometryToInsert >= numberOfGeometryToInsert)
+		? emptyGeometry
+		: transformToGPURepresentation(geometryToInsert[indexOfGeometryToInsert]);
 
 	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
 	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;

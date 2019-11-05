@@ -11,8 +11,6 @@ namespace Tachyon {
 			class OpenGLPipeline :
 				virtual public Rendering::RenderingPipeline {
 
-				static const std::array<const char*, 2> shadingAlgoEntry;
-
 			public:
 				OpenGLPipeline(const OpenGLPipeline&) = delete;
 
@@ -33,6 +31,8 @@ namespace Tachyon {
 				void flush() noexcept;
 
 			private:
+				std::unique_ptr<Pipeline::Program> mRaytracerFlush;
+
 				std::unique_ptr<Pipeline::Program> mRaytracerInsert;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerRender;

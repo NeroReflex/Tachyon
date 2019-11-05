@@ -12,17 +12,19 @@ using namespace Tachyon::Rendering::OpenGL::Pipeline;
 #include "shaders/tonemapping.vert.spv.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
 #include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
 #include "shaders/raytrace_insert.comp.spv.h" // raytrace_insert_compOGL, raytrace_insert_compOGL_size
-
-const std::array<const char*, 2> OpenGLPipeline::shadingAlgoEntry = {
-	"renderHitOrMiss",
-	"renderDistanceShading"
-};
+#include "shaders/raytrace_flush.comp.spv.h" // raytrace_flush_compOGL, raytrace_flush_compOGL_size
 
 OpenGLPipeline::OpenGLPipeline() noexcept
     : RenderingPipeline(),
+	mRaytracerFlush(
+		new Pipeline::Program(
+		std::initializer_list<std::shared_ptr<const Shader>>{
+			std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_flush_compOGL), raytrace_flush_compOGL_size)
+		})
+	),
 	mRaytracerInsert(new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{
-				std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_insert_compOGL), raytrace_insert_compOGL_size)
+			std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_insert_compOGL), raytrace_insert_compOGL_size)
 		})
 	),
 	/*mRaytracerRender(new Pipeline::Program(
