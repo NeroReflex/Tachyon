@@ -4,6 +4,8 @@
 #include "Rendering/OpenGL/Pipeline/FragmentShader.h"
 #include "Rendering/OpenGL/Pipeline/ComputeShader.h"
 
+#include "Rendering/CoreTypes.h"
+
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::OpenGL;
@@ -85,17 +87,29 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 	});
 	
-	// This is the collection of BLAS
-	//glNamedBufferStorage(mRaytracingSSBO[0], sizeof(Tachyon::Rendering::BLAS) * maxNumberOfBLASInTLAS, NULL, 0);
-	// This is the TLAS tree
-	//glNamedBufferStorage(mRaytracingSSBO[1], sizeof(Tachyon::Rendering::NodeData) * maxNumberOfTreeElementsInTLAS, NULL, 0);
-	// This is the collection of Model Matrices corresponding to each BLAS
-	//glNamedBufferStorage(mRaytracingSSBO[2], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, 0);
+	// This is the collection of geometry
+	glNamedBufferStorage(mRaytracingSSBO[0], sizeof(BLASGeometryCollection) * (1 << expOfTwo_maxModels), NULL, 0);
+
+	// This is the BLAS
+	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(BLAS) * (1 << expOfTwo_maxModels), NULL, 0);
+	
+	// This is the TLAS
+	glNamedBufferStorage(mRaytracingSSBO[2], sizeof(TLAS), NULL, 0);
+	
 	// This is the global collection of geometry
 	//glNamedBufferStorage(mRaytracingSSBO[3], sizeof(glm::mat4) * maxNumberOfBLASInTLAS, NULL, 0);
 
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
 	glBindVertexArray(mQuadVAO);
+
+	// Prepare the scene
+	flush();
+}
+
+void OpenGLPipeline::prapareDispatch() noexcept {
+	// Bind the raytracer SSBO (the rendering context)
+	for (GLuint k = 0; k < mRaytracingSSBO.size(); ++k)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, k, mRaytracingSSBO[k]);
 }
 
 void OpenGLPipeline::onRender() noexcept {
@@ -127,8 +141,7 @@ void OpenGLPipeline::onRender() noexcept {
 	Program::use(*mRaytracerRender);
 
 	// Bind the raytracer SSBO (the rendering context)
-	for (GLuint k = 0; k < mRaytracingSSBO.size(); ++k)
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, k, mRaytracingSSBO[k]);
+	prapareDispatch();
 
 	// Bind the texture to be written by the raytracer
 	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -187,6 +200,8 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 }
 
 void OpenGLPipeline::flush() noexcept {
+	prapareDispatch();
+
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
 

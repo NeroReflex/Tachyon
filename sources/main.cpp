@@ -81,15 +81,13 @@ int main(int argc, char** argv) {
 	}
 
 	// During init, enable debug output
-	//glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(MessageCallback, 0);
 
 	// Retrieve the initial window size to initialize the renderer
 	int initialWidth, initialHeight;
 	glfwGetWindowSize(window, &initialWidth, &initialHeight);
 
-	// Now it is safe to create the renderer
-	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
 
 	std::string rendererId =
 		std::string("OpenGL v") +
@@ -108,6 +106,9 @@ int main(int argc, char** argv) {
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &textureDimensionMaxSize);
 
 	std::cout << "Max texture dimension: " << textureDimensionMaxSize << std::endl;
+
+	// Now it is safe to create the renderer
+	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();

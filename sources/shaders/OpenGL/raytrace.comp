@@ -1,7 +1,5 @@
 #version 450 core
 
-layout(local_size_x = 48, local_size_y = 32, local_size_z = 1) in;
-
 #define expOfTwo_maxModels 10
 #define expOfTwo_maxGeometryOnCollection 3
 #define expOfTwo_maxCollectionsForModel 15
@@ -358,9 +356,9 @@ struct NodeData {
 };
 
 struct BLAS {
-	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_numberOfLeafsOnBLAS )];
-
 	mat4 ModelMatrix;
+
+	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_numberOfLeafsOnBLAS )];
 };
 
 struct TLAS {
@@ -392,8 +390,16 @@ bool isTLASNodeLeaf_ByIndex(const uint leafIndex) {
   ===                                  Core SSBOs & Related Data                                      ===
   =======================================================================================================*/
 
+struct GeometryCollection {
+	Geometry geometry[1 << expOfTwo_maxGeometryOnCollection];
+};
+
+struct BLASGeometryCollection {
+	GeometryCollection collection[1 << expOfTwo_maxCollectionsForModel];
+};
+
 layout(std430, binding = 0) buffer sceneGeometry {
-	Geometry geometry[]; // This is the BLAS collection
+	BLASGeometryCollection geometry[]; // This is an array of geometry
 };
 
 layout(std430, binding = 1) buffer sceneBLAS {
@@ -417,6 +423,10 @@ struct InputGeometry {
 	vec4 centroid_radius;
 };
 
+struct InputGeometryCollection {
+	InputGeometry inputCollection[1 << expOfTwo_maxCollectionsForModel];
+};
+
 Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
 	Geometry outGeometry = Geometry(vec4(inGeometry.centroid_radius.xyz, 1), inGeometry.centroid_radius.w);
 
@@ -426,7 +436,7 @@ Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
 layout(std430, binding = 3) buffer insertionGeometry {
 	uint targetBLAS; // The index of the BLAS to be updated (rewritted if occupied)
 	uint numberOfGeometryToInsert; // Number of geometric primitives to be inserted
-	InputGeometry geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
+	InputGeometryCollection geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
 };
 
 layout(std430, binding = 4) buffer insertionGeometryMorton {
@@ -458,15 +468,17 @@ uint morton3D(const vec3 point)
     return xx * 4 + yy * 2 + zz;
 }
 
-AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(uint baseIndexOnGeometrySSBO) {
+AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint BLASIndex, const uint CollectionIndex) {
 	AABB bounding = emptyAABB;
 
 	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
-		bounding = expandAABBWithGeometry(bounding, geometry[baseIndexOnGeometrySSBO + i]);
+		bounding = expandAABBWithGeometry(bounding, geometry[BLASIndex].collection[CollectionIndex].geometry[i]);
 	}
 
 	return bounding;
 }
+
+layout(local_size_x = 48, local_size_y = 32, local_size_z = 1) in;
 
 /**
  * This is the entry point for the geometry insertion program.
@@ -480,26 +492,22 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(uint baseIndexOnGe
 void main() {
 	if ((gl_GlobalInvocationID.y >= (1 << expOfTwo_maxCollectionsForModel)) || (gl_GlobalInvocationID.x >= (1 << expOfTwo_maxGeometryOnCollection))) return;
 
-	const uint indexOfGeometryToInsert = (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x;
-
-	// So... now I calculate the BASE index on the geometry SSBO...
-	const uint baseIndexOnGeometrySSBO = targetBLAS * ((1 << expOfTwo_maxGeometryOnCollection) * (1 << expOfTwo_maxCollectionsForModel));
-
-	// ... Now the final index on the SSBO!
-	const uint indexOnGeometrySSBO = baseIndexOnGeometrySSBO + indexOfGeometryToInsert;
-
 	// Copy the geometry on the final destination.
-	geometry[indexOnGeometrySSBO] = (indexOfGeometryToInsert >= numberOfGeometryToInsert)
-		? emptyGeometry
-		: transformToGPURepresentation(geometryToInsert[indexOfGeometryToInsert]);
+	geometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
 
 	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
 	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
+	
+	/*
+	barrier();
+	// the geometry has been updated
+	if (gl_GlobalInvocationID.x != 0) return;
+	*/
 
 	bool rootUpdated = false;
 	while (!rootUpdated) {
 		tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = (isBLASNodeLeaf_ByIndex(indexOfNodeInBLASToUpdate))
-			? generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(baseIndexOnGeometrySSBO)
+			? generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y)
 			: joinAABBs(tlasBLAS[targetBLAS].tree[leftNode(indexOfNodeInBLASToUpdate)].aabb, tlasBLAS[targetBLAS].tree[rightNode(indexOfNodeInBLASToUpdate)].aabb);
 
 		rootUpdated = isRootNode(indexOfNodeInBLASToUpdate);
@@ -530,14 +538,32 @@ void main() {
 
 #elif defined(TLAS_FLUSH)
 
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
 /**
  * This is the entry point for the TLAS nuke program.
  * The basic idea is that we want to empty all geometry and then (re-)build the tree back to the root.
  *
- * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxNumOfGeometry / numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1).
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxModels, 1, 1).
  */
 void main() {
-	const uint indexOfGeometryToClear = (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x;
+	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0)) return;
+
+	tlasBLAS[gl_GlobalInvocationID.x].ModelMatrix = emptyTransform;
+
+	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + gl_GlobalInvocationID.x;
+
+	bool rootUpdated = false;
+	while (!rootUpdated) {
+		tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
+
+		rootUpdated = isRootNode(indexOfNodeInTLAS);
+		
+		if (isEven(indexOfNodeInTLAS)) break;
+
+		// Get to the parent for the next iteration
+		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
+	}
 
 }
 

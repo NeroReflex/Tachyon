@@ -28,6 +28,8 @@ namespace Tachyon {
 				void onRender() noexcept final;
 
 			private:
+				void prapareDispatch() noexcept;
+
 				void flush() noexcept;
 
 			private:
@@ -43,7 +45,7 @@ namespace Tachyon {
 				 * This is the input data for the GPU raytracer algorithm.
 				 * See raytracer compute shader for more details.
 				 */
-				std::array<GLuint, 4> mRaytracingSSBO;
+				std::array<GLuint, 3> mRaytracingSSBO;
 
 				/**
 				 * This is the output texture of the raytraing.
