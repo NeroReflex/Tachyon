@@ -21,6 +21,8 @@ namespace Tachyon {
 				~OpenGLPipeline() override;
 
 				OpenGLPipeline() noexcept;
+
+				void enqueueModel(const std::vector<GeometryPrimitive>& primitive, GLuint location) noexcept override;
 				
 			protected:
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
@@ -29,6 +31,8 @@ namespace Tachyon {
 
 			private:
 				void prapareDispatch() noexcept;
+
+				void insert(GLuint targetBLAS) noexcept;
 
 				void flush() noexcept;
 
@@ -63,6 +67,11 @@ namespace Tachyon {
 				 * This VBO holds two triangles that directly map to the screen
 				 */
 				GLuint mQuadVBO;
+
+				/**
+				 * This is an SSBO, mapped in GPU Shared memory used to create scene object
+				 */
+				GLuint mInputGeometryTemporary;
 			};
 		}
 	}

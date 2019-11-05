@@ -110,13 +110,19 @@ int main(int argc, char** argv) {
 	// Now it is safe to create the renderer
 	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
 
+	raytracer->enqueueModel({
+		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, 0, -1), 0.5),
+		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0.75, 0, -1.5), 0.25),
+		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, -100.5, -1), 100),
+		}, 0);
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
 		int windowWidth, windowHeight;
 		glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-		raytracer->render(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
+		//raytracer->render(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
 		glfwSwapBuffers(window);
 	}

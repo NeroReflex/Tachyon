@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Tachyon.h"
+#include "GeometryPrimitive.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -16,6 +16,8 @@ namespace Tachyon {
 			RenderingPipeline& operator=(const RenderingPipeline&) = delete;
 
 			virtual ~RenderingPipeline() = default;
+
+			virtual void enqueueModel(const std::vector<GeometryPrimitive>& primitive, GLuint location) noexcept = 0;
 
 			void render(glm::uint32 width, glm::uint32 height) noexcept;
 

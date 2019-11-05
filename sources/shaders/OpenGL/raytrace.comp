@@ -414,6 +414,30 @@ bool isEmptyBLAS_ByIndex(uint index) {
 	return tlasBLAS[index].ModelMatrix == emptyTransform;
 }
 
+/**
+ * Update a leaf in in TLAS and all its parent to the root.
+ * The index of the leaf (that is NOT the index of the internal node) is also the index of the associated BLAS.
+ *
+ * @param indexOfLeafInTLAS the index of the BLAS leaf that has to be updated
+ */
+void updateTLASLeaf(const uint indexOfLeafInTLAS) {
+	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
+
+	bool rootUpdated = false;
+	while (!rootUpdated) {
+		tlas.tree[indexOfNodeInTLAS].aabb = (isTLASNodeLeaf_ByIndex(indexOfNodeInTLAS))
+			? transformAABB(tlasBLAS[indexOfLeafInTLAS].tree[0].aabb, tlasBLAS[indexOfLeafInTLAS].ModelMatrix)
+			: joinAABBs(
+				tlas.tree[leftNode(indexOfNodeInTLAS)].aabb,
+				tlas.tree[rightNode(indexOfNodeInTLAS)].aabb);
+
+		rootUpdated = isRootNode(indexOfNodeInTLAS);
+		
+		// Get to the parent for the next iteration
+		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
+	}
+}
+
 #if defined(BVH_INSERT)
 /*=======================================================================================================
   ===                                  BVH-Tree Construction                                          ===
@@ -433,15 +457,17 @@ Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
 	return outGeometry;
 }
 
+layout (location = 0) uniform uint targetBLAS;
+
 layout(std430, binding = 3) buffer insertionGeometry {
-	uint targetBLAS; // The index of the BLAS to be updated (rewritted if occupied)
-	uint numberOfGeometryToInsert; // Number of geometric primitives to be inserted
 	InputGeometryCollection geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
 };
 
+/*
 layout(std430, binding = 4) buffer insertionGeometryMorton {
 	uint mortonCode[]; // This is the BLAS collection
 };
+*/
 
 // Expands a 10-bit integer into 30 bits
 // by inserting 2 zeros after each bit.
@@ -478,7 +504,7 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint BLASInd
 	return bounding;
 }
 
-layout(local_size_x = 48, local_size_y = 32, local_size_z = 1) in;
+layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
 
 /**
  * This is the entry point for the geometry insertion program.
@@ -486,7 +512,7 @@ layout(local_size_x = 48, local_size_y = 32, local_size_z = 1) in;
  * (gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x
  * and then build the tree back to the root.
  * 
- * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxNumOfGeometry / numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1),
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(numOfGeometryPerCollection, numOfGeometryCollectionsPerBLAS, 1),
  *        also the geometry must be aligned with mortoncodes such as mortonCode[i] is the morton code of the geometry at geometry[i]
  */
 void main() {
@@ -519,21 +545,7 @@ void main() {
 	// At the very end, flag the BLAS as used/occupied
 	tlasBLAS[targetBLAS].ModelMatrix = identityTransform;
 
-	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + targetBLAS;
-
-	rootUpdated = false;
-	while (!rootUpdated) {
-		tlas.tree[indexOfNodeInTLAS].aabb = (isTLASNodeLeaf_ByIndex(indexOfNodeInBLASToUpdate))
-			? tlasBLAS[targetBLAS].tree[0].aabb
-			: joinAABBs(
-				tlas.tree[leftNode(indexOfNodeInTLAS)].aabb,
-				tlas.tree[rightNode(indexOfNodeInTLAS)].aabb);
-
-		rootUpdated = isRootNode(indexOfNodeInTLAS);
-		
-		// Get to the parent for the next iteration
-		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
-	}
+	updateTLASLeaf(targetBLAS);
 }
 
 #elif defined(TLAS_FLUSH)
