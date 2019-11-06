@@ -720,7 +720,7 @@ void main() {
 	if ((gl_GlobalInvocationID.y >= (1 << expOfTwo_maxCollectionsForModel)) || (gl_GlobalInvocationID.x >= (1 << expOfTwo_maxGeometryOnCollection))) return;
 
 	// Copy the geometry on the final destination.
-	geometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
+	globalGeometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
 
 	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
 	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;

@@ -102,10 +102,12 @@ int main(int argc, char** argv) {
 
 	std::cout << "Max UBO length in bytes: " << uboMaxSize << std::endl;
 
-	int textureDimensionMaxSize = 0;
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &textureDimensionMaxSize);
+	int texture2DimensionMaxSize = 0, texture3DimensionMaxSize = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texture2DimensionMaxSize);
+	glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &texture3DimensionMaxSize);
 
-	std::cout << "Max texture dimension: " << textureDimensionMaxSize << std::endl;
+	std::cout << "Max 2D texture dimension: " << texture2DimensionMaxSize << "x" << texture2DimensionMaxSize << std::endl;
+	std::cout << "Max 3D texture dimensions:" << texture3DimensionMaxSize << "x" << texture3DimensionMaxSize << "x" << texture3DimensionMaxSize << std::endl;
 
 	int maxBlockSize = 0;
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxBlockSize);
