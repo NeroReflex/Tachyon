@@ -2,8 +2,8 @@
 
 layout (location = 0) out vec4 FragColor;
 
-layout(location = 0) uniform float gamma;
-layout(location = 1) uniform float exposure;
+layout(location = 0) uniform float gamma; // Acceptable value: 2.2
+layout(location = 1) uniform float exposure; // Acceptable value: 0.1
 
 // Values that stay constant for the whole mesh.
 layout (binding = 0) uniform sampler2D outputSampler;

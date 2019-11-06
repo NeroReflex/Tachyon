@@ -384,6 +384,26 @@ bool isTLASNodeLeaf_ByIndex(const uint leafIndex) {
 	return leafIndex >= ((1 << expOfTwo_maxModels) - 1);
 }
 
+/**
+ * Get the index of a leaf element from the index of that leaf node.
+ *
+ * @param leafIndex the index used to access the leaf on the BLAS
+ * @return the index of the geometry collection
+ */
+uint LeafFromBLASNode_ByIndex(const uint leafIndex) {
+	return leafIndex - ((1 << expOfTwo_maxCollectionsForModel) - 1);
+}
+
+/**
+ * Get the index of a leaf element from the index of that leaf node.
+ *
+ * @param leafIndex the index used to access the leaf on the TLAS
+ * @return the index of the BLAS
+ */
+uint LeafFromTLASNode_ByIndex(const uint leafIndex) {
+	return leafIndex - ((1 << expOfTwo_maxModels) - 1);
+}
+
 
 /*=======================================================================================================
   ===                                  Core SSBOs & Related Data                                      ===
@@ -398,7 +418,7 @@ struct BLASGeometryCollection {
 };
 
 layout(std430, binding = 0) buffer sceneGeometry {
-	BLASGeometryCollection geometry[]; // This is an array of geometry
+	BLASGeometryCollection globalGeometry[]; // This is an array of geometry
 };
 
 layout(std430, binding = 1) buffer sceneBLAS {
@@ -420,21 +440,203 @@ bool isEmptyBLAS_ByIndex(uint index) {
  * @param indexOfLeafInTLAS the index of the BLAS leaf that has to be updated
  */
 void updateTLASLeaf(const uint indexOfLeafInTLAS) {
-	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
+	uint indexOfLastUpdatedNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
+
+	tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = transformAABB(tlasBLAS[indexOfLeafInTLAS].tree[0].aabb, tlasBLAS[indexOfLeafInTLAS].ModelMatrix);
 
 	bool rootUpdated = false;
-	while (!rootUpdated) {
-		tlas.tree[indexOfNodeInTLAS].aabb = (isTLASNodeLeaf_ByIndex(indexOfNodeInTLAS))
-			? transformAABB(tlasBLAS[indexOfLeafInTLAS].tree[0].aabb, tlasBLAS[indexOfLeafInTLAS].ModelMatrix)
-			: joinAABBs(
-				tlas.tree[leftNode(indexOfNodeInTLAS)].aabb,
-				tlas.tree[rightNode(indexOfNodeInTLAS)].aabb);
+	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
+		// Target the parent node for update
+		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
 
-		rootUpdated = isRootNode(indexOfNodeInTLAS);
-		
-		// Get to the parent for the next iteration
-		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
+		// Update the current node
+		tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = joinAABBs(
+				tlas.tree[leftNode(indexOfLastUpdatedNodeInTLAS)].aabb,
+				tlas.tree[rightNode(indexOfLastUpdatedNodeInTLAS)].aabb);
 	}
+}
+
+/*=======================================================================================================
+  ===                           Ray-Geometry Intersection (Rendering)                                 ===
+  =======================================================================================================*/
+
+struct RayGeometryIntersection {
+	float dist;
+	vec4 point;
+	vec4 normal;
+};
+
+const RayGeometryIntersection miss = RayGeometryIntersection(infinity, vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
+
+RayGeometryIntersection bestHit(const RayGeometryIntersection isect1, const RayGeometryIntersection isect2) {
+	return (isect1.dist < isect2.dist) ? isect1 : isect2;
+}
+
+
+RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
+	const vec3 center = vec3(transformMatrix * geometry.center);
+	const float radius = geometry.radius;
+
+	if (radius == 0) return miss;
+
+	const vec3 origin = vec3(ray.origin);
+	const vec3 direction = vec3(ray.direction);
+
+	vec3 oc = origin - center;
+	
+	const float a = dot(direction, direction);
+	const float b = dot(oc, direction);
+	const float c = dot(oc, oc) - radius * radius;
+	const float discriminant = b * b - a * c;
+
+	if (discriminant > 0.0) { // if delta > 0 then we have two intersections (one for each side of the sphere)
+		const float squareRoot = sqrt(discriminant);
+
+		// x0 and x1 are the distances to the origin of the ray
+		float x0 = (-b - squareRoot) / a, x1 = (-b + squareRoot) / a;
+
+		// Use x0 and x1 to calculate intersection points
+		vec3 point_x0 = rayPointAt(ray, x0), point_x1 = rayPointAt(ray, x1); // so if I use that distance as a coefficient I obtain the intersection point
+		
+		// Use intersecting points to calculate the surface normal at that point
+		vec3 normal_x0 = (point_x0 - center) / radius, normal_x1 = (point_x1 - center) / radius; // and the normal for a point p is (point - center)/radius
+
+		// No valid intersection? return a miss.
+		if (((x0 <= minDistance) || (x0 >= maxDistance)) && ((x1 <= minDistance) || (x1 >= maxDistance))) {
+			return miss;
+		}
+
+		// Choose the closest intersection point
+		return (((x0 > minDistance) && (x0 < maxDistance)) && (x0 <= x1)) || ((x1 <= minDistance) || (x1 >= maxDistance)) ?
+			RayGeometryIntersection(x0, vec4(point_x0, 1), vec4(normal_x0, 0)) : RayGeometryIntersection(x1, vec4(point_x1, 1), vec4(normal_x1, 0));
+	}
+
+	return miss;
+}
+
+RayGeometryIntersection intersectCollection_ByIndexes(const Ray ray, const uint blasIndex, const uint collectionIndex, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
+	RayGeometryIntersection bestHitSoFar = miss;
+
+	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection) ; ++i) {
+		// Execute the ray-geometry intersection algorithm
+		const RayGeometryIntersection currentIntersectionInfo = intersectGeometry(ray, globalGeometry[blasIndex].collection[collectionIndex].geometry[i], transformMatrix, minDistance, maxDistance);
+
+		// Check if this is a better hit than the former one
+		bestHitSoFar = bestHit(bestHitSoFar, currentIntersectionInfo);
+	}
+
+	return bestHitSoFar;
+}
+
+/**
+ * Check if the ray has missed every geometry that has been tested against.
+ *
+ * @param test the ray-geometry intersection algorithm output
+ * @return TRUE if the ray has missed all geometry
+ */
+bool hasMissed(const RayGeometryIntersection test) {
+	return isinf(test.dist) || isnan(test.dist);
+}
+
+RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const float minDistance, const float maxDistance) {
+	// Adjust transformation matrix to consider the BLAS model matrix
+	mat4 transformMatrix = tlasBLAS[blasIndex].ModelMatrix;
+
+	RayGeometryIntersection bestHitSoFar = miss;
+
+	int currentDepth = 0;
+	uint currentPath = 0;
+
+	while ((currentDepth < 32) && (currentDepth >= 0)) {
+		uint currentNodeIndex = 0;
+
+		// This for cycles is used to reach the interesting node
+		for (uint i = 0; i < currentDepth; ++i) {
+			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? leftNode(currentNodeIndex) : rightNode(currentNodeIndex);
+		}
+
+		if ((!isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlasBLAS[blasIndex].tree[currentNodeIndex].aabb, transformMatrix))) {
+			// Go one level deeper
+			currentDepth += 1;
+		} else {
+			// This is a leaf that should be tested...
+			if ((isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlasBLAS[blasIndex].tree[currentNodeIndex].aabb, transformMatrix))) {
+				RayGeometryIntersection currentHit = intersectCollection_ByIndexes(ray, blasIndex, LeafFromBLASNode_ByIndex(currentNodeIndex), transformMatrix, minDistance, maxDistance);
+
+				bestHitSoFar = bestHit(bestHitSoFar, currentHit);
+			}
+
+			// in either case: subtree discarded or visited leaf the algorithm should reduce the depth and change the path
+			currentDepth -= 1;
+
+			while (((currentPath & (1 << currentDepth)) == 1) && (currentDepth >= 0)) {
+				//set the bit at currentDepth position to 0
+				currentPath &= ~(1 << currentDepth);
+
+				// and decrease currentDepth
+				currentDepth -= 1;
+			}
+
+			if (currentDepth >= 0) {
+				// set the bit at currentDepth position to 1 (the next visit will choose another path)
+				currentPath |= (1 << currentDepth);
+			} else {
+				// the visited node was the very last one (the right-most) and the iteration should come to an end
+				break;
+			}
+		}
+	}
+
+	return bestHitSoFar;
+}
+
+RayGeometryIntersection castRay(const Ray ray, const float minDistance, const float maxDistance) {
+	RayGeometryIntersection bestHitSoFar = miss;
+
+	int currentDepth = 0;
+	uint currentPath = 0;
+
+	while ((currentDepth < 32) && (currentDepth >= 0)) {
+		uint currentNodeIndex = 0;
+
+		// This for cycles is used to reach the interesting node
+		for (uint i = 0; i < currentDepth; ++i) {
+			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? leftNode(currentNodeIndex) : rightNode(currentNodeIndex);
+		}
+
+		if ((!isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlas.tree[currentNodeIndex].aabb, identityTransform))) {
+			// Go one level deeper
+			currentDepth += 1;
+		} else {
+			// This is a leaf that should be tested...
+			if ((isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlas.tree[currentNodeIndex].aabb, identityTransform))) {
+				RayGeometryIntersection currentHit = intersectBLAS_ByIndex(ray, LeafFromTLASNode_ByIndex(currentNodeIndex), minDistance, maxDistance);
+				
+				bestHitSoFar = bestHit(bestHitSoFar, currentHit);
+			}
+
+			// in either case: subtree discarded or visited leaf the algorithm should reduce the depth and change the path
+			currentDepth -= 1;
+
+			while (((currentPath & (1 << currentDepth)) == 1) && (currentDepth >= 0)) {
+				//set the bit at currentDepth position to 0
+				currentPath &= ~(1 << currentDepth);
+
+				// and decrease currentDepth
+				currentDepth -= 1;
+			}
+
+			if (currentDepth >= 0) {
+				// set the bit at currentDepth position to 1 (the next visit will choose another path)
+				currentPath |= (1 << currentDepth);
+			} else {
+				// the visited node was the very last one (the right-most) and the iteration should come to an end
+				break;
+			}
+		}
+	}
+
+	return bestHitSoFar;
 }
 
 #if defined(BVH_INSERT)
@@ -497,7 +699,7 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint BLASInd
 	AABB bounding = emptyAABB;
 
 	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
-		bounding = expandAABBWithGeometry(bounding, geometry[BLASIndex].collection[CollectionIndex].geometry[i]);
+		bounding = expandAABBWithGeometry(bounding, globalGeometry[BLASIndex].collection[CollectionIndex].geometry[i]);
 	}
 
 	return bounding;
@@ -544,8 +746,7 @@ void main() {
 	// At the very end, flag the BLAS as used/occupied
 	tlasBLAS[targetBLAS].ModelMatrix = identityTransform;
 
-	// TLAS will be updated before drawing the scene
-	
+	// TLAS will be updated before drawing the scene doing it here would waste time
 }
 
 #elif defined(TLAS_FLUSH)
@@ -565,14 +766,12 @@ void main() {
 
 	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + gl_GlobalInvocationID.x;
 
-	bool rootUpdated = false;
-	while (!rootUpdated) {
-		tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
+	tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
 
-		rootUpdated = isRootNode(indexOfNodeInTLAS);
-
-		// Get to the parent for the next iteration
+	while (!isRootNode(indexOfNodeInTLAS)) {
 		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
+
+		tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
 	}
 
 }
@@ -593,6 +792,54 @@ void main () {
 	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 
 	updateTLASLeaf(gl_GlobalInvocationID.x);
+}
+
+#elif defined(RENDER)
+
+layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
+
+layout(rgba32f, binding = 0) uniform image2D renderTarget; // Raytracing output texture
+
+layout (location = 0) uniform uint width;
+layout (location = 1) uniform uint height;
+
+layout (location = 2) uniform vec3 cameraPosition;
+layout (location = 3) uniform vec3 cameraViewDir;
+layout (location = 4) uniform vec3 cameraUpVector;
+layout (location = 5) uniform float cameraFoV;
+layout (location = 6) uniform float cameraAspect;
+
+/**
+ * This is the entry point for the rendering program.
+ *
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(width, height, 1).
+ */
+void main () {
+	// base pixel colour for image
+	vec4 pixel = vec4(0, 0, 0, 0);
+	// get index in global work group i.e x,y position
+	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+
+	// Avoid calculating useless pixels
+	if ((gl_GlobalInvocationID.x >= width) || (gl_GlobalInvocationID.y >= height)) {
+		return;
+	}
+	
+	// Get UV cordinates of the output texture
+	const float u = float(gl_GlobalInvocationID.x) / float(width);
+	const float v = float(gl_GlobalInvocationID.y) / float(height);
+
+	const Camera camera = Camera(cameraPosition, normalize(cameraViewDir), cameraUpVector, cameraFoV, cameraAspect);
+
+	// Generate camera ray
+	const Ray cameraRay = generateCameraRay(camera, u, v);
+
+	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0);
+
+	pixel = vec4( vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point)))) , 1.0);
+  
+	// output to a specific pixel in the image
+	imageStore(renderTarget, pixel_coords, pixel);
 }
 
 #endif

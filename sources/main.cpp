@@ -107,6 +107,11 @@ int main(int argc, char** argv) {
 
 	std::cout << "Max texture dimension: " << textureDimensionMaxSize << std::endl;
 
+	int maxBlockSize = 0;
+	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxBlockSize);
+
+	std::cout << "Max SSBO Block size: " << maxBlockSize << std::endl;
+
 	// Now it is safe to create the renderer
 	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
 
@@ -122,7 +127,7 @@ int main(int argc, char** argv) {
 		int windowWidth, windowHeight;
 		glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-		//raytracer->render(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
+		raytracer->render(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
 		glfwSwapBuffers(window);
 	}
