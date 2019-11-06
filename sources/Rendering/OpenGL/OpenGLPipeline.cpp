@@ -77,19 +77,6 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	// Active the texture unit
 	glActiveTexture(GL_TEXTURE0);
 
-	// Set the initial viewport
-	glViewport(0, 0, getWidth(), getHeight());
-
-	// Create a new 2D texture used to store the raw raytrace result (without gamma correction)
-	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
-	glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
-	glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, getWidth(), getHeight());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-
 	//Create the raytracer SSBO, with corret dimensions
 	glCreateBuffers(mRaytracingSSBO.size(), mRaytracingSSBO.data());
 	std::for_each(mRaytracingSSBO.cbegin(), mRaytracingSSBO.cend(), [](const GLuint& ssbo) {
@@ -114,8 +101,9 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
 	glBindVertexArray(mQuadVAO);
+}
 
-	// Prepare the scene
+void OpenGLPipeline::reset() noexcept {
 	flush();
 }
 
@@ -184,7 +172,7 @@ OpenGLPipeline::~OpenGLPipeline() {
 }
 
 void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
-	glViewport(0, 0, getWidth(), getHeight());
+	glViewport(0, 0, newWidth, newHeight);
 
 	// Remove the previous texture to avoid GPU memory leak(s)
 	if (mRaytracerOutputTexture)
@@ -193,7 +181,7 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 	// Create a new 2D texture used to store the raw raytrace result (without gamma correction)
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
 	glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
-	glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, getWidth(), getHeight());
+	glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, newWidth, newHeight);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);

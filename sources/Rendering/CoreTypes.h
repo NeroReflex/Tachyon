@@ -6,9 +6,9 @@
 	FOLLOWING DATA STRUCTURES ARE MAINTAINED ALIGNED WITH THE GPU MEMORY
 */
 
-#define expOfTwo_maxModels 10
+#define expOfTwo_maxModels 2
 #define expOfTwo_maxGeometryOnCollection 3
-#define expOfTwo_maxCollectionsForModel 15
+#define expOfTwo_maxCollectionsForModel 4
 
 #define expOfTwo_numberOfLeafsOnTLAS (expOfTwo_maxModels)
 

@@ -24,6 +24,8 @@ namespace Tachyon {
 
 				void enqueueModel(const std::vector<GeometryPrimitive>& primitive, GLuint location) noexcept override;
 				
+				void reset() noexcept override;
+
 			protected:
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
 

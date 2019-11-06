@@ -19,6 +19,8 @@ namespace Tachyon {
 
 			virtual void enqueueModel(const std::vector<GeometryPrimitive>& primitive, GLuint location) noexcept = 0;
 
+			virtual void reset() noexcept = 0;
+
 			void render(glm::uint32 width, glm::uint32 height) noexcept;
 
 		protected:
