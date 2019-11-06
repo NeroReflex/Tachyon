@@ -30,6 +30,9 @@ add_custom_target(
 	COMMAND glslangValidator -G -DBVH_INSERT -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
 	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace_insert.comp.spv.h" "raytrace_insert_compOGL"
 
+	COMMAND glslangValidator -G -DTLAS_UPDATE -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_update.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_update.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace_update.comp.spv.h" "raytrace_update_compOGL"
+
 	COMMAND glslangValidator -G -o "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.vert.spv" "${OPENGL_SHADERS_SOURCE_DIR}/tonemapping.vert"
 	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.vert.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/tonemapping.vert.spv.h" "tonemapping_vertOGL"
 

@@ -36,10 +36,14 @@ namespace Tachyon {
 
 				void flush() noexcept;
 
+				void update() noexcept;
+
 			private:
 				std::unique_ptr<Pipeline::Program> mRaytracerFlush;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerInsert;
+
+				std::unique_ptr<Pipeline::Program> mRaytracerUpdate;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerRender;
 

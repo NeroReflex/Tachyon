@@ -4,7 +4,6 @@
 #define expOfTwo_maxGeometryOnCollection 3
 #define expOfTwo_maxCollectionsForModel 15
 
-#define expOfTwo_numberOfLeafsOnBLAS (expOfTwo_maxCollectionsForModel-expOfTwo_maxGeometryOnCollection)
 #define expOfTwo_numberOfLeafsOnTLAS (expOfTwo_maxModels)
 
 #define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
@@ -358,7 +357,7 @@ struct NodeData {
 struct BLAS {
 	mat4 ModelMatrix;
 
-	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_numberOfLeafsOnBLAS )];
+	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxCollectionsForModel )];
 };
 
 struct TLAS {
@@ -372,7 +371,7 @@ struct TLAS {
  * @return TRUE iif the node is a leaf
  */
 bool isBLASNodeLeaf_ByIndex(const uint leafIndex) {
-	return leafIndex > (1 << expOfTwo_numberOfLeafsOnBLAS) - 1;
+	return leafIndex >= ((1 << expOfTwo_maxCollectionsForModel) - 1);
 }
 
 /**
@@ -382,7 +381,7 @@ bool isBLASNodeLeaf_ByIndex(const uint leafIndex) {
  * @return TRUE iif the node is a leaf
  */
 bool isTLASNodeLeaf_ByIndex(const uint leafIndex) {
-	return leafIndex >= (1 << expOfTwo_maxModels) - 1;
+	return leafIndex >= ((1 << expOfTwo_maxModels) - 1);
 }
 
 
@@ -545,7 +544,8 @@ void main() {
 	// At the very end, flag the BLAS as used/occupied
 	tlasBLAS[targetBLAS].ModelMatrix = identityTransform;
 
-	updateTLASLeaf(targetBLAS);
+	// TLAS will be updated before drawing the scene
+	
 }
 
 #elif defined(TLAS_FLUSH)
@@ -559,7 +559,7 @@ layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
  * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxModels, 1, 1).
  */
 void main() {
-	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0)) return;
+	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 
 	tlasBLAS[gl_GlobalInvocationID.x].ModelMatrix = emptyTransform;
 
@@ -570,13 +570,29 @@ void main() {
 		tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
 
 		rootUpdated = isRootNode(indexOfNodeInTLAS);
-		
-		if (isEven(indexOfNodeInTLAS)) break;
 
 		// Get to the parent for the next iteration
 		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
 	}
 
+}
+
+#elif defined(TLAS_UPDATE)
+
+layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+
+/**
+ * This is the entry point for the TLAS update program.
+ * The basic idea is that we want the AABB of each leaf on the TLAS to be the AABB of the root
+ * of the corresponding BLAS, but transformated accordingly to the ModelMatrix.
+ *
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxModels, 1, 1).
+ */
+void main () {
+	// If this work doen't map to a BLAS do nothing
+	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+
+	updateTLASLeaf(gl_GlobalInvocationID.x);
 }
 
 #endif

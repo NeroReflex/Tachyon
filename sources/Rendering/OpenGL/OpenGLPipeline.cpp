@@ -15,6 +15,8 @@ using namespace Tachyon::Rendering::OpenGL::Pipeline;
 #include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
 #include "shaders/raytrace_insert.comp.spv.h" // raytrace_insert_compOGL, raytrace_insert_compOGL_size
 #include "shaders/raytrace_flush.comp.spv.h" // raytrace_flush_compOGL, raytrace_flush_compOGL_size
+#include "shaders/raytrace_update.comp.spv.h" // raytrace_update_compOGL, raytrace_update_compOGL_size
+
 
 OpenGLPipeline::OpenGLPipeline() noexcept
     : RenderingPipeline(),
@@ -22,6 +24,12 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 		new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{
 			std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_flush_compOGL), raytrace_flush_compOGL_size)
+		})
+	),
+	mRaytracerUpdate(
+		new Pipeline::Program(
+		std::initializer_list<std::shared_ptr<const Shader>>{
+			std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_update_compOGL), raytrace_update_compOGL_size)
 		})
 	),
 	mRaytracerInsert(new Pipeline::Program(
@@ -233,8 +241,6 @@ void OpenGLPipeline::enqueueModel(const std::vector<GeometryPrimitive>& primitiv
 
 	glUnmapNamedBuffer(mInputGeometryTemporary);
 
-
-
 	// As last step call the insertion algorithm on the GPU
 	insert(location);
 }
@@ -248,6 +254,18 @@ void OpenGLPipeline::insert(GLuint targetBLAS) noexcept {
 
 	// Dispatch the compute work!
 	glDispatchCompute(1 << expOfTwo_maxGeometryOnCollection, 1 << expOfTwo_maxCollectionsForModel, 1);
+
+	// synchronize with the GPU
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
+void OpenGLPipeline::update() noexcept {
+	Program::use(*mRaytracerUpdate);
+
+	prapareDispatch();
+
+	// Dispatch the compute work!
+	glDispatchCompute(1 << expOfTwo_maxModels, 1, 1);
 
 	// synchronize with the GPU
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

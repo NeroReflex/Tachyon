@@ -10,7 +10,6 @@
 #define expOfTwo_maxGeometryOnCollection 3
 #define expOfTwo_maxCollectionsForModel 15
 
-#define expOfTwo_numberOfLeafsOnBLAS (expOfTwo_maxCollectionsForModel-expOfTwo_maxGeometryOnCollection)
 #define expOfTwo_numberOfLeafsOnTLAS (expOfTwo_maxModels)
 
 #define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
@@ -46,7 +45,7 @@ namespace Tachyon {
 		struct BLAS {
 			glm::mat4 ModelMatrix;
 
-			NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_numberOfLeafsOnBLAS )];
+			NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxCollectionsForModel )];
 		};
 
 		struct TLAS {
