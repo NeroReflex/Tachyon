@@ -134,11 +134,11 @@ void OpenGLPipeline::onRender() noexcept {
 	mRaytracerRender->setUniform("height", getHeight());
 
 	// Set camera parameters
-	mDisplayWriter->setUniform("cameraPosition", glm::vec3(0, 0, 0));
-	mDisplayWriter->setUniform("cameraViewDir", glm::vec3(0, 0, -1));
-	mDisplayWriter->setUniform("cameraUpVector", glm::vec3(0, 1, 0));
-	mDisplayWriter->setUniform("cameraFoV", glm::float32(60));
-	mDisplayWriter->setUniform("cameraAspect", glm::float32(getWidth()) / glm::float32(getHeight()));
+	mRaytracerRender->setUniform("cameraPosition", glm::vec3(0, 0, 0));
+	mRaytracerRender->setUniform("cameraViewDir", glm::vec3(0, 0, -1));
+	mRaytracerRender->setUniform("cameraUpVector", glm::vec3(0, 1, 0));
+	mRaytracerRender->setUniform("cameraFoV", glm::float32(60));
+	mRaytracerRender->setUniform("cameraAspect", glm::float32(getWidth()) / glm::float32(getHeight()));
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
@@ -218,6 +218,9 @@ void OpenGLPipeline::enqueueModel(const std::vector<GeometryPrimitive>& primitiv
 	}
 
 	glUnmapNamedBuffer(mInputGeometryTemporary);
+
+	glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+	glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
 	// As last step call the insertion algorithm on the GPU
 	insert(location);

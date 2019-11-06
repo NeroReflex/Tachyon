@@ -444,7 +444,6 @@ void updateTLASLeaf(const uint indexOfLeafInTLAS) {
 
 	tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = transformAABB(tlasBLAS[indexOfLeafInTLAS].tree[0].aabb, tlasBLAS[indexOfLeafInTLAS].ModelMatrix);
 
-	bool rootUpdated = false;
 	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
 		// Target the parent node for update
 		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
@@ -471,7 +470,6 @@ const RayGeometryIntersection miss = RayGeometryIntersection(infinity, vec4(0, 0
 RayGeometryIntersection bestHit(const RayGeometryIntersection isect1, const RayGeometryIntersection isect2) {
 	return (isect1.dist < isect2.dist) ? isect1 : isect2;
 }
-
 
 RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
 	const vec3 center = vec3(transformMatrix * geometry.center);
@@ -722,25 +720,20 @@ void main() {
 	// Copy the geometry on the final destination.
 	globalGeometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
 
-	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
-	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
-	
-	/*
+	// Wait for all geometry to be in-place
 	barrier();
+
 	// the geometry has been updated
 	if (gl_GlobalInvocationID.x != 0) return;
-	*/
 
-	bool rootUpdated = false;
-	while (!rootUpdated) {
-		tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = (isBLASNodeLeaf_ByIndex(indexOfNodeInBLASToUpdate))
-			? generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y)
-			: joinAABBs(tlasBLAS[targetBLAS].tree[leftNode(indexOfNodeInBLASToUpdate)].aabb, tlasBLAS[targetBLAS].tree[rightNode(indexOfNodeInBLASToUpdate)].aabb);
-
-		rootUpdated = isRootNode(indexOfNodeInBLASToUpdate);
-
-		// Get to the parent for the next iteration
+	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
+	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
+	tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y);
+	
+	while (!isRootNode(indexOfNodeInBLASToUpdate)) {
 		indexOfNodeInBLASToUpdate = parentNode(indexOfNodeInBLASToUpdate);
+
+		tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = joinAABBs(tlasBLAS[targetBLAS].tree[leftNode(indexOfNodeInBLASToUpdate)].aabb, tlasBLAS[targetBLAS].tree[rightNode(indexOfNodeInBLASToUpdate)].aabb);
 	}
 
 	// At the very end, flag the BLAS as used/occupied

@@ -67,7 +67,12 @@ void Program::use(const Program& program) noexcept {
 }
 
 GLint Program::getUniformLocation(const std::string& name) const noexcept {
-    Program::use(*this);
+    //Program::use(*this);
+
+	GLint64 activeProgram;
+	glGetInteger64v(GL_CURRENT_PROGRAM, &activeProgram);
+
+	DBG_ASSERT( (activeProgram == this->program) );
 
     const auto locationIt = uniformLocations.find(name);
     if (locationIt == uniformLocations.cend()) {
