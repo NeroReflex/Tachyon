@@ -227,7 +227,7 @@ float SAH(const AABB containedAABB, const AABB containerAABB) {
  *
  * @param starting the AABB transformation will be applied to
  * @param transformMatrix the transform to be applied to all vertices of the AABB, given as a 4x4 matrix
- * @return thetransformed AABB
+ * @return the transformed AABB
  */
 AABB transformAABB(const AABB starting, const mat4 transformMatrix) {
 	vec4 v[8] = {
