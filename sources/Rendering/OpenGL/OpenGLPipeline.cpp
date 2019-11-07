@@ -233,6 +233,8 @@ void OpenGLPipeline::insert(GLuint targetBLAS) noexcept {
 
 	mRaytracerInsert->setUniform("targetBLAS", targetBLAS);
 
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, mInputGeometryTemporary);
+
 	// Dispatch the compute work!
 	glDispatchCompute(1 << expOfTwo_maxGeometryOnCollection, 1 << expOfTwo_maxCollectionsForModel, 1);
 
