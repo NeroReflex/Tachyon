@@ -205,7 +205,7 @@ AABB emptyAABB = AABB(vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
  * @return TRUE iif the AABB is a point in space
  */
 bool isEmpty(const AABB aabb) {
-	return aabb.dimensions == vec4(0, 0, 0, 0);
+	return (aabb.dimensions.x == 0) || (aabb.dimensions.y == 0) || (aabb.dimensions.z == 0);
 }
 
 /**
@@ -451,9 +451,7 @@ void updateTLASLeaf(const uint indexOfLeafInTLAS) {
 		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
 
 		// Update the current node
-		tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = joinAABBs(
-				tlas.tree[leftNode(indexOfLastUpdatedNodeInTLAS)].aabb,
-				tlas.tree[rightNode(indexOfLastUpdatedNodeInTLAS)].aabb);
+		tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = joinAABBs(tlas.tree[leftNode(indexOfLastUpdatedNodeInTLAS)].aabb, tlas.tree[rightNode(indexOfLastUpdatedNodeInTLAS)].aabb);
 	}
 }
 
@@ -789,7 +787,7 @@ layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
  */
 void main () {
 	// If this work doen't map to a BLAS do nothing
-	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) /*|| (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)*/) return;
+	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 
 	updateTLASLeaf(gl_GlobalInvocationID.x);
 }
