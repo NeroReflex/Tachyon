@@ -148,12 +148,12 @@ Ray generateCameraRay(Camera cam, float s, float t) {
  * This represents a sphere.
  */
 struct Geometry {
-	vec4 center;
+	vec3 center;
 
 	float radius;
 };
 
-Geometry emptyGeometry = Geometry(vec4(0, 0, 0, 1), 0.0);
+Geometry emptyGeometry = Geometry(vec3(0, 0, 0), 0.0);
 
 /*=======================================================================================================
   ===                                    AABB Structure & Algo                                        ===
@@ -474,7 +474,7 @@ RayGeometryIntersection bestHit(const RayGeometryIntersection isect1, const RayG
 }
 
 RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
-	const vec3 center = vec3(transformMatrix * geometry.center);
+	const vec3 center = vec3(transformMatrix * vec4(geometry.center, 1));
 	const float radius = geometry.radius;
 
 	if (radius == 0) return miss;
@@ -653,7 +653,7 @@ struct InputGeometryCollection {
 };
 
 Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
-	Geometry outGeometry = Geometry(vec4(inGeometry.centroid_radius.xyz, 1), inGeometry.centroid_radius.w);
+	Geometry outGeometry = Geometry(inGeometry.centroid_radius.xyz, inGeometry.centroid_radius.w);
 
 	return outGeometry;
 }
@@ -724,7 +724,7 @@ void main() {
 
 	// Wait for all geometry to be in-place
 	memoryBarrier();
-	barrier();
+	//barrier();
 
 	// the geometry has been updated
 	//if (gl_GlobalInvocationID.x != 0) return;
@@ -789,7 +789,7 @@ layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
  */
 void main () {
 	// If this work doen't map to a BLAS do nothing
-	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) /*|| (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)*/) return;
 
 	updateTLASLeaf(gl_GlobalInvocationID.x);
 }
