@@ -329,7 +329,7 @@ AABB joinAABBs(const AABB aabb1, const AABB aabb2) {
 }
 
 AABB generateFromGeometry(const Geometry geo) {
-	float diameter = 2 * geo.radius;
+	const float diameter = 2 * geo.radius;
 	return AABB(vec4(geo.center.x - geo.radius, geo.center.y - geo.radius , geo.center.z - geo.radius, 1), vec4(diameter, diameter, diameter, 0));
 }
 
@@ -445,6 +445,8 @@ void updateTLASLeaf(const uint indexOfLeafInTLAS) {
 	tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = transformAABB(tlasBLAS[indexOfLeafInTLAS].tree[0].aabb, tlasBLAS[indexOfLeafInTLAS].ModelMatrix);
 
 	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
+		memoryBarrier();
+
 		// Target the parent node for update
 		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
 
@@ -721,16 +723,19 @@ void main() {
 	globalGeometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
 
 	// Wait for all geometry to be in-place
+	memoryBarrier();
 	barrier();
 
 	// the geometry has been updated
-	if (gl_GlobalInvocationID.x != 0) return;
+	//if (gl_GlobalInvocationID.x != 0) return;
 
 	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
 	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
 	tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y);
 	
 	while (!isRootNode(indexOfNodeInBLASToUpdate)) {
+		memoryBarrier();
+
 		indexOfNodeInBLASToUpdate = parentNode(indexOfNodeInBLASToUpdate);
 
 		tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = joinAABBs(tlasBLAS[targetBLAS].tree[leftNode(indexOfNodeInBLASToUpdate)].aabb, tlasBLAS[targetBLAS].tree[rightNode(indexOfNodeInBLASToUpdate)].aabb);
@@ -762,6 +767,8 @@ void main() {
 	tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
 
 	while (!isRootNode(indexOfNodeInTLAS)) {
+		memoryBarrier();
+
 		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
 
 		tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
