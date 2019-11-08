@@ -84,25 +84,25 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	glActiveTexture(GL_TEXTURE5);
 
 	// TLAS TEXTURE CREATION
-	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingTLAS);
-	glBindTexture(GL_TEXTURE_2D, mRaytracingTLAS);
-	glTextureStorage2D(mRaytracingTLAS, 1, GL_RGBA32F, 1 << (expOfTwo_maxModels + 1), 2);
+	glCreateTextures(GL_TEXTURE_1D, 1, &mRaytracingTLAS);
+	glBindTexture(GL_TEXTURE_1D, mRaytracingTLAS);
+	glTextureStorage1D(mRaytracingTLAS, 1, GL_RGBA32F, (1 << (expOfTwo_maxModels + 1)) * 2);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_BASE_LEVEL, 0);
+	// END OF TLAS TEXTURE CREATION
+
+	// BLAS COLLECTION TEXTURE CREATION
+	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingBLASCollection);
+	glBindTexture(GL_TEXTURE_2D, mRaytracingBLASCollection);
+	glTextureStorage2D(mRaytracingBLASCollection, 1, GL_RGBA32F, (1 << (expOfTwo_maxCollectionsForModel + 1)) * 2, 1 << expOfTwo_maxModels);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	// END OF TLAS TEXTURE CREATION
-
-	// BLAS COLLECTION TEXTURE CREATION
-	glCreateTextures(GL_TEXTURE_3D, 1, &mRaytracingBLASCollection);
-	glBindTexture(GL_TEXTURE_3D, mRaytracingBLASCollection);
-	glTextureStorage3D(mRaytracingBLASCollection, 1, GL_RGBA32F, 1 << (expOfTwo_maxCollectionsForModel + 1), 1 << expOfTwo_maxModels, 2);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
 	// END OF BLAS COLLECTION TEXTURE CREATION
 	
 
@@ -127,6 +127,20 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
 	glBindVertexArray(mQuadVAO);
+}
+
+OpenGLPipeline::~OpenGLPipeline() {
+	glDeleteTextures(1, &mRaytracingTLAS);
+	glDeleteTextures(1, &mRaytracingBLASCollection);
+
+	// Avoid removing a VAO while it is currently bound
+	glBindVertexArray(0);
+
+	// Remove main VAO
+	glDeleteVertexArrays(1, &mQuadVAO);
+
+	// Remove VBO
+	glDeleteBuffers(1, &mQuadVBO);
 }
 
 void OpenGLPipeline::reset() noexcept {
@@ -189,17 +203,6 @@ void OpenGLPipeline::onRender() noexcept {
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
-OpenGLPipeline::~OpenGLPipeline() {
-	// Avoid removing a VAO while it is currently bound
-	glBindVertexArray(0);
-
-	// Remove main VAO
-	glDeleteVertexArrays(1, &mQuadVAO);
-
-	// Remove VBO
-	glDeleteBuffers(1, &mQuadVBO);
-}
-
 void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
 	glViewport(0, 0, newWidth, newHeight);
 
@@ -260,6 +263,12 @@ void OpenGLPipeline::insert(GLuint targetBLAS) noexcept {
 
 	prapareDispatch();
 
+	// The TLAS may get updated after an insert
+	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+	// The BLAS gets written, and since a node is a join of left and right childs the BLAS is also read
+	glBindImageTexture(1, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
 	mRaytracerInsert->setUniform("targetBLAS", targetBLAS);
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, mInputGeometryTemporary);
@@ -267,8 +276,8 @@ void OpenGLPipeline::insert(GLuint targetBLAS) noexcept {
 	// Dispatch the compute work!
 	glDispatchCompute(1 << expOfTwo_maxGeometryOnCollection, 1 << expOfTwo_maxCollectionsForModel, 1);
 
-	// synchronize with the GPU
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	// synchronize with the GPU: the insert procedure writes to texture (BLAS) and to the ModelMatrix SSBO.
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void OpenGLPipeline::update() noexcept {
@@ -276,9 +285,15 @@ void OpenGLPipeline::update() noexcept {
 
 	prapareDispatch();
 
+	// The TLAS gets written, and since a node is a join of left and right childs the TLAS is also read
+	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+	// The BLAS is only read on the update procedure
+	glBindImageTexture(1, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+
 	// Dispatch the compute work!
 	glDispatchCompute(static_cast<GLuint>(1) << expOfTwo_maxModels, 1, 1);
 
-	// synchronize with the GPU
+	// synchronize with the GPU: the update procedure only write to texture (TLAS)
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }

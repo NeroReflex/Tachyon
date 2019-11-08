@@ -349,28 +349,6 @@ AABB expandAABBWithGeometry(const AABB aabb, const Geometry geo) {
   =======================================================================================================*/
 
 /**
- * This represents a node of BVH-tree for an Acceleration Structure used in raytracing.
- */
-struct NodeData {
-	/**
-	 * The node AABB that can be either:
-	 *     - The content AABB if the current node is a leaf
-	 *     - The union of left and right AABBs
-	 */
-	AABB aabb;
-};
-
-struct BLAS {
-	mat4 ModelMatrix;
-
-	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxCollectionsForModel )];
-};
-
-struct TLAS {
-	NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxModels )];
-};
-
-/**
  * Check if the BLAS node at the given index is a leaf.
  *
  * @param index the node index on the linearized BVH-tree
@@ -410,6 +388,26 @@ uint LeafFromTLASNode_ByIndex(const uint leafIndex) {
 	return leafIndex - ((1 << expOfTwo_maxModels) - 1);
 }
 
+/**
+ * Get the index of a leaf element from the index of that leaf node.
+ *
+ * @param leafIndex the index used to access the leaf on the TLAS
+ * @return the index of the BLAS
+ */
+uint NodeFromBLASLeaf_ByLeafNumber(const uint leafIndex) {
+	return leafIndex + ((1 << expOfTwo_maxCollectionsForModel) - 1);
+}
+
+/**
+ * Get the index of a leaf element from the index of that leaf node.
+ *
+ * @param leafIndex the index used to access the leaf on the TLAS
+ * @return the index of the BLAS
+ */
+uint NodeFromTLASLeaf_ByLeafNumber(const uint leafIndex) {
+	return leafIndex + ((1 << expOfTwo_maxModels) - 1);
+}
+
 
 /*=======================================================================================================
   ===                                  Core SSBOs & Related Data                                      ===
@@ -423,9 +421,9 @@ struct BLASGeometryCollection {
 	GeometryCollection collection[1 << expOfTwo_maxCollectionsForModel];
 };
 
-layout(rgba32f, binding = 0) uniform coherent image2D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index, Y is either 0 for position or 1 for dimensions
+layout(rgba32f, binding = 0) uniform coherent image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
 
-layout(rgba32f, binding = 1) uniform coherent image3D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS, Z is either 0 for position or 1 for dimensions
+layout(rgba32f, binding = 1) uniform coherent image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
 
 layout(std430, binding = 0) coherent buffer sceneGeometry {
 	BLASGeometryCollection globalGeometry[]; // This is an array of geometry
@@ -445,7 +443,7 @@ layout(std430, binding = 1) coherent buffer blasLanes {
  * @return the AABB stored at the given index
  */
 AABB ReadAABBFromBLAS_ByIndexes(const uint blas, const uint index) {
-	return AABB(imageLoad(tlasBLAS, ivec3(index, blas, 0)), imageLoad(tlasBLAS, ivec3(index, blas, 1)));
+	return AABB(imageLoad(tlasBLAS, ivec2(2*index, blas)), imageLoad(tlasBLAS, ivec2(2*index+1, blas)));
 }
 
 /**
@@ -458,8 +456,8 @@ AABB ReadAABBFromBLAS_ByIndexes(const uint blas, const uint index) {
  * @param aabb the AABB to write
  */
 void WriteAABBOnBLAS_ByIndexes(const uint blas, const uint index, const AABB aabb) {
-	imageStore(tlasBLAS, ivec3(index, blas, 0), aabb.position);
-	imageStore(tlasBLAS, ivec3(index, blas, 1), aabb.dimensions);
+	imageStore(tlasBLAS, ivec2(2*index, blas), aabb.position);
+	imageStore(tlasBLAS, ivec2(2*index+1, blas), aabb.dimensions);
 }
 
 /**
@@ -483,7 +481,7 @@ bool isEmptyBLAS_ByIndex(uint index) {
  * @return the AABB stored at the given index
  */
 AABB ReadAABBFromTLAS_ByIndex(const uint index) {
-	return AABB(imageLoad(tlas, ivec2(index, 0)), imageLoad(tlas, ivec2(index, 1)));
+	return AABB(imageLoad(tlas, 2*int(index)), imageLoad(tlas, 2*int(index)+1));
 }
 
 /**
@@ -495,8 +493,8 @@ AABB ReadAABBFromTLAS_ByIndex(const uint index) {
  * @param aabb the AABB to write
  */
 void WriteAABBOnTLAS_ByIndex(const uint index, const AABB aabb) {
-	imageStore(tlas, ivec2(index, 0), aabb.position);
-	imageStore(tlas, ivec2(index, 1), aabb.dimensions);
+	imageStore(tlas, 2*int(index), aabb.position);
+	imageStore(tlas, 2*int(index)+1, aabb.dimensions);
 }
 
 /*=======================================================================================================
@@ -772,7 +770,7 @@ void main() {
 	//if (gl_GlobalInvocationID.x != 0) return;
 
 	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
-	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
+	uint indexOfNodeInBLASToUpdate = NodeFromBLASLeaf_ByLeafNumber(gl_GlobalInvocationID.y);
 	WriteAABBOnBLAS_ByIndexes(targetBLAS, indexOfNodeInBLASToUpdate, generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y));
 	
 	while (!isRootNode(indexOfNodeInBLASToUpdate)) {
@@ -811,7 +809,9 @@ void main() {
 
 	ModelMatrix[gl_GlobalInvocationID.x] = emptyTransform;
 
-	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + gl_GlobalInvocationID.x;
+	memoryBarrierBuffer();
+
+	uint indexOfNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(gl_GlobalInvocationID.x);
 
 	WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
 
@@ -842,7 +842,7 @@ void main () {
 	
 	const uint indexOfLeafInTLAS = gl_GlobalInvocationID.x;
 
-	uint indexOfLastUpdatedNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
+	uint indexOfLastUpdatedNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(indexOfLeafInTLAS);
 
 	WriteAABBOnTLAS_ByIndex(
 		indexOfLastUpdatedNodeInTLAS,
