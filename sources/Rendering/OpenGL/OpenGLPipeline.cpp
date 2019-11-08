@@ -49,7 +49,8 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 			std::make_shared<const FragmentShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(tonemapping_fragOGL), tonemapping_fragOGL_size)
 		})
     ),
-	mRaytracerOutputTexture(0) {
+	mRaytracerOutputTexture(0),
+	mRaytracingTLAS(0) {
 
 	std::array<glm::vec4, 4> screenTrianglesPosition = {
 		glm::vec4(-1.0f, -1.0f, 0.5f, 1.0f),
@@ -74,8 +75,36 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexArrayAttrib(mQuadVAO, 0);
 
-	// Active the texture unit
+	// Activate needed texture units
 	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE3);
+	glActiveTexture(GL_TEXTURE4);
+	glActiveTexture(GL_TEXTURE5);
+
+	// TLAS TEXTURE CREATION
+	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingTLAS);
+	glBindTexture(GL_TEXTURE_2D, mRaytracingTLAS);
+	glTextureStorage2D(mRaytracingTLAS, 1, GL_RGBA32F, 1 << (expOfTwo_maxModels + 1), 2);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	// END OF TLAS TEXTURE CREATION
+
+	// BLAS COLLECTION TEXTURE CREATION
+	glCreateTextures(GL_TEXTURE_3D, 1, &mRaytracingBLASCollection);
+	glBindTexture(GL_TEXTURE_3D, mRaytracingBLASCollection);
+	glTextureStorage3D(mRaytracingBLASCollection, 1, GL_RGBA32F, 1 << (expOfTwo_maxCollectionsForModel + 1), 1 << expOfTwo_maxModels, 2);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
+	// END OF BLAS COLLECTION TEXTURE CREATION
+	
 
 	//Create the raytracer SSBO, with corret dimensions
 	glCreateBuffers(mRaytracingSSBO.size(), mRaytracingSSBO.data());
@@ -87,15 +116,12 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	glNamedBufferStorage(mRaytracingSSBO[0], sizeof(BLASGeometryCollection) * (1 << expOfTwo_maxModels), NULL, 0);
 
 	// This is the BLAS
-	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(BLAS) * (1 << expOfTwo_maxModels), NULL, 0);
-	
-	// This is the TLAS
-	glNamedBufferStorage(mRaytracingSSBO[2], sizeof(TLAS), NULL, 0);
+	glNamedBufferStorage(mRaytracingSSBO[1], sizeof(glm::mat4) * (1 << expOfTwo_maxModels), NULL, 0);
 	
 	// Prepare the tomporary input geometry SSBO
 	glCreateBuffers(1, &mInputGeometryTemporary);
 	glNamedBufferStorage(mInputGeometryTemporary,
-		sizeof(glm::vec4) * (size_t(1) << expOfTwo_maxCollectionsForModel) * size_t(size_t(1) << expOfTwo_maxGeometryOnCollection),
+		sizeof(glm::vec4) * (size_t(1) << expOfTwo_maxCollectionsForModel) * size_t(size_t(1) << expOfTwo_maxCollectionsForModel),
 		NULL,
 		GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 
@@ -108,6 +134,9 @@ void OpenGLPipeline::reset() noexcept {
 }
 
 void OpenGLPipeline::prapareDispatch() noexcept {
+	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	glBindImageTexture(1, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
 	// Bind the raytracer SSBO (the rendering context)
 	for (GLuint k = 0; k < mRaytracingSSBO.size(); ++k)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, k, mRaytracingSSBO[k]);
@@ -127,7 +156,7 @@ void OpenGLPipeline::onRender() noexcept {
 	prapareDispatch();
 
 	// Bind the texture to be written by the raytracer
-	glBindImageTexture(0, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(5, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
 	// Set rendering information
 	mRaytracerRender->setUniform("width", getWidth());
@@ -248,8 +277,8 @@ void OpenGLPipeline::update() noexcept {
 	prapareDispatch();
 
 	// Dispatch the compute work!
-	glDispatchCompute(1 << expOfTwo_maxModels, 1, 1);
+	glDispatchCompute(static_cast<GLuint>(1) << expOfTwo_maxModels, 1, 1);
 
 	// synchronize with the GPU
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }

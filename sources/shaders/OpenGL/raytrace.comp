@@ -417,42 +417,80 @@ struct BLASGeometryCollection {
 	GeometryCollection collection[1 << expOfTwo_maxCollectionsForModel];
 };
 
-layout(std430, binding = 0) buffer sceneGeometry {
+layout(rgba32f, binding = 0) uniform coherent image2D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index, Y is either 0 for position or 1 for dimensions
+
+layout(rgba32f, binding = 1) uniform coherent image3D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS, Z is either 0 for position or 1 for dimensions
+
+layout(std430, binding = 0) coherent buffer sceneGeometry {
 	BLASGeometryCollection globalGeometry[]; // This is an array of geometry
 };
 
-layout(std430, binding = 1) buffer sceneBLAS {
-	BLAS tlasBLAS[]; // This is the BLAS collection
+layout(std430, binding = 1) coherent buffer blasLanes {
+	mat4 ModelMatrix[];
 };
 
-layout(std430, binding = 2) buffer sceneTLAS {
-	TLAS tlas; // This is the BLAS collection
-};
-
-bool isEmptyBLAS_ByIndex(uint index) {
-	return tlasBLAS[index].ModelMatrix == emptyTransform;
+/**
+ * Read the AABB on the given position.
+ *
+ * Note: memory synchronization (memoryBarrierImage) must be performed by the caller!
+ *
+ * @param blas the index of selected BLAS
+ * @param index the position in the linearized tree
+ * @return the AABB stored at the given index
+ */
+AABB ReadAABBFromBLAS_ByIndexes(const uint blas, const uint index) {
+	return AABB(imageLoad(tlasBLAS, ivec3(index, blas, 0)), imageLoad(tlasBLAS, ivec3(index, blas, 1)));
 }
 
 /**
- * Update a leaf in in TLAS and all its parent to the root.
- * The index of the leaf (that is NOT the index of the internal node) is also the index of the associated BLAS.
+ * Update the AABB at the given index with the provided AABB.
  *
- * @param indexOfLeafInTLAS the index of the BLAS leaf that has to be updated
+ * Note: memory synchronization (memoryBarrierImage) must be performed by the caller!
+ * 
+ * @param blas the index of selected BLAS
+ * @param index the position in the linearized tree
+ * @param aabb the AABB to write
  */
-void updateTLASLeaf(const uint indexOfLeafInTLAS) {
-	uint indexOfLastUpdatedNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
+void WriteAABBOnBLAS_ByIndexes(const uint blas, const uint index, const AABB aabb) {
+	imageStore(tlasBLAS, ivec3(index, blas, 0), aabb.position);
+	imageStore(tlasBLAS, ivec3(index, blas, 1), aabb.dimensions);
+}
 
-	tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = transformAABB(tlasBLAS[indexOfLeafInTLAS].tree[0].aabb, tlasBLAS[indexOfLeafInTLAS].ModelMatrix);
+/**
+ * Check if the given BLAS is empty.
+ *
+ * Note: an empty BLAS has the ModelMatrix set to an empty transform.
+ *
+ * @param index the index of the BLAS to be tested
+ * @return TRUE iif the BLAS is empty
+ */
+bool isEmptyBLAS_ByIndex(uint index) {
+	return ModelMatrix[index] == emptyTransform;
+}
 
-	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
-		memoryBarrier();
+/**
+ * Read the AABB on the given position.
+ *
+ * Note: memory synchronization (memoryBarrierImage) must be performed by the caller!
+ *
+ * @param index the position in the linearized tree
+ * @return the AABB stored at the given index
+ */
+AABB ReadAABBFromTLAS_ByIndex(const uint index) {
+	return AABB(imageLoad(tlas, ivec2(index, 0)), imageLoad(tlas, ivec2(index, 1)));
+}
 
-		// Target the parent node for update
-		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
-
-		// Update the current node
-		tlas.tree[indexOfLastUpdatedNodeInTLAS].aabb = joinAABBs(tlas.tree[leftNode(indexOfLastUpdatedNodeInTLAS)].aabb, tlas.tree[rightNode(indexOfLastUpdatedNodeInTLAS)].aabb);
-	}
+/**
+ * Update the AABB at the given index with the provided AABB.
+ *
+ * Note: memory synchronization (memoryBarrierImage) must be performed by the caller!
+ * 
+ * @param index the position in the linearized tree
+ * @param aabb the AABB to write
+ */
+void WriteAABBOnTLAS_ByIndex(const uint index, const AABB aabb) {
+	imageStore(tlas, ivec2(index, 0), aabb.position);
+	imageStore(tlas, ivec2(index, 1), aabb.dimensions);
 }
 
 /*=======================================================================================================
@@ -538,7 +576,7 @@ bool hasMissed(const RayGeometryIntersection test) {
 
 RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const float minDistance, const float maxDistance) {
 	// Adjust transformation matrix to consider the BLAS model matrix
-	mat4 transformMatrix = tlasBLAS[blasIndex].ModelMatrix;
+	mat4 transformMatrix = ModelMatrix[blasIndex];
 
 	RayGeometryIntersection bestHitSoFar = miss;
 
@@ -553,12 +591,12 @@ RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasInde
 			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? leftNode(currentNodeIndex) : rightNode(currentNodeIndex);
 		}
 
-		if ((!isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlasBLAS[blasIndex].tree[currentNodeIndex].aabb, transformMatrix))) {
+		if ((!isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromBLAS_ByIndexes(blasIndex, currentNodeIndex), transformMatrix))) {
 			// Go one level deeper
 			currentDepth += 1;
 		} else {
 			// This is a leaf that should be tested...
-			if ((isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlasBLAS[blasIndex].tree[currentNodeIndex].aabb, transformMatrix))) {
+			if ((isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromBLAS_ByIndexes(blasIndex, currentNodeIndex), transformMatrix))) {
 				RayGeometryIntersection currentHit = intersectCollection_ByIndexes(ray, blasIndex, LeafFromBLASNode_ByIndex(currentNodeIndex), transformMatrix, minDistance, maxDistance);
 
 				bestHitSoFar = bestHit(bestHitSoFar, currentHit);
@@ -602,12 +640,12 @@ RayGeometryIntersection castRay(const Ray ray, const float minDistance, const fl
 			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? leftNode(currentNodeIndex) : rightNode(currentNodeIndex);
 		}
 
-		if ((!isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlas.tree[currentNodeIndex].aabb, identityTransform))) {
+		if ((!isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromTLAS_ByIndex(currentNodeIndex), identityTransform))) {
 			// Go one level deeper
 			currentDepth += 1;
 		} else {
 			// This is a leaf that should be tested...
-			if ((isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, tlas.tree[currentNodeIndex].aabb, identityTransform))) {
+			if ((isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromTLAS_ByIndex(currentNodeIndex), identityTransform))) {
 				RayGeometryIntersection currentHit = intersectBLAS_ByIndex(ray, LeafFromTLASNode_ByIndex(currentNodeIndex), minDistance, maxDistance);
 				
 				bestHitSoFar = bestHit(bestHitSoFar, currentHit);
@@ -721,7 +759,7 @@ void main() {
 	globalGeometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
 
 	// Wait for all geometry to be in-place
-	memoryBarrier();
+	memoryBarrierBuffer();
 	//barrier();
 
 	// the geometry has been updated
@@ -729,18 +767,25 @@ void main() {
 
 	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
 	uint indexOfNodeInBLASToUpdate = ((1 << expOfTwo_maxCollectionsForModel) - 1) + gl_GlobalInvocationID.y;
-	tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y);
+	WriteAABBOnBLAS_ByIndexes(targetBLAS, indexOfNodeInBLASToUpdate, generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y));
 	
 	while (!isRootNode(indexOfNodeInBLASToUpdate)) {
-		memoryBarrier();
+		memoryBarrierBuffer();
 
 		indexOfNodeInBLASToUpdate = parentNode(indexOfNodeInBLASToUpdate);
 
-		tlasBLAS[targetBLAS].tree[indexOfNodeInBLASToUpdate].aabb = joinAABBs(tlasBLAS[targetBLAS].tree[leftNode(indexOfNodeInBLASToUpdate)].aabb, tlasBLAS[targetBLAS].tree[rightNode(indexOfNodeInBLASToUpdate)].aabb);
+		WriteAABBOnBLAS_ByIndexes(
+			targetBLAS,
+			indexOfNodeInBLASToUpdate,
+			joinAABBs(
+				ReadAABBFromBLAS_ByIndexes(targetBLAS, leftNode(indexOfNodeInBLASToUpdate)),
+				ReadAABBFromBLAS_ByIndexes(targetBLAS, rightNode(indexOfNodeInBLASToUpdate))
+			)
+		);
 	}
 
 	// At the very end, flag the BLAS as used/occupied
-	tlasBLAS[targetBLAS].ModelMatrix = identityTransform;
+	ModelMatrix[targetBLAS] = identityTransform;
 
 	// TLAS will be updated before drawing the scene doing it here would waste time
 }
@@ -758,18 +803,18 @@ layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 void main() {
 	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 
-	tlasBLAS[gl_GlobalInvocationID.x].ModelMatrix = emptyTransform;
+	ModelMatrix[gl_GlobalInvocationID.x] = emptyTransform;
 
 	uint indexOfNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + gl_GlobalInvocationID.x;
 
-	tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
+	WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
 
 	while (!isRootNode(indexOfNodeInTLAS)) {
-		memoryBarrier();
+		memoryBarrierBuffer();
 
 		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
 
-		tlas.tree[indexOfNodeInTLAS].aabb = emptyAABB;
+		WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
 	}
 
 }
@@ -789,14 +834,40 @@ void main () {
 	// If this work doen't map to a BLAS do nothing
 	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 
-	updateTLASLeaf(gl_GlobalInvocationID.x);
+	const uint indexOfLeafInTLAS = gl_GlobalInvocationID.x;
+
+	uint indexOfLastUpdatedNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
+
+	WriteAABBOnTLAS_ByIndex(
+		indexOfLastUpdatedNodeInTLAS,
+		transformAABB(ReadAABBFromBLAS_ByIndexes(indexOfLeafInTLAS, 0), ModelMatrix[indexOfLeafInTLAS])
+	);
+
+	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
+		memoryBarrierImage();
+		barrier();
+
+		if (isEven(indexOfLastUpdatedNodeInTLAS)) break;
+
+		// Target the parent node for update
+		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
+
+		// Update the current node
+		WriteAABBOnTLAS_ByIndex(
+			indexOfLastUpdatedNodeInTLAS,
+			joinAABBs(
+				ReadAABBFromTLAS_ByIndex(leftNode(indexOfLastUpdatedNodeInTLAS)),
+				ReadAABBFromTLAS_ByIndex(rightNode(indexOfLastUpdatedNodeInTLAS))
+			)
+		);
+	}
 }
 
 #elif defined(RENDER)
 
 layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
 
-layout(rgba32f, binding = 0) uniform image2D renderTarget; // Raytracing output texture
+layout(rgba32f, binding = 5) uniform image2D renderTarget; // Raytracing output texture
 
 layout (location = 0) uniform uint width;
 layout (location = 1) uniform uint height;

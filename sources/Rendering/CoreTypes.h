@@ -47,9 +47,5 @@ namespace Tachyon {
 
 			NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxCollectionsForModel )];
 		};
-
-		struct TLAS {
-			NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxModels )];
-		};
 	}
 }

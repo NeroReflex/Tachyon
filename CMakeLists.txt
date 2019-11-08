@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.10)
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 set(CMAKE_DEBUG_POSTFIX "_d")
 
-project (SparkEngine)
+project (Tachyon)
 
 include(${PROJECT_SOURCE_DIR}/cmake/file2c.cmake)
 
