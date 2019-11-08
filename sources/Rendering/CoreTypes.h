@@ -33,19 +33,5 @@ namespace Tachyon {
 			GeometryCollection collection[1 << expOfTwo_maxCollectionsForModel];
 		};
 
-		struct AABB {
-			glm::vec4 position;
-			glm::vec4 dimensions;
-		};
-
-		struct NodeData {
-			AABB aabb;
-		};
-
-		struct BLAS {
-			glm::mat4 ModelMatrix;
-
-			NodeData tree[numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo_maxCollectionsForModel )];
-		};
 	}
 }
