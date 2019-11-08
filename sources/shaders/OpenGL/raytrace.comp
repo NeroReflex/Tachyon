@@ -18,6 +18,12 @@ const mat4 emptyTransform = mat4(0);
  *                                                  Algorithms                                                           *
  *************************************************************************************************************************/
 
+/**
+ * Checks if the given number is even.
+ *
+ * @param n the number to check
+ * @return TRUE iif the given number is even
+ */
 bool isEven(uint n) {
 	return (n & 0x0001) == 0;
 }
@@ -759,7 +765,7 @@ void main() {
 	globalGeometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
 
 	// Wait for all geometry to be in-place
-	memoryBarrierBuffer();
+	memoryBarrier();
 	//barrier();
 
 	// the geometry has been updated
@@ -770,7 +776,7 @@ void main() {
 	WriteAABBOnBLAS_ByIndexes(targetBLAS, indexOfNodeInBLASToUpdate, generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y));
 	
 	while (!isRootNode(indexOfNodeInBLASToUpdate)) {
-		memoryBarrierBuffer();
+		memoryBarrierImage();
 
 		indexOfNodeInBLASToUpdate = parentNode(indexOfNodeInBLASToUpdate);
 
@@ -810,7 +816,7 @@ void main() {
 	WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
 
 	while (!isRootNode(indexOfNodeInTLAS)) {
-		memoryBarrierBuffer();
+		memoryBarrierImage();
 
 		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
 
@@ -832,8 +838,8 @@ layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
  */
 void main () {
 	// If this work doen't map to a BLAS do nothing
-	if ((gl_GlobalInvocationID.x > (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
-
+	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+	//if (gl_GlobalInvocationID.x != 0) return;
 	const uint indexOfLeafInTLAS = gl_GlobalInvocationID.x;
 
 	uint indexOfLastUpdatedNodeInTLAS = ((1 << expOfTwo_maxModels) - 1) + indexOfLeafInTLAS;
