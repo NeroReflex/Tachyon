@@ -41,8 +41,13 @@
 typedef glm::uint32 UnsignedType;
 typedef glm::float32 NumericType;
 
-#define DBG_ASSERT(x) assert(x)
-#define DBG_ONLY(x) x
+#if !defined(NDEBUG)
+	#define DBG_ASSERT(x) assert(x)
+	#define DBG_ONLY(x) x
+#else
+	#define DBG_ASSERT(x) /* x */
+	#define DBG_ONLY(x) /* x */
+#endif
 
 // Remove macros that generate compile errors
 #undef max

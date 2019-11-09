@@ -10,6 +10,38 @@
 
 #define expOfTwo_numOfVec4OnGeometrySerialization 1
 
+
+#if defined(RENDER) || defined(QUERY_INFO)
+	#define TLAS_MEMORY_MODEL readonly
+	#define TLAS_READONLY
+
+	#define BLAS_MOEMORY_MODEL readonly
+	#define BLAS_READONLY
+
+	#define GEOMETRY_MEMORY_MODEL readonly
+	#define GEOMETRY_READONLY
+
+	#define MODELMATRIX_MEMORY_MODEL readonly
+	#define MODELMATRIX_READONLY
+
+#elif defined(TLAS_UPDATE)
+	#define TLAS_MEMORY_MODEL coherent
+
+	#define BLAS_MOEMORY_MODEL readonly
+	#define BLAS_READONLY
+
+	#define GEOMETRY_MEMORY_MODEL readonly
+	#define GEOMETRY_READONLY
+
+	#define MODELMATRIX_MEMORY_MODEL readonly
+	#define MODELMATRIX_READONLY
+#else
+	#define TLAS_MEMORY_MODEL coherent
+	#define BLAS_MOEMORY_MODEL coherent
+	#define GEOMETRY_MEMORY_MODEL coherent
+	#define MODELMATRIX_MEMORY_MODEL coherent
+#endif
+
 const float PI = 3.14159265359;
 const float infinity = (1.0) / 0.0;
 const float minusInfinity = (-1.0) / 0.0;
@@ -415,13 +447,15 @@ uint NodeFromTLASLeaf_ByLeafNumber(const uint leafIndex) {
   ===                                  Core SSBOs & Related Data                                      ===
   =======================================================================================================*/
 
-layout(rgba32f, binding = 0) uniform coherent image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
+//#if !defined(QUERY_INFO)
 
-layout(rgba32f, binding = 1) uniform coherent image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
+layout(rgba32f, binding = 0) uniform TLAS_MEMORY_MODEL image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
 
-layout(rgba32f, binding = 2) uniform coherent image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
+layout(rgba32f, binding = 1) uniform BLAS_MOEMORY_MODEL image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
 
-layout(rgba32f, binding = 3) uniform coherent image2D ModelMatrix;
+layout(rgba32f, binding = 2) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
+
+layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix;
 
 mat4 ReadModelMatrix_ByIndex(const uint index) {
 	return mat4(
@@ -432,12 +466,14 @@ mat4 ReadModelMatrix_ByIndex(const uint index) {
 	);
 }
 
+#if !defined(MODELMATRIX_READONLY)
 void WriteModelMatrix_ByIndex(const uint index, const mat4 matrix) {
 	imageStore(ModelMatrix, ivec2(0, index), matrix[0]);
 	imageStore(ModelMatrix, ivec2(1, index), matrix[1]);
 	imageStore(ModelMatrix, ivec2(2, index), matrix[2]);
 	imageStore(ModelMatrix, ivec2(3, index), matrix[3]);
 }
+#endif
 
 Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection) {
 	vec4 center = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex));
@@ -446,10 +482,12 @@ Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, cons
 	return Geometry(center.xyz, radius.x);
 }
 
+#if !defined(GEOMETRY_READONLY)
 void WriteGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection, const Geometry geometry) {
 	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex), vec4(geometry.center, 1));
 	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex), vec4(geometry.radius, geometry.radius, geometry.radius, geometry.radius));
 }
+#endif
 
 /**
  * Read the AABB on the given position.
@@ -464,6 +502,7 @@ AABB ReadAABBFromBLAS_ByIndexes(const uint blas, const uint index) {
 	return AABB(imageLoad(tlasBLAS, ivec2(2*index, blas)), imageLoad(tlasBLAS, ivec2(2*index+1, blas)));
 }
 
+#if !defined(BLAS_READONLY)
 /**
  * Update the AABB at the given index with the provided AABB.
  *
@@ -477,6 +516,7 @@ void WriteAABBOnBLAS_ByIndexes(const uint blas, const uint index, const AABB aab
 	imageStore(tlasBLAS, ivec2(2*index, blas), aabb.position);
 	imageStore(tlasBLAS, ivec2(2*index+1, blas), aabb.dimensions);
 }
+#endif
 
 /**
  * Check if the given BLAS is empty.
@@ -502,6 +542,7 @@ AABB ReadAABBFromTLAS_ByIndex(const uint index) {
 	return AABB(imageLoad(tlas, 2*int(index)), imageLoad(tlas, 2*int(index)+1));
 }
 
+#if !defined(TLAS_READONLY)
 /**
  * Update the AABB at the given index with the provided AABB.
  *
@@ -514,6 +555,7 @@ void WriteAABBOnTLAS_ByIndex(const uint index, const AABB aabb) {
 	imageStore(tlas, 2*int(index), aabb.position);
 	imageStore(tlas, 2*int(index)+1, aabb.dimensions);
 }
+#endif
 
 AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint blasIndex, const uint collectionIndex) {
 	AABB bounding = emptyAABB;
@@ -524,6 +566,8 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint blasInd
 
 	return bounding;
 }
+
+//#endif
 
 /*=======================================================================================================
   ===                           Ray-Geometry Intersection (Rendering)                                 ===
@@ -578,7 +622,7 @@ RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry
 		return (((x0 > minDistance) && (x0 < maxDistance)) && (x0 <= x1)) || ((x1 <= minDistance) || (x1 >= maxDistance)) ?
 			RayGeometryIntersection(x0, vec4(point_x0, 1), vec4(normal_x0, 0)) : RayGeometryIntersection(x1, vec4(point_x1, 1), vec4(normal_x1, 0));
 	}
-
+	
 	return miss;
 }
 
@@ -890,6 +934,35 @@ void main () {
 	}
 }
 
+#elif defined(QUERY_INFO)
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout (std430, binding = 1) writeonly buffer raytracerInfo {
+	uint expOfTwo_numberOfModels;
+	uint expOfTwo_numberOfGeometryCollectionOnBLAS;
+	uint expOfTwo_numberOfGeometryOnCollection;
+
+	// Geometry is stored as consecutive vec4 in a texture, on the x axis.
+	uint oxpOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
+};
+
+/**
+ * This is the entry point used to query information about the raytracer.
+ *
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(1, 1, 1)
+ */
+void main() {
+	// Only one instance is necessary
+	if ((gl_GlobalInvocationID.x != 0) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+
+	expOfTwo_numberOfModels = expOfTwo_maxModels;
+	expOfTwo_numberOfGeometryCollectionOnBLAS = expOfTwo_maxCollectionsForModel;
+	expOfTwo_numberOfGeometryOnCollection = expOfTwo_maxGeometryOnCollection;
+
+	oxpOfTwo_numberOfTesselsForGeometryTexturazation = expOfTwo_numOfVec4OnGeometrySerialization;
+}
+
 #elif defined(RENDER)
 
 layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
@@ -911,21 +984,19 @@ layout (location = 6) uniform float cameraAspect;
  * Usage: the compute shader MUST be dispatched as glDispatchCompute(width, height, 1).
  */
 void main () {
+	// Avoid calculating useless pixels
+	if ((gl_GlobalInvocationID.x >= width) || (gl_GlobalInvocationID.y >= height)) return;
+
 	// base pixel colour for image
 	vec4 pixel = vec4(0, 0, 0, 0);
 	// get index in global work group i.e x,y position
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-
-	// Avoid calculating useless pixels
-	if ((gl_GlobalInvocationID.x >= width) || (gl_GlobalInvocationID.y >= height)) {
-		return;
-	}
 	
 	// Get UV cordinates of the output texture
 	const float u = float(gl_GlobalInvocationID.x) / float(width);
 	const float v = float(gl_GlobalInvocationID.y) / float(height);
 
-	const Camera camera = Camera(cameraPosition, normalize(cameraViewDir), cameraUpVector, cameraFoV, cameraAspect);
+	const Camera camera = Camera(cameraPosition, cameraViewDir, cameraUpVector, cameraFoV, cameraAspect);
 
 	// Generate camera ray
 	const Ray cameraRay = generateCameraRay(camera, u, v);
@@ -938,28 +1009,6 @@ void main () {
 	imageStore(renderTarget, pixel_coords, pixel);
 }
 
-#elif defined(QUERY_INFO)
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-
-layout (std430, binding = 1) writeonly buffer raytracerInfo {
-	uint expOfTwo_numberOfModels;
-	uint expOfTwo_numberOfGeometryCollectionOnBLAS;
-	uint expOfTwo_numberOfGeometryOnCollection;
-
-	// Geometry is stored as consecutive vec4 in a texture, on the x axis.
-	uint oxpOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
-};
-
-void main() {
-	// Only one instance is necessary
-	if ((gl_GlobalInvocationID.x != 0) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
-
-	expOfTwo_numberOfModels = expOfTwo_maxModels;
-	expOfTwo_numberOfGeometryCollectionOnBLAS = expOfTwo_maxCollectionsForModel;
-	expOfTwo_numberOfGeometryOnCollection = expOfTwo_maxGeometryOnCollection;
-
-	oxpOfTwo_numberOfTesselsForGeometryTexturazation = expOfTwo_numOfVec4OnGeometrySerialization;
-}
 
 #endif

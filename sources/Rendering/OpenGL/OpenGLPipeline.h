@@ -32,10 +32,6 @@ namespace Tachyon {
 				void onRender() noexcept final;
 
 			private:
-				void insert(GLuint targetBLAS) noexcept;
-
-				void flush() noexcept;
-
 				void update() noexcept;
 
 			private:

@@ -93,6 +93,12 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	glNamedBufferStorage(mQuadVBO, sizeof(glm::vec4) * screenTrianglesPosition.size(), screenTrianglesPosition.data(), 0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexArrayAttrib(mQuadVAO, 0);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 
 	// Activate needed texture units
 	glActiveTexture(GL_TEXTURE0);
@@ -106,33 +112,18 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	glCreateTextures(GL_TEXTURE_1D, 1, &mRaytracingTLAS);
 	glBindTexture(GL_TEXTURE_1D, mRaytracingTLAS);
 	glTextureStorage1D(mRaytracingTLAS, 1, GL_RGBA32F, (size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_BASE_LEVEL, 0);
 	// END OF TLAS TEXTURE CREATION
 
 	// BLAS COLLECTION TEXTURE CREATION
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingBLASCollection);
 	glBindTexture(GL_TEXTURE_2D, mRaytracingBLASCollection);
 	glTextureStorage2D(mRaytracingBLASCollection, 1, GL_RGBA32F, (size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS + 1)) * 2, size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	// END OF BLAS COLLECTION TEXTURE CREATION
 
 	// MODELMATRIX TEXTURE CREATION
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingModelMatrix);
 	glBindTexture(GL_TEXTURE_2D, mRaytracingModelMatrix);
 	glTextureStorage2D(mRaytracingModelMatrix, 1, GL_RGBA32F, 4, size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	// END OF MODELMATRIX TEXTURE CREATION
 
 	// GEOMETRY COLLECTION TEXTURE CREATION
@@ -147,11 +138,6 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 		size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.oxpOfTwo_numberOfTesselsForGeometryTexturazation),
 		size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS,
 		size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	// END OF GEOMETRY COLLECTION TEXTURE CREATION
 	
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
@@ -176,7 +162,18 @@ OpenGLPipeline::~OpenGLPipeline() {
 }
 
 void OpenGLPipeline::reset() noexcept {
-	flush();
+	Program::use(*mRaytracerFlush);
+
+	// Bind the raytracer ModelMatrix as write-only as the shader will only nuke it
+	glBindImageTexture(3, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+	// The TLAS may get updated to the root after a leaf deletion
+	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels, 1, 1);
+
+	// synchronize with the GPU
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void OpenGLPipeline::onRender() noexcept {
@@ -240,26 +237,6 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
 	glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
 	glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, newWidth, newHeight);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-}
-
-void OpenGLPipeline::flush() noexcept {
-	Program::use(*mRaytracerFlush);
-
-	// Bind the raytracer ModelMatrix as write-only as the shader will only nuke it
-	glBindImageTexture(3, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-	// The TLAS may get updated to the root after a leaf deletion
-	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
-	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels, 1, 1);
-
-	// synchronize with the GPU
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, GLuint targetBLAS) noexcept {

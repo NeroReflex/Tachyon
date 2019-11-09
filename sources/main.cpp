@@ -84,11 +84,6 @@ int main(int argc, char** argv) {
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(MessageCallback, 0);
 
-	// Retrieve the initial window size to initialize the renderer
-	int initialWidth, initialHeight;
-	glfwGetWindowSize(window, &initialWidth, &initialHeight);
-
-
 	std::string rendererId =
 		std::string("OpenGL v") +
 		std::string((const char*)glGetString(GL_VERSION)) +
