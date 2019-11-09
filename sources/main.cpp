@@ -1,3 +1,4 @@
+#include "Core/Camera.h"
 #include "Rendering/OpenGL/OpenGLPipeline.h"
 
 void GLAPIENTRY
@@ -42,6 +43,8 @@ std::string get_opengl_compute_info() {
 
 int main(int argc, char** argv) {
 
+	std::cout << "Camera size: " << sizeof(Tachyon::Core::Camera) << " bytes. " << std::endl;
+
 	// Initialize GLFW
 	if (glfwInit() == 0) {
 		std::cout << "Error: cannot initialize GLFW" << std::endl;
@@ -64,6 +67,9 @@ int main(int argc, char** argv) {
 
 		return EXIT_FAILURE;
 	}
+
+	int windowWidth, windowHeight;
+	glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
 	// Make the window's context current
 	glfwMakeContextCurrent(window);
@@ -111,6 +117,7 @@ int main(int argc, char** argv) {
 
 	// Now it is safe to create the renderer
 	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
+	Tachyon::Core::Camera camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), glm::float32(60), glm::float32(windowWidth) / glm::float32(windowHeight));
 
 	raytracer->reset();
 
@@ -123,10 +130,10 @@ int main(int argc, char** argv) {
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		int windowWidth, windowHeight;
 		glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-		raytracer->render(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
+		camera.setAspect(windowWidth, windowHeight);
+		raytracer->render(camera, static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
 		glfwSwapBuffers(window);
 	}

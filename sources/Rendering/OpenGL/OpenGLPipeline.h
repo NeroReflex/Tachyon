@@ -29,7 +29,7 @@ namespace Tachyon {
 			protected:
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
 
-				void onRender() noexcept final;
+				void onRender(const Core::Camera& camera) noexcept final;
 
 			private:
 				void update() noexcept;

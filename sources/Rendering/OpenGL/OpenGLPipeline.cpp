@@ -176,7 +176,7 @@ void OpenGLPipeline::reset() noexcept {
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-void OpenGLPipeline::onRender() noexcept {
+void OpenGLPipeline::onRender(const Core::Camera& camera) noexcept {
 	// Clear the previously rendered scene
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -200,11 +200,14 @@ void OpenGLPipeline::onRender() noexcept {
 	mRaytracerRender->setUniform("height", getHeight());
 
 	// Set camera parameters
-	mRaytracerRender->setUniform("cameraPosition", glm::vec3(0, 0, 0));
-	mRaytracerRender->setUniform("cameraViewDir", glm::vec3(0, 0, -1));
-	mRaytracerRender->setUniform("cameraUpVector", glm::vec3(0, 1, 0));
-	mRaytracerRender->setUniform("cameraFoV", glm::float32(60));
-	mRaytracerRender->setUniform("cameraAspect", glm::float32(getWidth()) / glm::float32(getHeight()));
+	mRaytracerRender->setUniform("cameraPosition", camera.getCameraPosition());
+	mRaytracerRender->setUniform("cameraViewDir", camera.getViewDirection());
+	mRaytracerRender->setUniform("cameraUpVector", camera.getUp());
+	mRaytracerRender->setUniform("cameraFoV", camera.getFieldOfView());
+	mRaytracerRender->setUniform("cameraAspect", camera.getAspectRatio());
+	mRaytracerRender->setUniform("cameraLowerLeftCorner", camera.getRaytracingLowerLeftCorner());
+	mRaytracerRender->setUniform("cameraHorizontal", camera.getRaytracingHorizontal());
+	mRaytracerRender->setUniform("cameraVertical", camera.getRaytracingVertical());
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
