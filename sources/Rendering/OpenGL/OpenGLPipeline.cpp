@@ -154,14 +154,6 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	// END OF GEOMETRY COLLECTION TEXTURE CREATION
 	
-	// Prepare the tomporary input geometry SSBO
-	glCreateBuffers(1, &mInputGeometryTemporary);
-	glNamedBufferStorage(mInputGeometryTemporary,
-		sizeof(glm::vec4) * (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS) * size_t(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection),
-		NULL,
-		GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT
-	);
-
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
 	glBindVertexArray(mQuadVAO);
 }
@@ -264,55 +256,41 @@ void OpenGLPipeline::flush() noexcept {
 	// The TLAS may get updated to the root after a leaf deletion
 	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-	// Dispatch the compute work!
 	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels, 1, 1);
 
 	// synchronize with the GPU
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-void OpenGLPipeline::enqueueModel(const std::vector<GeometryPrimitive>& primitive, GLuint location) noexcept {
-	DBG_ASSERT( (location < (1 << mRaytracerInfo.expOfTwo_numberOfModels)) );
+void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, GLuint targetBLAS) noexcept {
+	DBG_ASSERT( (targetBLAS < (1 << mRaytracerInfo.expOfTwo_numberOfModels)) );
 
 	static_assert( (sizeof(GeometryPrimitive) == sizeof(glm::vec4) ), "Geometry type not matching input GLSL");
-
-	size_t fixedGeometryCount = (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection) * (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS);
-
-	GeometryPrimitive* inputGeometryMemory = reinterpret_cast<GeometryPrimitive*>(
-		glMapNamedBufferRange(mInputGeometryTemporary, 0, sizeof(GeometryPrimitive) * fixedGeometryCount, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT)
-	);
-	DBG_ASSERT((inputGeometryMemory));
 	
-	for (size_t i = 0; i < fixedGeometryCount; ++i) {
-		inputGeometryMemory[i] = (i < primitive.size()) ? primitive[i] : GeometryPrimitive();
-	}
+	// When creating the SSBO used to write geometry on the GPU the primitivesCollection vector will be read sequentially for the entire SSBO length, so make sure that won't generate a SEGFAULT!
+	primitivesCollection.reserve((size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection) * (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS));
 
-	glUnmapNamedBuffer(mInputGeometryTemporary);
+	// Prepare the tomporary input geometry SSBO
+	GLuint temporaryInputGeometry;
+	glCreateBuffers(1, &temporaryInputGeometry);
+	glNamedBufferStorage(temporaryInputGeometry, sizeof(glm::vec4) * (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS) * size_t(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection), primitivesCollection.data(), 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, temporaryInputGeometry);
 
-	glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-	glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-	// As last step call the insertion algorithm on the GPU
-	insert(location);
-}
-
-void OpenGLPipeline::insert(GLuint targetBLAS) noexcept {
 	Program::use(*mRaytracerInsert);
+
+	mRaytracerInsert->setUniform("targetBLAS", targetBLAS);
 
 	glBindImageTexture(0, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glBindImageTexture(1, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glBindImageTexture(2, mRaytracingGeometryCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glBindImageTexture(3, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
-	mRaytracerInsert->setUniform("targetBLAS", targetBLAS);
-
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, mInputGeometryTemporary);
-
-	// Dispatch the compute work!
+	
 	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection, size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS, 1);
 
 	// synchronize with the GPU: the insert procedure writes to texture (BLAS) and to the ModelMatrix SSBO.
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	glDeleteBuffers(1, &temporaryInputGeometry);
 }
 
 void OpenGLPipeline::update() noexcept {
@@ -323,7 +301,6 @@ void OpenGLPipeline::update() noexcept {
 	glBindImageTexture(2, mRaytracingGeometryCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 	glBindImageTexture(3, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-	// Dispatch the compute work!
 	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels, 1, 1);
 
 	// synchronize with the GPU: the update procedure only write to texture (TLAS)
