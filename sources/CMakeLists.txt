@@ -24,6 +24,9 @@ add_custom_target(
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}/shaders
 
+	COMMAND glslangValidator -G -DQUERY_INFO -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_query_info.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_query_info.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace_query_info.comp.spv.h" "raytrace_query_info_compOGL"
+
 	COMMAND glslangValidator -G -DRENDER -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_render.comp.spv" "${OPENGL_SHADERS_SOURCE_DIR}/raytrace.comp"
 	COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/raytrace_render.comp.spv.h" "raytrace_render_compOGL"
 

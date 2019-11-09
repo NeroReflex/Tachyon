@@ -8,6 +8,8 @@
 
 #define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
 
+#define expOfTwo_numOfVec4OnGeometrySerialization 1
+
 const float PI = 3.14159265359;
 const float infinity = (1.0) / 0.0;
 const float minusInfinity = (-1.0) / 0.0;
@@ -413,25 +415,41 @@ uint NodeFromTLASLeaf_ByLeafNumber(const uint leafIndex) {
   ===                                  Core SSBOs & Related Data                                      ===
   =======================================================================================================*/
 
-struct GeometryCollection {
-	Geometry geometry[1 << expOfTwo_maxGeometryOnCollection];
-};
-
-struct BLASGeometryCollection {
-	GeometryCollection collection[1 << expOfTwo_maxCollectionsForModel];
-};
-
 layout(rgba32f, binding = 0) uniform coherent image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
 
 layout(rgba32f, binding = 1) uniform coherent image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
 
-layout(std430, binding = 0) coherent buffer sceneGeometry {
-	BLASGeometryCollection globalGeometry[]; // This is an array of geometry
-};
+layout(rgba32f, binding = 2) uniform coherent image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
 
-layout(std430, binding = 1) coherent buffer blasLanes {
-	mat4 ModelMatrix[];
-};
+layout(rgba32f, binding = 3) uniform coherent image2D ModelMatrix;
+
+mat4 ReadModelMatrix_ByIndex(const uint index) {
+	return mat4(
+		imageLoad(ModelMatrix, ivec2(0, index)),
+		imageLoad(ModelMatrix, ivec2(1, index)),
+		imageLoad(ModelMatrix, ivec2(2, index)),
+		imageLoad(ModelMatrix, ivec2(3, index))
+	);
+}
+
+void WriteModelMatrix_ByIndex(const uint index, const mat4 matrix) {
+	imageStore(ModelMatrix, ivec2(0, index), matrix[0]);
+	imageStore(ModelMatrix, ivec2(1, index), matrix[1]);
+	imageStore(ModelMatrix, ivec2(2, index), matrix[2]);
+	imageStore(ModelMatrix, ivec2(3, index), matrix[3]);
+}
+
+Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection) {
+	vec4 center = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex));
+	vec4 radius = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex));
+
+	return Geometry(center.xyz, radius.x);
+}
+
+void WriteGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection, const Geometry geometry) {
+	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex), vec4(geometry.center, 1));
+	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex), vec4(geometry.radius, geometry.radius, geometry.radius, geometry.radius));
+}
 
 /**
  * Read the AABB on the given position.
@@ -469,7 +487,7 @@ void WriteAABBOnBLAS_ByIndexes(const uint blas, const uint index, const AABB aab
  * @return TRUE iif the BLAS is empty
  */
 bool isEmptyBLAS_ByIndex(uint index) {
-	return ModelMatrix[index] == emptyTransform;
+	return ReadModelMatrix_ByIndex(index) == emptyTransform;
 }
 
 /**
@@ -495,6 +513,16 @@ AABB ReadAABBFromTLAS_ByIndex(const uint index) {
 void WriteAABBOnTLAS_ByIndex(const uint index, const AABB aabb) {
 	imageStore(tlas, 2*int(index), aabb.position);
 	imageStore(tlas, 2*int(index)+1, aabb.dimensions);
+}
+
+AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint blasIndex, const uint collectionIndex) {
+	AABB bounding = emptyAABB;
+
+	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
+		bounding = expandAABBWithGeometry(bounding, ReadGeometry_ByIndexes(blasIndex, collectionIndex, i));
+	}
+
+	return bounding;
 }
 
 /*=======================================================================================================
@@ -559,7 +587,7 @@ RayGeometryIntersection intersectCollection_ByIndexes(const Ray ray, const uint 
 
 	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection) ; ++i) {
 		// Execute the ray-geometry intersection algorithm
-		const RayGeometryIntersection currentIntersectionInfo = intersectGeometry(ray, globalGeometry[blasIndex].collection[collectionIndex].geometry[i], transformMatrix, minDistance, maxDistance);
+		const RayGeometryIntersection currentIntersectionInfo = intersectGeometry(ray, ReadGeometry_ByIndexes(blasIndex, collectionIndex, i), transformMatrix, minDistance, maxDistance);
 
 		// Check if this is a better hit than the former one
 		bestHitSoFar = bestHit(bestHitSoFar, currentIntersectionInfo);
@@ -580,7 +608,7 @@ bool hasMissed(const RayGeometryIntersection test) {
 
 RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const float minDistance, const float maxDistance) {
 	// Adjust transformation matrix to consider the BLAS model matrix
-	mat4 transformMatrix = ModelMatrix[blasIndex];
+	mat4 transformMatrix = ReadModelMatrix_ByIndex(blasIndex);
 
 	RayGeometryIntersection bestHitSoFar = miss;
 
@@ -735,16 +763,6 @@ uint morton3D(const vec3 point)
     return xx * 4 + yy * 2 + zz;
 }
 
-AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint BLASIndex, const uint CollectionIndex) {
-	AABB bounding = emptyAABB;
-
-	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
-		bounding = expandAABBWithGeometry(bounding, globalGeometry[BLASIndex].collection[CollectionIndex].geometry[i]);
-	}
-
-	return bounding;
-}
-
 layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
 
 /**
@@ -760,7 +778,11 @@ void main() {
 	if ((gl_GlobalInvocationID.y >= (1 << expOfTwo_maxCollectionsForModel)) || (gl_GlobalInvocationID.x >= (1 << expOfTwo_maxGeometryOnCollection))) return;
 
 	// Copy the geometry on the final destination.
-	globalGeometry[targetBLAS].collection[gl_GlobalInvocationID.y].geometry[gl_GlobalInvocationID.x] = transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]);
+	WriteGeometry_ByIndexes(
+		targetBLAS, gl_GlobalInvocationID.y,
+		gl_GlobalInvocationID.x,
+		transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x])
+	);
 
 	// Wait for all geometry to be in-place
 	memoryBarrier();
@@ -769,7 +791,6 @@ void main() {
 	// the geometry has been updated
 	//if (gl_GlobalInvocationID.x != 0) return;
 
-	// Where "(1 << expOfTwo_maxCollectionsForModel) - 1" is used to reach the first valid leaf on the BLAS tree
 	uint indexOfNodeInBLASToUpdate = NodeFromBLASLeaf_ByLeafNumber(gl_GlobalInvocationID.y);
 	WriteAABBOnBLAS_ByIndexes(targetBLAS, indexOfNodeInBLASToUpdate, generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y));
 	
@@ -789,7 +810,7 @@ void main() {
 	}
 
 	// At the very end, flag the BLAS as used/occupied
-	ModelMatrix[targetBLAS] = identityTransform;
+	WriteModelMatrix_ByIndex(targetBLAS, identityTransform);
 
 	// TLAS will be updated before drawing the scene doing it here would waste time
 }
@@ -807,7 +828,7 @@ layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 void main() {
 	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 
-	ModelMatrix[gl_GlobalInvocationID.x] = emptyTransform;
+	WriteModelMatrix_ByIndex(gl_GlobalInvocationID.x, emptyTransform);
 
 	memoryBarrierBuffer();
 
@@ -846,7 +867,7 @@ void main () {
 
 	WriteAABBOnTLAS_ByIndex(
 		indexOfLastUpdatedNodeInTLAS,
-		transformAABB(ReadAABBFromBLAS_ByIndexes(indexOfLeafInTLAS, 0), ModelMatrix[indexOfLeafInTLAS])
+		transformAABB(ReadAABBFromBLAS_ByIndexes(indexOfLeafInTLAS, 0), ReadModelMatrix_ByIndex(indexOfLeafInTLAS))
 	);
 
 	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
@@ -915,6 +936,30 @@ void main () {
   
 	// output to a specific pixel in the image
 	imageStore(renderTarget, pixel_coords, pixel);
+}
+
+#elif defined(QUERY_INFO)
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout (std430, binding = 1) writeonly buffer raytracerInfo {
+	uint expOfTwo_numberOfModels;
+	uint expOfTwo_numberOfGeometryCollectionOnBLAS;
+	uint expOfTwo_numberOfGeometryOnCollection;
+
+	// Geometry is stored as consecutive vec4 in a texture, on the x axis.
+	uint oxpOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
+};
+
+void main() {
+	// Only one instance is necessary
+	if ((gl_GlobalInvocationID.x != 0) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+
+	expOfTwo_numberOfModels = expOfTwo_maxModels;
+	expOfTwo_numberOfGeometryCollectionOnBLAS = expOfTwo_maxCollectionsForModel;
+	expOfTwo_numberOfGeometryOnCollection = expOfTwo_maxGeometryOnCollection;
+
+	oxpOfTwo_numberOfTesselsForGeometryTexturazation = expOfTwo_numOfVec4OnGeometrySerialization;
 }
 
 #endif

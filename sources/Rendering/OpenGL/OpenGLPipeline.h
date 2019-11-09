@@ -32,8 +32,6 @@ namespace Tachyon {
 				void onRender() noexcept final;
 
 			private:
-				void prapareDispatch() noexcept;
-
 				void insert(GLuint targetBLAS) noexcept;
 
 				void flush() noexcept;
@@ -41,6 +39,8 @@ namespace Tachyon {
 				void update() noexcept;
 
 			private:
+				std::unique_ptr<Pipeline::Program> mRaytracerQueryInfo;
+
 				std::unique_ptr<Pipeline::Program> mRaytracerFlush;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerInsert;
@@ -51,15 +51,22 @@ namespace Tachyon {
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
 
-				/**
-				 * This is the input data for the GPU raytracer algorithm.
-				 * See raytracer compute shader for more details.
-				 */
-				std::array<GLuint, 2> mRaytracingSSBO;
+				struct RaytracerInfo {
+					glm::uint32 expOfTwo_numberOfModels;
+					glm::uint32 expOfTwo_numberOfGeometryCollectionOnBLAS;
+					glm::uint32 expOfTwo_numberOfGeometryOnCollection;
+
+					// Geometry is stored as consecutive vec4 in a texture, on the x axis.
+					glm::uint32 oxpOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
+				} mRaytracerInfo ;
 
 				GLuint mRaytracingTLAS;
 
 				GLuint mRaytracingBLASCollection;
+
+				GLuint mRaytracingGeometryCollection;
+
+				GLuint mRaytracingModelMatrix;
 
 				/**
 				 * This is the output texture of the raytraing.
