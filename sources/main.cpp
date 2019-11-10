@@ -130,9 +130,11 @@ int main(int argc, char** argv) {
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
+		// Get window size and reset aspect
 		glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
 		camera.setAspect(windowWidth, windowHeight);
+
+		// Render the scene
 		raytracer->render(camera, static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
 		glfwSwapBuffers(window);

@@ -2,14 +2,12 @@
 
 #define expOfTwo_maxModels 9
 #define expOfTwo_maxGeometryOnCollection 3
-#define expOfTwo_maxCollectionsForModel 12
-
-#define expOfTwo_numberOfLeafsOnTLAS (expOfTwo_maxModels)
+// TODO: investigate why setting this to 3 or less makes the CS crash
+#define expOfTwo_maxCollectionsForModel 12 
 
 #define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
 
 #define expOfTwo_numOfVec4OnGeometrySerialization 1
-
 
 #if defined(RENDER) || defined(QUERY_INFO)
 	#define TLAS_MEMORY_MODEL readonly
@@ -47,6 +45,8 @@ const float infinity = (1.0) / 0.0;
 const float minusInfinity = (-1.0) / 0.0;
 const mat4 identityTransform = mat4(1);
 const mat4 emptyTransform = mat4(0);
+
+#if !defined(QUERY_INFO)
 
 /*************************************************************************************************************************
  *                                                  Algorithms                                                           *
@@ -249,7 +249,11 @@ AABB emptyAABB = AABB(vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
  * @return TRUE iif the AABB is a point in space
  */
 bool isEmpty(const AABB aabb) {
-	return (aabb.dimensions.x == 0) || (aabb.dimensions.y == 0) || (aabb.dimensions.z == 0);
+	return (
+		((aabb.dimensions.x == 0) || (aabb.dimensions.y == 0) || (aabb.dimensions.z == 0)) ||
+		( isinf(aabb.dimensions.x) || isinf(aabb.dimensions.y) || isinf(aabb.dimensions.z) ) ||
+		( isnan(aabb.dimensions.x) || isnan(aabb.dimensions.y) || isnan(aabb.dimensions.z) ) 
+	);
 }
 
 /**
@@ -373,6 +377,8 @@ AABB joinAABBs(const AABB aabb1, const AABB aabb2) {
 }
 
 AABB generateFromGeometry(const Geometry geo) {
+	if (geo.radius <= 0) return emptyAABB;
+
 	const float diameter = 2 * geo.radius;
 	return AABB(vec4(geo.center.x - geo.radius, geo.center.y - geo.radius , geo.center.z - geo.radius, 1), vec4(diameter, diameter, diameter, 0));
 }
@@ -446,12 +452,9 @@ uint NodeFromTLASLeaf_ByLeafNumber(const uint leafIndex) {
 	return leafIndex + ((1 << expOfTwo_maxModels) - 1);
 }
 
-
 /*=======================================================================================================
   ===                                  Core SSBOs & Related Data                                      ===
   =======================================================================================================*/
-
-//#if !defined(QUERY_INFO)
 
 layout(rgba32f, binding = 0) uniform TLAS_MEMORY_MODEL image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
 
@@ -459,7 +462,7 @@ layout(rgba32f, binding = 1) uniform BLAS_MOEMORY_MODEL image2D tlasBLAS; // Thi
 
 layout(rgba32f, binding = 2) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
 
-layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix;
+layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
 
 mat4 ReadModelMatrix_ByIndex(const uint index) {
 	return mat4(
@@ -479,14 +482,25 @@ void WriteModelMatrix_ByIndex(const uint index, const mat4 matrix) {
 }
 #endif
 
-Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection) {
-	vec4 center = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex));
-	vec4 radius = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex));
+Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint collectionIndex, const uint indexOnCollection) {
+	vec4 center = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, collectionIndex, blasIndex));
+	vec4 radius = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, collectionIndex, blasIndex));
 
 	return Geometry(center.xyz, radius.x);
 }
 
 #if !defined(GEOMETRY_READONLY)
+
+/**
+ * Update the geometry on the given BLAS, collection and relative position on the collection.
+ *
+ * Note: memory synchronization (memoryBarrierImage) must be performed by the caller!
+ *
+ * @param blasIndex the index of the BLAS
+ * @param leafIndex the index of leaf on the given BLAS (corresponds to the index of geometry collection on the given BLAS)
+ * @param indexOnCollection the index of the chosen collection that will be updated
+ * @param geometry the geometry to be written
+ */
 void WriteGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection, const Geometry geometry) {
 	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex), vec4(geometry.center, 1));
 	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex), vec4(geometry.radius, geometry.radius, geometry.radius, geometry.radius));
@@ -571,7 +585,33 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint blasInd
 	return bounding;
 }
 
-//#endif
+#if !defined(TLAS_READONLY)
+void UpdateTLASFromLeafToRoot_ByIndex(const uint indexOfLeafInTLAS) {
+	uint indexOfLastUpdatedNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(indexOfLeafInTLAS);
+
+	// On the leaf write the AABB aware of its associated Model Matrix
+	WriteAABBOnTLAS_ByIndex(
+		indexOfLastUpdatedNodeInTLAS,
+		transformAABB(ReadAABBFromBLAS_ByIndexes(indexOfLeafInTLAS, 0), ReadModelMatrix_ByIndex(indexOfLeafInTLAS))
+	);
+
+	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
+		memoryBarrierImage();
+
+		// Target the parent node for update
+		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
+
+		// Update the current node with the two ModelMatrix-aware child nodes
+		WriteAABBOnTLAS_ByIndex(
+			indexOfLastUpdatedNodeInTLAS,
+			joinAABBs(
+				ReadAABBFromTLAS_ByIndex(leftNode(indexOfLastUpdatedNodeInTLAS)),
+				ReadAABBFromTLAS_ByIndex(rightNode(indexOfLastUpdatedNodeInTLAS))
+			)
+		);
+	}
+}
+#endif
 
 /*=======================================================================================================
   ===                           Ray-Geometry Intersection (Rendering)                                 ===
@@ -586,7 +626,7 @@ struct RayGeometryIntersection {
 const RayGeometryIntersection miss = RayGeometryIntersection(infinity, vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
 
 RayGeometryIntersection bestHit(const RayGeometryIntersection isect1, const RayGeometryIntersection isect2) {
-	return (isect1.dist < isect2.dist) ? isect1 : isect2;
+	return (isect1.dist <= isect2.dist) ? isect1 : isect2;
 }
 
 RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
@@ -631,14 +671,14 @@ RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry
 }
 
 RayGeometryIntersection intersectCollection_ByIndexes(const Ray ray, const uint blasIndex, const uint collectionIndex, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
-	RayGeometryIntersection bestHitSoFar = miss;
+	RayGeometryIntersection bestHitSoFar = intersectGeometry(ray, ReadGeometry_ByIndexes(blasIndex, collectionIndex, 0), transformMatrix, minDistance, maxDistance);
 
-	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection) ; ++i) {
-		// Execute the ray-geometry intersection algorithm
-		const RayGeometryIntersection currentIntersectionInfo = intersectGeometry(ray, ReadGeometry_ByIndexes(blasIndex, collectionIndex, i), transformMatrix, minDistance, maxDistance);
-
+	for (uint i = 1; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
 		// Check if this is a better hit than the former one
-		bestHitSoFar = bestHit(bestHitSoFar, currentIntersectionInfo);
+		bestHitSoFar = bestHit(
+			bestHitSoFar,
+			intersectGeometry(ray, ReadGeometry_ByIndexes(blasIndex, collectionIndex, i), transformMatrix, minDistance, maxDistance) // Compare to the result of ray-geometry intersection algorithm
+		);
 	}
 
 	return bestHitSoFar;
@@ -656,104 +696,113 @@ bool hasMissed(const RayGeometryIntersection test) {
 
 RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const float minDistance, const float maxDistance) {
 	// Adjust transformation matrix to consider the BLAS model matrix
-	mat4 transformMatrix = ReadModelMatrix_ByIndex(blasIndex);
+	const mat4 ModelMatrix = ReadModelMatrix_ByIndex(blasIndex);
 
 	RayGeometryIntersection bestHitSoFar = miss;
-
+	
 	int currentDepth = 0;
 	uint currentPath = 0;
 
-	while ((currentDepth < 32) && (currentDepth >= 0)) {
+	while ((currentDepth < (expOfTwo_maxCollectionsForModel + 1)) && (currentDepth >= 0)) {
+		// This for cycles is used to reach the interesting node index (the result is in currentNodeIndex)
 		uint currentNodeIndex = 0;
-
-		// This for cycles is used to reach the interesting node
 		for (uint i = 0; i < currentDepth; ++i) {
 			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? leftNode(currentNodeIndex) : rightNode(currentNodeIndex);
 		}
 
-		if ((!isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromBLAS_ByIndexes(blasIndex, currentNodeIndex), transformMatrix))) {
-			// Go one level deeper
-			currentDepth += 1;
-		} else {
-			// This is a leaf that should be tested...
-			if ((isBLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromBLAS_ByIndexes(blasIndex, currentNodeIndex), transformMatrix))) {
-				RayGeometryIntersection currentHit = intersectCollection_ByIndexes(ray, blasIndex, LeafFromBLASNode_ByIndex(currentNodeIndex), transformMatrix, minDistance, maxDistance);
+		bool goDeeper = false;
 
-				bestHitSoFar = bestHit(bestHitSoFar, currentHit);
+		if (intersectAABB(ray, ReadAABBFromBLAS_ByIndexes(blasIndex, currentNodeIndex), ModelMatrix)) {
+			if (isBLASNodeLeaf_ByIndex(currentNodeIndex)) {
+				bestHitSoFar = bestHit( // Update the best hit so far by comparing...
+					bestHitSoFar, // the bast hit so far
+					intersectCollection_ByIndexes(ray, blasIndex, LeafFromBLASNode_ByIndex(currentNodeIndex), ModelMatrix, minDistance, maxDistance) // and the result of the ray-collection traverse
+				);
+			} else {
+				// Go one level deeper
+				goDeeper = true;
+				currentDepth += 1;
 			}
+		}
 
+		if (!goDeeper) {
 			// in either case: subtree discarded or visited leaf the algorithm should reduce the depth and change the path
 			currentDepth -= 1;
 
-			while (((currentPath & (1 << currentDepth)) == 1) && (currentDepth >= 0)) {
+			while ((currentPath & (1 << currentDepth)) == 1) {
 				//set the bit at currentDepth position to 0
 				currentPath &= ~(1 << currentDepth);
 
+				if (currentDepth == 0) return bestHitSoFar;
+				
 				// and decrease currentDepth
 				currentDepth -= 1;
 			}
 
-			if (currentDepth >= 0) {
-				// set the bit at currentDepth position to 1 (the next visit will choose another path)
-				currentPath |= (1 << currentDepth);
-			} else {
-				// the visited node was the very last one (the right-most) and the iteration should come to an end
-				break;
-			}
+			// set the bit at currentDepth position to 1 (the next visit will choose another path)
+			currentPath |= (1 << currentDepth);
 		}
 	}
-
+	
 	return bestHitSoFar;
 }
 
 RayGeometryIntersection castRay(const Ray ray, const float minDistance, const float maxDistance) {
 	RayGeometryIntersection bestHitSoFar = miss;
-
-	int currentDepth = 0;
+	
+	uint currentDepth = 0;
 	uint currentPath = 0;
-
-	while ((currentDepth < 32) && (currentDepth >= 0)) {
+	
+	// Traverse the entire TLAS to find the best intersection
+	while (currentDepth <= expOfTwo_maxModels) {
+		// This for cycles is used to reach the interesting node index (the result is in currentNodeIndex)
 		uint currentNodeIndex = 0;
-
-		// This for cycles is used to reach the interesting node
 		for (uint i = 0; i < currentDepth; ++i) {
 			currentNodeIndex = ((currentPath & (1 << currentDepth)) == 0) ? leftNode(currentNodeIndex) : rightNode(currentNodeIndex);
 		}
 
-		if ((!isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromTLAS_ByIndex(currentNodeIndex), identityTransform))) {
-			// Go one level deeper
-			currentDepth += 1;
-		} else {
-			// This is a leaf that should be tested...
-			if ((isTLASNodeLeaf_ByIndex(currentNodeIndex)) && (intersectAABB(ray, ReadAABBFromTLAS_ByIndex(currentNodeIndex), identityTransform))) {
-				RayGeometryIntersection currentHit = intersectBLAS_ByIndex(ray, LeafFromTLASNode_ByIndex(currentNodeIndex), minDistance, maxDistance);
-				
-				bestHitSoFar = bestHit(bestHitSoFar, currentHit);
-			}
+		bool goDeeper = false;
 
+		if (intersectAABB(ray, ReadAABBFromTLAS_ByIndex(currentNodeIndex), identityTransform)) {
+			if (isTLASNodeLeaf_ByIndex(currentNodeIndex)) {
+				bestHitSoFar = bestHit( // Update the best hit so far by comparing...
+					bestHitSoFar, // the bast hit so far
+					intersectBLAS_ByIndex(ray, LeafFromTLASNode_ByIndex(currentNodeIndex), minDistance, maxDistance) // and the result of the ray-BLAS traverse
+				);
+			} else {
+				// Go one level deeper
+				goDeeper = true;
+				currentDepth += 1;
+			}
+		}
+
+		if (!goDeeper) {
 			// in either case: subtree discarded or visited leaf the algorithm should reduce the depth and change the path
 			currentDepth -= 1;
 
-			while (((currentPath & (1 << currentDepth)) == 1) && (currentDepth >= 0)) {
+			while ((currentPath & (1 << currentDepth)) == 1) {
 				//set the bit at currentDepth position to 0
 				currentPath &= ~(1 << currentDepth);
 
+				if (currentDepth == 0) return bestHitSoFar;
+				
 				// and decrease currentDepth
 				currentDepth -= 1;
 			}
 
-			if (currentDepth >= 0) {
-				// set the bit at currentDepth position to 1 (the next visit will choose another path)
-				currentPath |= (1 << currentDepth);
-			} else {
-				// the visited node was the very last one (the right-most) and the iteration should come to an end
-				break;
-			}
+			// set the bit at currentDepth position to 1 (the next visit will choose another path)
+			currentPath |= (1 << currentDepth);
 		}
 	}
-
+	
 	return bestHitSoFar;
 }
+
+#endif
+
+/*=======================================================================================================
+  ===                          Entry Points (main): one for each stage                                ===
+  =======================================================================================================*/
 
 #if defined(BVH_INSERT)
 /*=======================================================================================================
@@ -860,12 +909,16 @@ void main() {
 	// At the very end, flag the BLAS as used/occupied
 	WriteModelMatrix_ByIndex(targetBLAS, identityTransform);
 
-	// TLAS will be updated before drawing the scene doing it here would waste time
+	// Perform a TLAS update after everything has been written on BLAS and geometry data collection
+	barrier();
+	if ((gl_GlobalInvocationID.x == 0) && (gl_GlobalInvocationID.y == 0) && (gl_GlobalInvocationID.z == 0)) {
+		UpdateTLASFromLeafToRoot_ByIndex(targetBLAS);
+	}
 }
 
 #elif defined(TLAS_FLUSH)
 
-layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
 /**
  * This is the entry point for the TLAS nuke program.
@@ -874,24 +927,41 @@ layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
  * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxModels, 1, 1).
  */
 void main() {
-	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+	// An instance of this compute shader will reset the BLAS at index gl_GlobalInvocationID.x
+	if ((gl_GlobalInvocationID.x < (1 << expOfTwo_maxModels)) && (gl_GlobalInvocationID.y == 0) && (gl_GlobalInvocationID.z == 0)) {
+		const uint indexOfBLASToNuke = gl_GlobalInvocationID.x;
 
-	WriteModelMatrix_ByIndex(gl_GlobalInvocationID.x, emptyTransform);
-
-	memoryBarrierBuffer();
-
-	uint indexOfNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(gl_GlobalInvocationID.x);
-
-	WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
-
-	while (!isRootNode(indexOfNodeInTLAS)) {
-		memoryBarrierImage();
-
-		indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
+		WriteModelMatrix_ByIndex(indexOfBLASToNuke, emptyTransform);
+	
+		uint indexOfNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(indexOfBLASToNuke);
 
 		WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
-	}
 
+		// This update the TLAS from a leaf to its root
+		while (!isRootNode(indexOfNodeInTLAS)) {
+			memoryBarrierImage();
+
+			indexOfNodeInTLAS = parentNode(indexOfNodeInTLAS);
+
+			WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
+		}
+
+		// This nuke the entire BLAS
+		for (uint blasLinearNode = 0; blasLinearNode < ( numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxModels) ); ++blasLinearNode) {
+			WriteAABBOnBLAS_ByIndexes(indexOfBLASToNuke, blasLinearNode, emptyAABB);
+
+			memoryBarrierImage();
+		}
+
+		for (uint geometryCollectionIndex = 0; geometryCollectionIndex < (1 << expOfTwo_maxCollectionsForModel); ++geometryCollectionIndex) {
+			for (uint geometryIndex = 0; geometryIndex < (1 << expOfTwo_maxGeometryOnCollection); ++geometryIndex) {
+				WriteGeometry_ByIndexes(indexOfBLASToNuke, geometryCollectionIndex, geometryIndex, emptyGeometry);
+
+				memoryBarrierImage();
+			}
+		}
+
+	}
 }
 
 #elif defined(TLAS_UPDATE)
@@ -909,33 +979,7 @@ void main () {
 	// If this work doen't map to a BLAS do nothing
 	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 	
-	const uint indexOfLeafInTLAS = gl_GlobalInvocationID.x;
-
-	uint indexOfLastUpdatedNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(indexOfLeafInTLAS);
-
-	WriteAABBOnTLAS_ByIndex(
-		indexOfLastUpdatedNodeInTLAS,
-		transformAABB(ReadAABBFromBLAS_ByIndexes(indexOfLeafInTLAS, 0), ReadModelMatrix_ByIndex(indexOfLeafInTLAS))
-	);
-
-	while (!isRootNode(indexOfLastUpdatedNodeInTLAS)) {
-		memoryBarrierImage();
-		barrier();
-
-		if (isEven(indexOfLastUpdatedNodeInTLAS)) break;
-
-		// Target the parent node for update
-		indexOfLastUpdatedNodeInTLAS = parentNode(indexOfLastUpdatedNodeInTLAS);
-
-		// Update the current node
-		WriteAABBOnTLAS_ByIndex(
-			indexOfLastUpdatedNodeInTLAS,
-			joinAABBs(
-				ReadAABBFromTLAS_ByIndex(leftNode(indexOfLastUpdatedNodeInTLAS)),
-				ReadAABBFromTLAS_ByIndex(rightNode(indexOfLastUpdatedNodeInTLAS))
-			)
-		);
-	}
+	UpdateTLASFromLeafToRoot_ByIndex(gl_GlobalInvocationID.x);
 }
 
 #elif defined(QUERY_INFO)
@@ -971,7 +1015,7 @@ void main() {
 
 layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
 
-layout(rgba32f, binding = 5) uniform image2D renderTarget; // Raytracing output texture
+layout(rgba32f, binding = 5) uniform writeonly image2D renderTarget; // Raytracing output texture
 
 layout (location = 0) uniform uint width;
 layout (location = 1) uniform uint height;
@@ -995,7 +1039,7 @@ void main () {
 	// Avoid calculating useless pixels
 	if ((gl_GlobalInvocationID.x >= width) || (gl_GlobalInvocationID.y >= height)) return;
 
-	// base pixel colour for image
+	// base pixel color for image
 	vec4 pixel = vec4(0, 0, 0, 0);
 	// get index in global work group i.e x,y position
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -1011,7 +1055,17 @@ void main () {
 	//const Ray cameraRay = generateCameraRay(camera, u, v);
 	const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
 
-	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0);
+	//RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
+
+	/* // With this code the horizontal artifact is not shown
+	RayGeometryIntersection isect = miss;
+	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 0), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
+	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 1), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
+	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 2), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
+	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 3), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
+	*/
+
+	RayGeometryIntersection isect =  intersectBLAS_ByIndex(cameraRay, 0, 0.001, 10000);
 
 	pixel = vec4( vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point)))) , 1.0);
   
