@@ -72,6 +72,11 @@ namespace Tachyon {
 				GLuint mRaytracerOutputTexture;
 
 				/**
+				 * A texture used for debugging. Has the screen dimensions.
+				 */
+				GLuint mRaytracerDebugOutput;
+
+				/**
 				 * This VAO is used for the final result rendering process (the one involving tonemapping).
 				 */
 				GLuint mQuadVAO;

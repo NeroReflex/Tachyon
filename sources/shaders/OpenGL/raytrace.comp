@@ -1,9 +1,15 @@
 #version 450 core
 
+/*
 #define expOfTwo_maxModels 9
 #define expOfTwo_maxGeometryOnCollection 3
 // TODO: investigate why setting this to 3 or less makes the CS crash
 #define expOfTwo_maxCollectionsForModel 12 
+*/
+#define expOfTwo_maxModels 2
+#define expOfTwo_maxGeometryOnCollection 3
+// TODO: investigate why setting this to 3 or less makes the CS crash
+#define expOfTwo_maxCollectionsForModel 4
 
 #define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
 
@@ -47,6 +53,8 @@ const mat4 identityTransform = mat4(1);
 const mat4 emptyTransform = mat4(0);
 
 #if !defined(QUERY_INFO)
+
+layout(rgba32f, binding = 4) uniform /*writeonly*/ image2D debugOutput;
 
 /*************************************************************************************************************************
  *                                                  Algorithms                                                           *
@@ -277,21 +285,21 @@ float SAH(const AABB containedAABB, const AABB containerAABB) {
  * @param transformMatrix the transform to be applied to all vertices of the AABB, given as a 4x4 matrix
  * @return the transformed AABB
  */
-AABB transformAABB(const AABB starting, const mat4 transformMatrix) {
+AABB transformAABB(const AABB b, const mat4 transformMatrix) {
 	vec4 v[8] = {
-		transformMatrix * vec4(starting.position.x, starting.position.y, starting.position.z, 1),
-		transformMatrix * vec4(starting.position.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
-		transformMatrix * vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
-		transformMatrix * vec4(starting.position.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
-		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z, 1),
-		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y, starting.position.z + starting.dimensions.z, 1),
-		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z, 1),
-		transformMatrix * vec4(starting.position.x + starting.dimensions.x, starting.position.y + starting.dimensions.y, starting.position.z + starting.dimensions.z, 1),
+		transformMatrix * vec4(b.position.x                 , b.position.y                 , b.position.z                 , 1),
+		transformMatrix * vec4(b.position.x                 , b.position.y                 , b.position.z + b.dimensions.z, 1),
+		transformMatrix * vec4(b.position.x                 , b.position.y + b.dimensions.y, b.position.z                 , 1),
+		transformMatrix * vec4(b.position.x                 , b.position.y + b.dimensions.y, b.position.z + b.dimensions.z, 1),
+		transformMatrix * vec4(b.position.x + b.dimensions.x, b.position.y                 , b.position.z                 , 1),
+		transformMatrix * vec4(b.position.x + b.dimensions.x, b.position.y                 , b.position.z + b.dimensions.z, 1),
+		transformMatrix * vec4(b.position.x + b.dimensions.x, b.position.y + b.dimensions.y, b.position.z                 , 1),
+		transformMatrix * vec4(b.position.x + b.dimensions.x, b.position.y + b.dimensions.y, b.position.z + b.dimensions.z, 1),
 	};
 
-	float maxX = minusInfinity, maxY = minusInfinity, maxZ=minusInfinity, minX=infinity, minY=infinity, minZ=infinity;
+	float maxX = v[0].x, maxY = v[0].y, maxZ=v[0].z, minX=v[0].x, minY=v[0].y, minZ=v[0].z;
 
-	for (uint i = 0; i < 8; ++i) {
+	for (uint i = 1; i < 8; ++i) {
 		maxX = (v[i].x > maxX) ? v[i].x : maxX;
 		maxY = (v[i].y > maxY) ? v[i].y : maxY;
 		maxZ = (v[i].z > maxZ) ? v[i].z : maxZ;
@@ -303,51 +311,51 @@ AABB transformAABB(const AABB starting, const mat4 transformMatrix) {
 	return AABB(vec4(minX, minY, minZ, 1), vec4(maxX-minX, maxY-minY, maxZ-minZ, 0));
 }
 
+void swap(inout float a, inout float b) {
+	float temp = a;
+	a = b;
+	b = temp;
+}
 
 bool intersectAABB(const Ray ray, const AABB aabb, const mat4 transformMatrix) {
 	AABB transformedAABB = transformAABB(aabb, transformMatrix);
 
 	if (isEmpty(transformedAABB)) return false;
 
-	float tmin, tmax, tymin, tymax, tzmin, tzmax;
-
-	vec3 orig = ray.origin.xyz;
-	vec3 invdir = getInvDirection(ray);
-
-	vec3 bounds[2] = {
-		transformedAABB.position.xyz,
-		(transformedAABB.position.xyz) + (transformedAABB.dimensions.xyz)
-	};
-
-	const int[3] raySigns = int[3](
-		(invdir.x < 0) ? 1 : 0,
-		(invdir.y < 0) ? 1 : 0,
-		(invdir.z < 0) ? 1 : 0
-	);
-
-	tmin = (bounds[raySigns[0]].x - orig.x) * invdir.x;
-	tmax = (bounds[1 - raySigns[0]].x - orig.x) * invdir.x;
-	tymin = (bounds[raySigns[1]].y - orig.y) * invdir.y;
-	tymax = (bounds[1 - raySigns[1]].y - orig.y) * invdir.y;
-
-	if ((tmin > tymax) || (tymin > tmax))
-		return false;
-	if (tymin > tmin)
-		tmin = tymin;
-	if (tymax < tmax)
-		tmax = tymax;
-
-	tzmin = (bounds[raySigns[2]].z - orig.z) * invdir.z;
-	tzmax = (bounds[1 - raySigns[2]].z - orig.z) * invdir.z;
-
-	if ((tmin > tzmax) || (tzmin > tmax))
-		return false;
-	if (tzmin > tmin)
-		tmin = tzmin;
-	if (tzmax < tmax)
-		tmax = tzmax;
-
-	return true;
+	float tmin = (transformedAABB.position.x - ray.origin.x) / ray.direction.x; 
+    float tmax = ((transformedAABB.position.x + transformedAABB.dimensions.x) - ray.origin.x) / ray.direction.x; 
+ 
+    if (tmin > tmax) swap(tmin, tmax); 
+ 
+    float tymin = (transformedAABB.position.y - ray.origin.y) / ray.direction.y; 
+    float tymax = ((transformedAABB.position.y + transformedAABB.dimensions.y) - ray.origin.y) / ray.direction.y; 
+ 
+    if (tymin > tymax) swap(tymin, tymax); 
+ 
+    if ((tmin > tymax) || (tymin > tmax)) 
+        return false; 
+ 
+    if (tymin > tmin) 
+        tmin = tymin; 
+ 
+    if (tymax < tmax) 
+        tmax = tymax; 
+ 
+    float tzmin = (transformedAABB.position.z - ray.origin.z) / ray.direction.z; 
+    float tzmax = ((transformedAABB.position.z + transformedAABB.dimensions.z) - ray.origin.z) / ray.direction.z; 
+ 
+    if (tzmin > tzmax) swap(tzmin, tzmax); 
+ 
+    if ((tmin > tzmax) || (tzmin > tmax)) 
+        return false; 
+ 
+    if (tzmin > tmin) 
+        tmin = tzmin; 
+ 
+    if (tzmax < tmax) 
+        tmax = tzmax; 
+ 
+    return true; 
 }
 
 /**
@@ -701,8 +709,8 @@ RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasInde
 	RayGeometryIntersection bestHitSoFar = miss;
 	
 	int currentDepth = 0;
-	uint currentPath = 0;
-
+	uint currentPath = 0x0000;
+	
 	while ((currentDepth < (expOfTwo_maxCollectionsForModel + 1)) && (currentDepth >= 0)) {
 		// This for cycles is used to reach the interesting node index (the result is in currentNodeIndex)
 		uint currentNodeIndex = 0;
@@ -713,6 +721,7 @@ RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasInde
 		bool goDeeper = false;
 
 		if (intersectAABB(ray, ReadAABBFromBLAS_ByIndexes(blasIndex, currentNodeIndex), ModelMatrix)) {
+			imageStore(debugOutput, ivec2(int(gl_GlobalInvocationID.x), int(gl_GlobalInvocationID.y)), vec4(1,1,1,1));
 			if (isBLASNodeLeaf_ByIndex(currentNodeIndex)) {
 				bestHitSoFar = bestHit( // Update the best hit so far by comparing...
 					bestHitSoFar, // the bast hit so far
