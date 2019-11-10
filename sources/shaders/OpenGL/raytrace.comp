@@ -66,7 +66,7 @@ layout(rgba32f, binding = 4) uniform /*writeonly*/ image2D debugOutput;
  * @param n the number to check
  * @return TRUE iif the given number is even
  */
-bool isEven(uint n) {
+bool isEven(const in uint n) {
 	return (n & 0x0001) == 0;
 }
 
@@ -77,7 +77,7 @@ bool isEven(uint n) {
  * @param i the node index on the tree-array
  * @return TRUE iif the index is the root of the tree-array
  */
-bool isRootNode(uint i) {
+bool isRootNode(const in uint i) {
 	return i == 0;
 }
 
@@ -88,7 +88,7 @@ bool isRootNode(uint i) {
  * @param i the node index on the tree-array
  * @return the parent node index on the tree-array 
  */
-uint parentNode(uint i) {
+uint parentNode(const in uint i) {
 	return (i - 1) / 2;
 }
 
@@ -99,7 +99,7 @@ uint parentNode(uint i) {
  * @param i the node index on the tree-array
  * @return the left childern node index on the tree-array 
  */
-uint leftNode(uint i) {
+uint leftNode(const in uint i) {
 	return (2 * i + 1);
 }
 
@@ -110,7 +110,7 @@ uint leftNode(uint i) {
  * @param i the node index on the tree-array
  * @return the right childern node index on the tree-array 
  */
-uint rightNode(uint i) {
+uint rightNode(const in uint i) {
 	return (2 * i + 2);
 }
 
@@ -123,11 +123,11 @@ struct Ray {
 	vec4 direction;
 };
 
-vec3 rayPointAt(const Ray ray, const float coeff) {
+vec3 rayPointAt(const in Ray ray, const in float coeff) {
 	return vec3(ray.origin) + coeff * vec3(ray.direction);
 }
 
-vec3 getInvDirection(const Ray ray) {
+vec3 getInvDirection(const in Ray ray) {
 	return 1.0/ray.direction.xyz;
 }
 
@@ -173,7 +173,7 @@ struct Camera {
  * @param t the V ccordinate
  * @return the camera ray (in world coordinates)
  */
-Ray generateCameraRayFromCamera(Camera cam, float s, float t) {
+Ray generateCameraRayFromCamera(const in Camera cam, const in float s, const in float t) {
 	vec3 u, v, w;
 	const float theta = cam.fieldOfView * PI / 180;
 	const float half_height = tan(theta / 2.0);
@@ -256,7 +256,7 @@ AABB emptyAABB = AABB(vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
  * @param aabb the AABB to be checked
  * @return TRUE iif the AABB is a point in space
  */
-bool isEmpty(const AABB aabb) {
+bool isEmpty(const in AABB aabb) {
 	return (
 		((aabb.dimensions.x == 0) || (aabb.dimensions.y == 0) || (aabb.dimensions.z == 0)) ||
 		( isinf(aabb.dimensions.x) || isinf(aabb.dimensions.y) || isinf(aabb.dimensions.z) ) ||
@@ -270,11 +270,11 @@ bool isEmpty(const AABB aabb) {
  * @param aabb the AABB to use for area calculation
  * @return the area of the AABB
  */
-float getAreaAABB(const AABB aabb) {
+float getAreaAABB(const in AABB aabb) {
 	return 2 * ((aabb.dimensions.x * aabb.dimensions.z) + (aabb.dimensions.x * aabb.dimensions.y) + (aabb.dimensions.y * aabb.dimensions.z));
 }
 
-float SAH(const AABB containedAABB, const AABB containerAABB) {
+float SAH(const in AABB containedAABB, const in AABB containerAABB) {
 	return getAreaAABB(containedAABB) / getAreaAABB(containerAABB);
 }
 
@@ -285,7 +285,7 @@ float SAH(const AABB containedAABB, const AABB containerAABB) {
  * @param transformMatrix the transform to be applied to all vertices of the AABB, given as a 4x4 matrix
  * @return the transformed AABB
  */
-AABB transformAABB(const AABB b, const mat4 transformMatrix) {
+AABB transformAABB(const in AABB b, const in mat4 transformMatrix) {
 	vec4 v[8] = {
 		transformMatrix * vec4(b.position.x                 , b.position.y                 , b.position.z                 , 1),
 		transformMatrix * vec4(b.position.x                 , b.position.y                 , b.position.z + b.dimensions.z, 1),
@@ -317,7 +317,7 @@ void swap(inout float a, inout float b) {
 	b = temp;
 }
 
-bool intersectAABB(const Ray ray, const AABB aabb, const mat4 transformMatrix) {
+bool intersectAABB(const in Ray ray, const in AABB aabb, const in mat4 transformMatrix) {
 	AABB transformedAABB = transformAABB(aabb, transformMatrix);
 
 	if (isEmpty(transformedAABB)) return false;
@@ -365,7 +365,7 @@ bool intersectAABB(const Ray ray, const AABB aabb, const mat4 transformMatrix) {
  * @param aabb2 the second AABB
  * @return the union of the two AABBs
  */
-AABB joinAABBs(const AABB aabb1, const AABB aabb2) {
+AABB joinAABBs(const in AABB aabb1, const in AABB aabb2) {
 	if (isEmpty(aabb1)) return aabb2;
 	if (isEmpty(aabb2)) return aabb1;
 
@@ -384,14 +384,14 @@ AABB joinAABBs(const AABB aabb1, const AABB aabb2) {
 	return AABB(vMin, vMax - vMin);
 }
 
-AABB generateFromGeometry(const Geometry geo) {
+AABB generateFromGeometry(const in Geometry geo) {
 	if (geo.radius <= 0) return emptyAABB;
 
 	const float diameter = 2 * geo.radius;
 	return AABB(vec4(geo.center.x - geo.radius, geo.center.y - geo.radius , geo.center.z - geo.radius, 1), vec4(diameter, diameter, diameter, 0));
 }
 
-AABB expandAABBWithGeometry(const AABB aabb, const Geometry geo) {
+AABB expandAABBWithGeometry(const in AABB aabb, const in Geometry geo) {
 	AABB geometryAABB = generateFromGeometry(geo);
 	return joinAABBs(aabb, geometryAABB);
 }
@@ -406,7 +406,7 @@ AABB expandAABBWithGeometry(const AABB aabb, const Geometry geo) {
  * @param index the node index on the linearized BVH-tree
  * @return TRUE iif the node is a leaf
  */
-bool isBLASNodeLeaf_ByIndex(const uint leafIndex) {
+bool isBLASNodeLeaf_ByIndex(const in uint leafIndex) {
 	return leafIndex >= ((1 << expOfTwo_maxCollectionsForModel) - 1);
 }
 
@@ -416,7 +416,7 @@ bool isBLASNodeLeaf_ByIndex(const uint leafIndex) {
  * @param index the node index on the linearized BVH-tree
  * @return TRUE iif the node is a leaf
  */
-bool isTLASNodeLeaf_ByIndex(const uint leafIndex) {
+bool isTLASNodeLeaf_ByIndex(const in uint leafIndex) {
 	return leafIndex >= ((1 << expOfTwo_maxModels) - 1);
 }
 
@@ -426,7 +426,7 @@ bool isTLASNodeLeaf_ByIndex(const uint leafIndex) {
  * @param leafIndex the index used to access the leaf on the BLAS
  * @return the index of the geometry collection
  */
-uint LeafFromBLASNode_ByIndex(const uint leafIndex) {
+uint LeafFromBLASNode_ByIndex(const in uint leafIndex) {
 	return leafIndex - ((1 << expOfTwo_maxCollectionsForModel) - 1);
 }
 
@@ -436,7 +436,7 @@ uint LeafFromBLASNode_ByIndex(const uint leafIndex) {
  * @param leafIndex the index used to access the leaf on the TLAS
  * @return the index of the BLAS
  */
-uint LeafFromTLASNode_ByIndex(const uint leafIndex) {
+uint LeafFromTLASNode_ByIndex(const in uint leafIndex) {
 	return leafIndex - ((1 << expOfTwo_maxModels) - 1);
 }
 
@@ -446,7 +446,7 @@ uint LeafFromTLASNode_ByIndex(const uint leafIndex) {
  * @param leafIndex the index used to access the leaf on the TLAS
  * @return the index of the BLAS
  */
-uint NodeFromBLASLeaf_ByLeafNumber(const uint leafIndex) {
+uint NodeFromBLASLeaf_ByLeafNumber(const in uint leafIndex) {
 	return leafIndex + ((1 << expOfTwo_maxCollectionsForModel) - 1);
 }
 
@@ -456,7 +456,7 @@ uint NodeFromBLASLeaf_ByLeafNumber(const uint leafIndex) {
  * @param leafIndex the index used to access the leaf on the TLAS
  * @return the index of the BLAS
  */
-uint NodeFromTLASLeaf_ByLeafNumber(const uint leafIndex) {
+uint NodeFromTLASLeaf_ByLeafNumber(const in uint leafIndex) {
 	return leafIndex + ((1 << expOfTwo_maxModels) - 1);
 }
 
@@ -472,7 +472,7 @@ layout(rgba32f, binding = 2) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometr
 
 layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
 
-mat4 ReadModelMatrix_ByIndex(const uint index) {
+mat4 ReadModelMatrix_ByIndex(const in uint index) {
 	return mat4(
 		imageLoad(ModelMatrix, ivec2(0, index)),
 		imageLoad(ModelMatrix, ivec2(1, index)),
@@ -482,7 +482,7 @@ mat4 ReadModelMatrix_ByIndex(const uint index) {
 }
 
 #if !defined(MODELMATRIX_READONLY)
-void WriteModelMatrix_ByIndex(const uint index, const mat4 matrix) {
+void WriteModelMatrix_ByIndex(const in uint index, const in mat4 matrix) {
 	imageStore(ModelMatrix, ivec2(0, index), matrix[0]);
 	imageStore(ModelMatrix, ivec2(1, index), matrix[1]);
 	imageStore(ModelMatrix, ivec2(2, index), matrix[2]);
@@ -490,7 +490,7 @@ void WriteModelMatrix_ByIndex(const uint index, const mat4 matrix) {
 }
 #endif
 
-Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint collectionIndex, const uint indexOnCollection) {
+Geometry ReadGeometry_ByIndexes(const in uint blasIndex, const in uint collectionIndex, const in uint indexOnCollection) {
 	vec4 center = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, collectionIndex, blasIndex));
 	vec4 radius = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, collectionIndex, blasIndex));
 
@@ -509,7 +509,7 @@ Geometry ReadGeometry_ByIndexes(const uint blasIndex, const uint collectionIndex
  * @param indexOnCollection the index of the chosen collection that will be updated
  * @param geometry the geometry to be written
  */
-void WriteGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const uint indexOnCollection, const Geometry geometry) {
+void WriteGeometry_ByIndexes(const in uint blasIndex, const in uint leafIndex, const in uint indexOnCollection, const in Geometry geometry) {
 	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex), vec4(geometry.center, 1));
 	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex), vec4(geometry.radius, geometry.radius, geometry.radius, geometry.radius));
 }
@@ -524,7 +524,7 @@ void WriteGeometry_ByIndexes(const uint blasIndex, const uint leafIndex, const u
  * @param index the position in the linearized tree
  * @return the AABB stored at the given index
  */
-AABB ReadAABBFromBLAS_ByIndexes(const uint blas, const uint index) {
+AABB ReadAABBFromBLAS_ByIndexes(const in uint blas, const in uint index) {
 	return AABB(imageLoad(tlasBLAS, ivec2(2*index, blas)), imageLoad(tlasBLAS, ivec2(2*index+1, blas)));
 }
 
@@ -538,7 +538,7 @@ AABB ReadAABBFromBLAS_ByIndexes(const uint blas, const uint index) {
  * @param index the position in the linearized tree
  * @param aabb the AABB to write
  */
-void WriteAABBOnBLAS_ByIndexes(const uint blas, const uint index, const AABB aabb) {
+void WriteAABBOnBLAS_ByIndexes(const in uint blas, const in uint index, const in AABB aabb) {
 	imageStore(tlasBLAS, ivec2(2*index, blas), aabb.position);
 	imageStore(tlasBLAS, ivec2(2*index+1, blas), aabb.dimensions);
 }
@@ -552,7 +552,7 @@ void WriteAABBOnBLAS_ByIndexes(const uint blas, const uint index, const AABB aab
  * @param index the index of the BLAS to be tested
  * @return TRUE iif the BLAS is empty
  */
-bool isEmptyBLAS_ByIndex(uint index) {
+bool isEmptyBLAS_ByIndex(const in uint index) {
 	return ReadModelMatrix_ByIndex(index) == emptyTransform;
 }
 
@@ -564,7 +564,7 @@ bool isEmptyBLAS_ByIndex(uint index) {
  * @param index the position in the linearized tree
  * @return the AABB stored at the given index
  */
-AABB ReadAABBFromTLAS_ByIndex(const uint index) {
+AABB ReadAABBFromTLAS_ByIndex(const in uint index) {
 	return AABB(imageLoad(tlas, 2*int(index)), imageLoad(tlas, 2*int(index)+1));
 }
 
@@ -577,13 +577,13 @@ AABB ReadAABBFromTLAS_ByIndex(const uint index) {
  * @param index the position in the linearized tree
  * @param aabb the AABB to write
  */
-void WriteAABBOnTLAS_ByIndex(const uint index, const AABB aabb) {
+void WriteAABBOnTLAS_ByIndex(const in uint index, const in AABB aabb) {
 	imageStore(tlas, 2*int(index), aabb.position);
 	imageStore(tlas, 2*int(index)+1, aabb.dimensions);
 }
 #endif
 
-AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint blasIndex, const uint collectionIndex) {
+AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const in uint blasIndex, const in uint collectionIndex) {
 	AABB bounding = emptyAABB;
 
 	for (uint i = 0; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
@@ -594,7 +594,7 @@ AABB generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(const uint blasInd
 }
 
 #if !defined(TLAS_READONLY)
-void UpdateTLASFromLeafToRoot_ByIndex(const uint indexOfLeafInTLAS) {
+void UpdateTLASFromLeafToRoot_ByIndex(const in uint indexOfLeafInTLAS) {
 	uint indexOfLastUpdatedNodeInTLAS = NodeFromTLASLeaf_ByLeafNumber(indexOfLeafInTLAS);
 
 	// On the leaf write the AABB aware of its associated Model Matrix
@@ -633,11 +633,11 @@ struct RayGeometryIntersection {
 
 const RayGeometryIntersection miss = RayGeometryIntersection(infinity, vec4(0, 0, 0, 1), vec4(0, 0, 0, 0));
 
-RayGeometryIntersection bestHit(const RayGeometryIntersection isect1, const RayGeometryIntersection isect2) {
+RayGeometryIntersection bestHit(const in RayGeometryIntersection isect1, const in RayGeometryIntersection isect2) {
 	return (isect1.dist <= isect2.dist) ? isect1 : isect2;
 }
 
-RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
+RayGeometryIntersection intersectGeometry(const in Ray ray, const in Geometry geometry, const in mat4 transformMatrix, const in float minDistance, const in float maxDistance) {
 	const vec3 center = vec3(transformMatrix * vec4(geometry.center, 1));
 	const float radius = geometry.radius;
 
@@ -678,7 +678,7 @@ RayGeometryIntersection intersectGeometry(const Ray ray, const Geometry geometry
 	return miss;
 }
 
-RayGeometryIntersection intersectCollection_ByIndexes(const Ray ray, const uint blasIndex, const uint collectionIndex, const mat4 transformMatrix, const float minDistance, const float maxDistance) {
+RayGeometryIntersection intersectCollection_ByIndexes(const in Ray ray, const in uint blasIndex, const in uint collectionIndex, const in mat4 transformMatrix, const in float minDistance, const in float maxDistance) {
 	RayGeometryIntersection bestHitSoFar = intersectGeometry(ray, ReadGeometry_ByIndexes(blasIndex, collectionIndex, 0), transformMatrix, minDistance, maxDistance);
 
 	for (uint i = 1; i < (1 << expOfTwo_maxGeometryOnCollection); ++i) {
@@ -698,11 +698,11 @@ RayGeometryIntersection intersectCollection_ByIndexes(const Ray ray, const uint 
  * @param test the ray-geometry intersection algorithm output
  * @return TRUE if the ray has missed all geometry
  */
-bool hasMissed(const RayGeometryIntersection test) {
+bool hasMissed(const in RayGeometryIntersection test) {
 	return isinf(test.dist) || isnan(test.dist);
 }
 
-RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasIndex, const float minDistance, const float maxDistance) {
+RayGeometryIntersection intersectBLAS_ByIndex(const in Ray ray, const in uint blasIndex, const in float minDistance, const in float maxDistance) {
 	// Adjust transformation matrix to consider the BLAS model matrix
 	const mat4 ModelMatrix = ReadModelMatrix_ByIndex(blasIndex);
 
@@ -756,7 +756,7 @@ RayGeometryIntersection intersectBLAS_ByIndex(const Ray ray, const uint blasInde
 	return bestHitSoFar;
 }
 
-RayGeometryIntersection castRay(const Ray ray, const float minDistance, const float maxDistance) {
+RayGeometryIntersection castRay(const in Ray ray, const in float minDistance, const in float maxDistance) {
 	RayGeometryIntersection bestHitSoFar = miss;
 	
 	uint currentDepth = 0;
@@ -858,7 +858,7 @@ uint expandBits(uint v)
 /**
  * Calculates a 30-bit Morton code for the given 3D point located within the unit cube [0,1].
  */
-uint morton3D(const vec3 point)
+uint morton3D(const in vec3 point)
 {
     const float x = min(max(point.x * 1024.0f, 0.0f), 1023.0f);
     const float y = min(max(point.y * 1024.0f, 0.0f), 1023.0f);
