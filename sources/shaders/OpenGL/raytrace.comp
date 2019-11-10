@@ -322,7 +322,7 @@ bool intersectAABB(const Ray ray, const AABB aabb, const mat4 transformMatrix) {
 
 	if (isEmpty(transformedAABB)) return false;
 
-	float tmin = (transformedAABB.position.x - ray.origin.x) / ray.direction.x; 
+	float  tmin = (transformedAABB.position.x - ray.origin.x) / ray.direction.x; 
     float tmax = ((transformedAABB.position.x + transformedAABB.dimensions.x) - ray.origin.x) / ray.direction.x; 
  
     if (tmin > tmax) swap(tmin, tmax); 
