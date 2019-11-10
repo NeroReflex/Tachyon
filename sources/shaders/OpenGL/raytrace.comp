@@ -128,7 +128,7 @@ vec3 rayPointAt(const in Ray ray, const in float coeff) {
 }
 
 vec3 getInvDirection(const in Ray ray) {
-	return 1.0/ray.direction.xyz;
+	return 1.0/(ray.direction.xyz);
 }
 
 /*=======================================================================================================
@@ -317,45 +317,25 @@ void swap(inout float a, inout float b) {
 	b = temp;
 }
 
+float min_component(vec3 a) {
+	return min(min(a.x, a.y), a.z);
+}
+
+float max_component(vec3 a) {
+	return max(max(a.x, a.y), a.z);
+}
+
 bool intersectAABB(const in Ray ray, const in AABB aabb, const in mat4 transformMatrix) {
 	AABB transformedAABB = transformAABB(aabb, transformMatrix);
 
 	if (isEmpty(transformedAABB)) return false;
 
-	float  tmin = (transformedAABB.position.x - ray.origin.x) / ray.direction.x; 
-    float tmax = ((transformedAABB.position.x + transformedAABB.dimensions.x) - ray.origin.x) / ray.direction.x; 
- 
-    if (tmin > tmax) swap(tmin, tmax); 
- 
-    float tymin = (transformedAABB.position.y - ray.origin.y) / ray.direction.y; 
-    float tymax = ((transformedAABB.position.y + transformedAABB.dimensions.y) - ray.origin.y) / ray.direction.y; 
- 
-    if (tymin > tymax) swap(tymin, tymax); 
- 
-    if ((tmin > tymax) || (tymin > tmax)) 
-        return false; 
- 
-    if (tymin > tmin) 
-        tmin = tymin; 
- 
-    if (tymax < tmax) 
-        tmax = tymax; 
- 
-    float tzmin = (transformedAABB.position.z - ray.origin.z) / ray.direction.z; 
-    float tzmax = ((transformedAABB.position.z + transformedAABB.dimensions.z) - ray.origin.z) / ray.direction.z; 
- 
-    if (tzmin > tzmax) swap(tzmin, tzmax); 
- 
-    if ((tmin > tzmax) || (tzmin > tmax)) 
-        return false; 
- 
-    if (tzmin > tmin) 
-        tmin = tzmin; 
- 
-    if (tzmax < tmax) 
-        tmax = tzmax; 
- 
-    return true; 
+	const vec3 invRaydir = getInvDirection(ray);
+
+	const vec3 t0 = ((transformedAABB.position).xyz - ray.origin.xyz)*invRaydir;
+	const vec3 t1 = ((transformedAABB.position + transformedAABB.dimensions).xyz - ray.origin.xyz)*invRaydir;
+	const vec3 tmin = min(t0,t1), tmax = max(t0,t1);
+	return max_component(tmin) <= min_component(tmax);
 }
 
 /**
