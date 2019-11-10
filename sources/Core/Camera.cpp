@@ -3,6 +3,8 @@
 using namespace Tachyon;
 using namespace Tachyon::Core;
 
+const glm::vec3 Camera::UPVector = glm::vec3(0, 1, 0);
+
 Camera::Camera(glm::vec3 lookfrom, glm::vec3 lookat, glm::float32 vfov, glm::float32 aspect, glm::vec3 vup) noexcept
 	: mFoV(std::move(vfov)),
 	mLookingDir(std::move(lookat)),
