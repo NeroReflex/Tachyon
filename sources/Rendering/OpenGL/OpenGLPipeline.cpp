@@ -9,22 +9,18 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::OpenGL;
 using namespace Tachyon::Rendering::OpenGL::Pipeline;
 
+// This is included to query the memory size of objects
+#include "shaders/OpenGL/config.glsl"
+
 #include "shaders/tonemapping.vert.spv.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
 #include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
 #include "shaders/raytrace_insert.comp.spv.h" // raytrace_insert_compOGL, raytrace_insert_compOGL_size
 #include "shaders/raytrace_flush.comp.spv.h" // raytrace_flush_compOGL, raytrace_flush_compOGL_size
 #include "shaders/raytrace_render.comp.spv.h" // raytrace_render_compOGL, raytrace_render_compOGL_size
 #include "shaders/raytrace_update.comp.spv.h" // raytrace_update_compOGL, raytrace_update_compOGL_size
-#include "shaders/raytrace_query_info.comp.spv.h" // raytrace_query_info_compOGL raytrace_query_info_compOGL_size
 
 OpenGLPipeline::OpenGLPipeline() noexcept
     : RenderingPipeline(),
-	mRaytracerQueryInfo(
-		new Pipeline::Program(
-		std::initializer_list<std::shared_ptr<const Shader>>{
-			std::make_shared<const ComputeShader>(Shader::SourceType::SPIRV, reinterpret_cast<const char*>(raytrace_query_info_compOGL), raytrace_query_info_compOGL_size)
-		})
-	),
 	mRaytracerFlush(
 		new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{
@@ -57,19 +53,10 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	mRaytracingTLAS(0) {
 
 	// Query raytracer capabilities
-	GLuint mRaytracerInfoSSBO;
-	glCreateBuffers(1, &mRaytracerInfoSSBO);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, mRaytracerInfoSSBO);
-	glNamedBufferStorage(mRaytracerInfoSSBO, sizeof(RaytracerInfo), NULL, GL_MAP_READ_BIT); // when done I want to read back results
-	Program::use(*mRaytracerQueryInfo); // This is the program that I use to query raytracer capabilities
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, mRaytracerInfoSSBO); // Bind the buffer to be used to retrieve info about the raytracer
-	glDispatchCompute(1, 1, 1); // Only one work is needed
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // Wit for the GPU to write out results
-	const RaytracerInfo* infoPtr = reinterpret_cast<const RaytracerInfo*>(glMapNamedBufferRange(mRaytracerInfoSSBO, 0, sizeof(RaytracerInfo), GL_MAP_READ_BIT)); // map the memory so I can read the capabilities of the raytracer
-	DBG_ASSERT( (infoPtr != nullptr) );
-	mRaytracerInfo = *infoPtr; // Copy info retrieved from the GPU to a more conventional type of memory
-	glUnmapNamedBuffer(mRaytracerInfoSSBO); // Done, unmap the memory
-	glDeleteBuffers(1, &mRaytracerInfoSSBO); // Done, delete the GPU memory
+	mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS = expOfTwo_maxCollectionsForModel;
+	mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection = expOfTwo_maxGeometryOnCollection;
+	mRaytracerInfo.expOfTwo_numberOfModels = expOfTwo_maxModels;
+	mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation = expOfTwo_numOfVec4OnGeometrySerialization;
 
 	std::array<glm::vec4, 4> screenTrianglesPosition = {
 		glm::vec4(-1.0f, -1.0f, 0.5f, 1.0f),
@@ -127,17 +114,12 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	// END OF MODELMATRIX TEXTURE CREATION
 
 	// GEOMETRY COLLECTION TEXTURE CREATION
-	size_t geometryX = size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.oxpOfTwo_numberOfTesselsForGeometryTexturazation);
-	size_t geometryY = size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS;
-	size_t geometryZ = size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels;
+	const size_t geometryX = size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation);
+	const size_t geometryY = size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS;
+	const size_t geometryZ = size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels;
 	glCreateTextures(GL_TEXTURE_3D, 1, &mRaytracingGeometryCollection);
 	glBindTexture(GL_TEXTURE_3D, mRaytracingGeometryCollection);
-	glTextureStorage3D(
-		mRaytracingGeometryCollection,
-		1, GL_RGBA32F,
-		size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.oxpOfTwo_numberOfTesselsForGeometryTexturazation),
-		size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS,
-		size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels);
+	glTextureStorage3D(mRaytracingGeometryCollection, 1, GL_RGBA32F, geometryX, geometryY, geometryZ);
 	// END OF GEOMETRY COLLECTION TEXTURE CREATION
 	
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
@@ -161,7 +143,7 @@ OpenGLPipeline::~OpenGLPipeline() {
 	glDeleteBuffers(1, &mQuadVBO);
 }
 
-void OpenGLPipeline::reset() noexcept {
+void OpenGLPipeline::onReset() noexcept {
 	Program::use(*mRaytracerFlush);
 
 	// Bind the raytracer ModelMatrix as write-only as the shader will only nuke it

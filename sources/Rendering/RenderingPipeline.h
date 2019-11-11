@@ -20,7 +20,7 @@ namespace Tachyon {
 
 			virtual void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept = 0;
 
-			virtual void reset() noexcept = 0;
+			void reset() noexcept;
 
 			void render(const Core::Camera& camera, glm::uint32 width, glm::uint32 height) noexcept;
 
@@ -28,6 +28,8 @@ namespace Tachyon {
 			virtual void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
 
 			virtual void onRender(const Core::Camera& camera) noexcept = 0;
+
+			virtual void onReset() noexcept = 0;
 
 			glm::uint32 getWidth() const noexcept;
 

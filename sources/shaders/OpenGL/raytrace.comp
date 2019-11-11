@@ -1,21 +1,10 @@
 #version 450 core
 
-/*
-#define expOfTwo_maxModels 9
-#define expOfTwo_maxGeometryOnCollection 3
-// TODO: investigate why setting this to 3 or less makes the CS crash
-#define expOfTwo_maxCollectionsForModel 12 
-*/
-#define expOfTwo_maxModels 2
-#define expOfTwo_maxGeometryOnCollection 3
-// TODO: investigate why setting this to 3 or less makes the CS crash
-#define expOfTwo_maxCollectionsForModel 4
+#include "config.glsl"
 
 #define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
 
-#define expOfTwo_numOfVec4OnGeometrySerialization 1
-
-#if defined(RENDER) || defined(QUERY_INFO)
+#if defined(RENDER)
 	#define TLAS_MEMORY_MODEL readonly
 	#define TLAS_READONLY
 
@@ -51,8 +40,6 @@ const float infinity = (1.0) / 0.0;
 const float minusInfinity = (-1.0) / 0.0;
 const mat4 identityTransform = mat4(1);
 const mat4 emptyTransform = mat4(0);
-
-#if !defined(QUERY_INFO)
 
 layout(rgba32f, binding = 4) uniform writeonly image2D debugOutput;
 
@@ -161,9 +148,12 @@ vec3 rayPointAt(const in Ray ray, const in float coeff) {
 
 vec3 getInvDirection(const in Ray ray) {
 	vec3 ray_dir = ray.direction.xyz;
+
+	/* // Sum/subtract an epsilon to avoid using infinite value
 	ray_dir.x += (ray_dir.x >= 0) ? 0.001 : -0.001;
 	ray_dir.y += (ray_dir.z >= 0) ? 0.001 : -0.001;
 	ray_dir.z += (ray_dir.z >= 0) ? 0.001 : -0.001;
+	*/
 
 	return normalize(1.0/(ray_dir));
 }
@@ -818,8 +808,6 @@ RayGeometryIntersection castRay(const in Ray ray, const in float minDistance, co
 	return bestHitSoFar;
 }
 
-#endif
-
 /*=======================================================================================================
   ===                          Entry Points (main): one for each stage                                ===
   =======================================================================================================*/
@@ -1000,35 +988,6 @@ void main () {
 	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
 	
 	UpdateTLASFromLeafToRoot_ByIndex(gl_GlobalInvocationID.x);
-}
-
-#elif defined(QUERY_INFO)
-
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-
-layout (std430, binding = 1) writeonly buffer raytracerInfo {
-	uint expOfTwo_numberOfModels;
-	uint expOfTwo_numberOfGeometryCollectionOnBLAS;
-	uint expOfTwo_numberOfGeometryOnCollection;
-
-	// Geometry is stored as consecutive vec4 in a texture, on the x axis.
-	uint oxpOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
-};
-
-/**
- * This is the entry point used to query information about the raytracer.
- *
- * Usage: the compute shader MUST be dispatched as glDispatchCompute(1, 1, 1)
- */
-void main() {
-	// Only one instance is necessary
-	if ((gl_GlobalInvocationID.x != 0) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
-
-	expOfTwo_numberOfModels = expOfTwo_maxModels;
-	expOfTwo_numberOfGeometryCollectionOnBLAS = expOfTwo_maxCollectionsForModel;
-	expOfTwo_numberOfGeometryOnCollection = expOfTwo_maxGeometryOnCollection;
-
-	oxpOfTwo_numberOfTesselsForGeometryTexturazation = expOfTwo_numOfVec4OnGeometrySerialization;
 }
 
 #elif defined(RENDER)

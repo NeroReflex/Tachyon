@@ -8,7 +8,7 @@ namespace Tachyon {
 	namespace Rendering {
 		namespace OpenGL {
 
-			class OpenGLPipeline :
+			class OpenGLPipeline final :
 				virtual public Rendering::RenderingPipeline {
 
 			public:
@@ -22,12 +22,14 @@ namespace Tachyon {
 
 				OpenGLPipeline() noexcept;
 
-				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept override;
+				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept final;
 				
-				void reset() noexcept override;
+				
 
 			protected:
-				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
+				void onReset() noexcept final;
+
+				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept final;
 
 				void onRender(const Core::Camera& camera) noexcept final;
 
@@ -35,8 +37,6 @@ namespace Tachyon {
 				void update() noexcept;
 
 			private:
-				std::unique_ptr<Pipeline::Program> mRaytracerQueryInfo;
-
 				std::unique_ptr<Pipeline::Program> mRaytracerFlush;
 
 				std::unique_ptr<Pipeline::Program> mRaytracerInsert;
@@ -53,7 +53,7 @@ namespace Tachyon {
 					glm::uint32 expOfTwo_numberOfGeometryOnCollection;
 
 					// Geometry is stored as consecutive vec4 in a texture, on the x axis.
-					glm::uint32 oxpOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
+					glm::uint32 expOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
 				} mRaytracerInfo ;
 
 				GLuint mRaytracingTLAS;

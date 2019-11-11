@@ -23,6 +23,10 @@ glm::uint32 RenderingPipeline::getHeight() const noexcept {
 	return mWindowHeight;
 }
 
+void RenderingPipeline::reset() noexcept {
+	onReset();
+}
+
 void RenderingPipeline::render(const Core::Camera& camera, glm::uint32 width, glm::uint32 height) noexcept {
 	if ((width != getWidth()) || (height != getHeight())) resize(width, height);
 

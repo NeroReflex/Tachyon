@@ -1,5 +1,6 @@
 #include "Core/Camera.h"
 #include "Rendering/OpenGL/OpenGLPipeline.h"
+#include "Rendering/Vulkan/VulkanPipeline.h"
 
 void GLAPIENTRY
 MessageCallback(GLenum source,
@@ -42,9 +43,6 @@ std::string get_opengl_compute_info() {
 }
 
 int main(int argc, char** argv) {
-
-	std::cout << "Camera size: " << sizeof(Tachyon::Core::Camera) << " bytes. " << std::endl;
-
 	// Initialize GLFW
 	if (glfwInit() == 0) {
 		std::cout << "Error: cannot initialize GLFW" << std::endl;
@@ -52,12 +50,16 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
+	std::unique_ptr<Tachyon::Rendering::Vulkan::VulkanPipeline> vulkanRenderer(new Tachyon::Rendering::Vulkan::VulkanPipeline());
+
+#if defined(OPENGL_SUPPORT)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// TODO: let the user decide the input antialiasing
 	glfwWindowHint(GLFW_SAMPLES, 16);
+#endif
 
 	// TODO: let the user specify preferred resolution
 	GLFWwindow* window = glfwCreateWindow(480, 360, "Tachyon Raytracer", nullptr, nullptr);
@@ -70,6 +72,8 @@ int main(int argc, char** argv) {
 
 	int windowWidth, windowHeight;
 	glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+#if defined(OPENGL_SUPPORT)
 
 	// Make the window's context current
 	glfwMakeContextCurrent(window);
@@ -114,6 +118,8 @@ int main(int argc, char** argv) {
 	glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxBlockSize);
 
 	std::cout << "Max SSBO Block size: " << maxBlockSize << std::endl;
+
+#endif
 
 	// Now it is safe to create the renderer
 	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
