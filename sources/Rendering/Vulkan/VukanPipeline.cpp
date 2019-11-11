@@ -22,6 +22,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanPipeline::debugReportCallbackFn(
 VulkanPipeline::VulkanPipeline() noexcept {
 	createInstance();
 	findPhysicalDevice();
+	createLogicalDevice();
 }
 
 VulkanPipeline::~VulkanPipeline() {

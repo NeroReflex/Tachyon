@@ -10,7 +10,7 @@ using namespace Tachyon::Rendering::OpenGL;
 using namespace Tachyon::Rendering::OpenGL::Pipeline;
 
 // This is included to query the memory size of objects
-#include "shaders/OpenGL/config.glsl"
+#include "shaders/config.glsl"
 
 #include "shaders/tonemapping.vert.spv.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
 #include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
