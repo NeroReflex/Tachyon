@@ -117,14 +117,14 @@ int main(int argc, char** argv) {
 
 	// Now it is safe to create the renderer
 	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
-	Tachyon::Core::Camera camera(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), glm::float32(60), glm::float32(windowWidth) / glm::float32(windowHeight));
+	Tachyon::Core::Camera camera(glm::vec3(0, 90.3, 0), glm::vec3(0, 90, -1), glm::float32(60), glm::float32(windowWidth) / glm::float32(windowHeight));
 
 	raytracer->reset();
 
 	raytracer->enqueueModel({
-		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, 0, -1), 0.5),
-		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0.75, 0, -1.5), 0.25),
-		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, -100.5, -1), 100),
+		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, 90, -1), 0.5),
+		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0.75, 90, -1.5), 0.25),
+		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, -10.5, -1), 100),
 		}, 0);
 
 	while (!glfwWindowShouldClose(window)) {
