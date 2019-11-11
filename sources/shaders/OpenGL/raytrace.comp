@@ -61,6 +61,38 @@ layout(rgba32f, binding = 4) uniform /*writeonly*/ image2D debugOutput;
  *************************************************************************************************************************/
 
 /**
+ * Swaps two numbers.
+ *
+ * @param a the first number
+ * @param b the second number
+ */
+ void swap(inout float a, inout float b) {
+	float temp = a;
+	a = b;
+	b = temp;
+}
+
+/**
+ * Finds the minimum component on a vector.
+ *
+ * @param a the vector
+ * @return the minimum component
+ */
+float min_component(vec3 a) {
+	return min(min(a.x, a.y), a.z);
+}
+
+/**
+ * Finds the maximum component on a vector.
+ *
+ * @param a the vector
+ * @return the maximum component
+ */
+float max_component(vec3 a) {
+	return max(max(a.x, a.y), a.z);
+}
+
+/**
  * Checks if the given number is even.
  *
  * @param n the number to check
@@ -311,20 +343,14 @@ AABB transformAABB(const in AABB b, const in mat4 transformMatrix) {
 	return AABB(vec4(minX, minY, minZ, 1), vec4(maxX-minX, maxY-minY, maxZ-minZ, 0));
 }
 
-void swap(inout float a, inout float b) {
-	float temp = a;
-	a = b;
-	b = temp;
-}
-
-float min_component(vec3 a) {
-	return min(min(a.x, a.y), a.z);
-}
-
-float max_component(vec3 a) {
-	return max(max(a.x, a.y), a.z);
-}
-
+/**
+ * Test intersaction of the given ray with the ginve AABB after applying a transformation to the AABB.
+ *
+ * @param ray the input ray
+ * @param aabb the input AABB
+ * @param transformMatrix the transformation to be applied to the input AABB
+ * @return TRUE iif the ray intersects the transformed AABB
+ */
 bool intersectAABB(const in Ray ray, const in AABB aabb, const in mat4 transformMatrix) {
 	AABB transformedAABB = transformAABB(aabb, transformMatrix);
 
