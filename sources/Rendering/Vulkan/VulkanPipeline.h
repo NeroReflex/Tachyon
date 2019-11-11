@@ -4,6 +4,13 @@
 
 namespace Tachyon {
     namespace Rendering {
-        
+		namespace Vulkan {
+			class VulkanPipeline :
+				virtual public Rendering::RenderingPipeline {
+			public:
+				VulkanPipeline() noexcept;
+
+			};
+		}
     }
 }

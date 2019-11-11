@@ -1076,18 +1076,7 @@ void main () {
 	//const Ray cameraRay = generateCameraRay(camera, u, v);
 	const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
 
-	//RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
-
-	/* // With this code the horizontal artifact is not shown
-	RayGeometryIntersection isect = miss;
-	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 0), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
-	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 1), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
-	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 2), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
-	isect = bestHit(isect, intersectGeometry(cameraRay, ReadGeometry_ByIndexes(0, 0, 3), ReadModelMatrix_ByIndex(0), 0.001, 10000.00 ));
-	*/
-
-	// debugging output texture
-	//imageStore(debugOutput, pixel_coords, vec4(getInvDirection(cameraRay), 1));
+	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
 
 	if (intersectAABB(cameraRay, ReadAABBFromBLAS_ByIndexes(0, 0), ReadModelMatrix_ByIndex(0))) {
 		imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 1));
@@ -1095,7 +1084,6 @@ void main () {
 		imageStore(debugOutput, pixel_coords, vec4(0, 0, 1, 1));
 	}
 
-	RayGeometryIntersection isect = intersectBLAS_ByIndex(cameraRay, 0, 0.001, 10000);
 
 	pixel = vec4( vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point)))) , 1.0);
   

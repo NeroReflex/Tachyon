@@ -33,7 +33,13 @@
 #include <gtx/quaternion.hpp>
 
 // OpenGL
+#if defined(OPENGL_SUPPORT)
 #include <GL/gl3w.h>
+#endif
+
+#if defined(VULKAN_SUPPORT)
+#include <vulkan/vulkan.h>
+#endif
 
 // GLFW
 #include <GLFW/glfw3.h>

@@ -19,18 +19,21 @@ find_package (Threads)
 # Include GLM
 include_directories(${PROJECT_SOURCE_DIR}/external/glm/glm)
 
-# Include GL3W
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/gl3w)
-include_directories(${PROJECT_SOURCE_DIR}/external/gl3w/include)
-
-# Include GLFW
 # OpenGL library new profile if possible
 set(OpenGL_GL_PREFERENCE GLVND)
-find_package(OpenGL REQUIRED)
-if(NOT OPENGL_FOUND)
-    message("ERROR: OpenGL not found")
-endif(NOT OPENGL_FOUND)
+find_package(OpenGL)
 
+# Include Vulkan library
+find_package(Vulkan)
+
+# Include GL3W
+if (OPENGL_FOUND)
+message("OpenGL found: including gl3w")
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/gl3w)
+include_directories(${PROJECT_SOURCE_DIR}/external/gl3w/include)
+endif(OPENGL_FOUND)
+
+# Include GLFW
 find_package(glfw3 REQUIRED)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
