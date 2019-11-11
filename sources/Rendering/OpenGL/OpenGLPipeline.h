@@ -47,15 +47,6 @@ namespace Tachyon {
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
 
-				struct RaytracerInfo {
-					glm::uint32 expOfTwo_numberOfModels;
-					glm::uint32 expOfTwo_numberOfGeometryCollectionOnBLAS;
-					glm::uint32 expOfTwo_numberOfGeometryOnCollection;
-
-					// Geometry is stored as consecutive vec4 in a texture, on the x axis.
-					glm::uint32 expOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
-				} mRaytracerInfo ;
-
 				GLuint mRaytracingTLAS;
 
 				GLuint mRaytracingBLASCollection;

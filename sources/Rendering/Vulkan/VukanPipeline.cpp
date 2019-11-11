@@ -23,6 +23,7 @@ VulkanPipeline::VulkanPipeline() noexcept {
 	createInstance();
 	findPhysicalDevice();
 	createLogicalDevice();
+	createCoreBuffers();
 }
 
 VulkanPipeline::~VulkanPipeline() {
@@ -35,15 +36,21 @@ VulkanPipeline::~VulkanPipeline() {
 		func(mInstance, debugReportCallback, NULL);
 #endif
 
-	/*vkFreeMemory(device, bufferMemory, NULL);
-	vkDestroyBuffer(device, buffer, NULL);
+	// The first step is to destroy all memory buffers and allocated memory on the GPU
+	destroyCoreBuffers();
+
+	/*
 	vkDestroyShaderModule(device, computeShaderModule, NULL);
 	vkDestroyDescriptorPool(device, descriptorPool, NULL);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, NULL);
 	vkDestroyPipelineLayout(device, pipelineLayout, NULL);
 	vkDestroyPipeline(device, pipeline, NULL);
 	vkDestroyCommandPool(mDevice, commandPool, NULL);*/
+
+	// at this point everything about the logical device has been destroyed, so it's safe to destroy the device
 	vkDestroyDevice(mDevice, NULL);
+
+	// As I am for sure not going to use vulkan for anything else at this point just destroy the instance
 	vkDestroyInstance(mInstance, NULL);
 }
 
@@ -71,7 +78,7 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 		if ((deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
 			(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
 
-			DBG_ONLY(	printf("Chosen GPU: %s", deviceProperties.deviceName ) );
+			DBG_ONLY(	printf("Chosen Vulkan GPU: %s\n\n", deviceProperties.deviceName ) );
 
 			mPhysicalDevice = physicalDevice;
 			deviceFound = true;
@@ -234,7 +241,7 @@ glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept {
 			(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
 			(props.queueFlags & VK_QUEUE_TRANSFER_BIT)
 			)) {
-			// found a queue with compute. We're done!
+			// found a candidate!
 			break;
 		}
 	}
@@ -242,6 +249,67 @@ glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept {
 	DBG_ASSERT((i != queueFamilies.size())); // could not find a queue family that supports required operations
 
 	return i;
+}
+
+uint32_t VulkanPipeline::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) noexcept {
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
+
+	// See the documentation of VkPhysicalDeviceMemoryProperties for a detailed description.
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+		if ((memoryTypeBits & (1 << i)) &&
+			((memoryProperties.memoryTypes[i].propertyFlags & properties) == properties))
+			return i;
+	}
+
+	DBG_ASSERT( false ); // out-of-memory or to enough VRAM
+
+	return -1;
+}
+
+void VulkanPipeline::createCoreBuffers() noexcept {
+	// This is to create the TLAS buffer memory
+	VkBufferCreateInfo bufferCreateInfo = {};
+	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferCreateInfo.size = ((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2) * VULKAN_SIZEOF_RGBA32F; // buffer size in bytes
+	bufferCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT; // buffer is used as an image (mainly because I hope to get better performance and keep compatibility with OpenGL)
+	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // buffer is exclusive to a single queue family at a time. 
+
+	VK_CHECK_RESULT(vkCreateBuffer(mDevice, &bufferCreateInfo, NULL, &mRaytracingTLAS_buffer)); // create buffer.
+
+	//!!! But the buffer doesn't allocate memory for itself, so we must do that manually !!!
+
+	//First, we find the memory requirements for the buffer.
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(mDevice, mRaytracingTLAS_buffer, &memoryRequirements);
+
+	//Now use obtained memory requirements info to allocate the memory for the buffer.
+	VkMemoryAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize = memoryRequirements.size; // specify required memory.
+
+	/*
+	There are several types of memory that can be allocated, and we must choose a memory type that:
+	1) Satisfies the memory requirements(memoryRequirements.memoryTypeBits).
+	2) Satifies our own usage requirements.
+	
+	To satisfy condition two we can set a bitwise combination of following flags:
+		- VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT: memory can be mapped with vkMapMemory
+		- VK_MEMORY_PROPERTY_HOST_COHERENT_BIT: memory written by the device(GPU) will be easily visible to the host(CPU), without having to call any extra flushing commands.
+	*/
+	allocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &mRaytracingTLAS_bufferMemory)); // allocate memory on device.
+
+	// Now associate that allocated memory with the buffer. With that, the buffer is backed by actual memory.
+	VK_CHECK_RESULT(vkBindBufferMemory(mDevice, mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory, 0));
+}
+
+void VulkanPipeline::destroyCoreBuffers() noexcept {
+	// Destroy TLAS buffer memory
+	vkFreeMemory(mDevice, mRaytracingTLAS_bufferMemory, NULL);
+	vkDestroyBuffer(mDevice, mRaytracingTLAS_buffer, NULL);
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept {

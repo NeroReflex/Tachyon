@@ -2,6 +2,9 @@
 
 #include "Rendering/RenderingPipeline.h"
 
+// befause a float is 4 bytes, and a vec4 is four floats
+#define VULKAN_SIZEOF_RGBA32F 4 * 4
+
 namespace Tachyon {
     namespace Rendering {
 		namespace Vulkan {
@@ -41,10 +44,11 @@ namespace Tachyon {
 				void findPhysicalDevice() noexcept;
 
 				/**
-				 * 
+				 * Search for a family queue in the locigal device that satisfy all requrements.
 				 *
 				 * Note: must be called after findPhysicalDevice()
 				 *
+				 * @return the index of a queue family that satisfy all requirements
 				 */
 				glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept;
 
@@ -61,6 +65,15 @@ namespace Tachyon {
 				 * Note: must be called after createLogicalDevice()
 				 */
 				void createCoreBuffers() noexcept;
+
+				void destroyCoreBuffers() noexcept;
+
+				/**
+				 * Find memory type with the given properties.
+				 *
+				 * Note: must be called after createLogicalDevice()
+				 */
+				uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) noexcept;
 
 				static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFn(
 					VkDebugReportFlagsEXT                       flags,
@@ -114,6 +127,15 @@ namespace Tachyon {
 				 * This variable keeps track of the index of that queue in its family.
 				 */
 				uint32_t mQueueFamilyIndex;
+
+				/**
+				 * This is the memory buffer on the GPU used to store texels used as scene BLAS.
+				 *
+				 * This buffer will always be used as rgba32f (its size must be multiplied by 4)
+				 */
+				VkBuffer mRaytracingTLAS_buffer;
+
+				VkDeviceMemory mRaytracingTLAS_bufferMemory;
 			};
 		}
     }

@@ -35,6 +35,24 @@ namespace Tachyon {
 
 			glm::uint32 getHeight() const noexcept;
 
+			const struct RaytracerInfo {
+				glm::uint32 expOfTwo_numberOfModels;
+				glm::uint32 expOfTwo_numberOfGeometryCollectionOnBLAS;
+				glm::uint32 expOfTwo_numberOfGeometryOnCollection;
+
+				// Geometry is stored as consecutive vec4 in a texture, on the x axis.
+				glm::uint32 expOfTwo_numberOfTesselsForGeometryTexturazation; // This number is the number of texture texels used to store the texture
+
+				inline RaytracerInfo(glm::uint32 expOfTwo_numberOfModels,
+					glm::uint32 expOfTwo_numberOfGeometryCollectionOnBLAS,
+					glm::uint32 expOfTwo_numberOfGeometryOnCollection,
+					glm::uint32 expOfTwo_numberOfTesselsForGeometryTexturazation) noexcept :
+					expOfTwo_numberOfModels(std::move(expOfTwo_numberOfModels)),
+					expOfTwo_numberOfGeometryCollectionOnBLAS(std::move(expOfTwo_numberOfGeometryCollectionOnBLAS)),
+					expOfTwo_numberOfGeometryOnCollection(std::move(expOfTwo_numberOfGeometryOnCollection)),
+					expOfTwo_numberOfTesselsForGeometryTexturazation(std::move(expOfTwo_numberOfTesselsForGeometryTexturazation)) {}
+			} mRaytracerInfo;
+
 		private:
 			void resize(glm::uint32 width, glm::uint32 height) noexcept;
 

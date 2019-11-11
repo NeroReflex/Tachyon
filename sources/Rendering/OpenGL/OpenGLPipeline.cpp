@@ -9,9 +9,6 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::OpenGL;
 using namespace Tachyon::Rendering::OpenGL::Pipeline;
 
-// This is included to query the memory size of objects
-#include "shaders/config.glsl"
-
 #include "shaders/tonemapping.vert.spv.h" // SHADER_TONEMAPPING_VERT, SHADER_TONEMAPPING_VERT_size
 #include "shaders/tonemapping.frag.spv.h" // SHADER_TONEMAPPING_FRAG, SHADER_TONEMAPPING_FRAG_size
 #include "shaders/raytrace_insert.comp.spv.h" // raytrace_insert_compOGL, raytrace_insert_compOGL_size
@@ -51,12 +48,6 @@ OpenGLPipeline::OpenGLPipeline() noexcept
     ),
 	mRaytracerOutputTexture(0),
 	mRaytracingTLAS(0) {
-
-	// Query raytracer capabilities
-	mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS = expOfTwo_maxCollectionsForModel;
-	mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection = expOfTwo_maxGeometryOnCollection;
-	mRaytracerInfo.expOfTwo_numberOfModels = expOfTwo_maxModels;
-	mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation = expOfTwo_numOfVec4OnGeometrySerialization;
 
 	std::array<glm::vec4, 4> screenTrianglesPosition = {
 		glm::vec4(-1.0f, -1.0f, 0.5f, 1.0f),
