@@ -268,21 +268,21 @@ uint32_t VulkanPipeline::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropert
 	return -1;
 }
 
-void VulkanPipeline::createCoreBuffers() noexcept {
+void VulkanPipeline::allocateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize memorySize, VkBufferUsageFlags memoryUsage, VkMemoryPropertyFlags memoryProperties) noexcept {
 	// This is to create the TLAS buffer memory
 	VkBufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferCreateInfo.size = ((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2) * VULKAN_SIZEOF_RGBA32F; // buffer size in bytes
-	bufferCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT; // buffer is used as an image (mainly because I hope to get better performance and keep compatibility with OpenGL)
+	bufferCreateInfo.size = memorySize; // buffer size in bytes
+	bufferCreateInfo.usage = memoryUsage; // buffer is used as an image (mainly because I hope to get better performance and keep compatibility with OpenGL)
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // buffer is exclusive to a single queue family at a time. 
 
-	VK_CHECK_RESULT(vkCreateBuffer(mDevice, &bufferCreateInfo, NULL, &mRaytracingTLAS_buffer)); // create buffer.
+	VK_CHECK_RESULT(vkCreateBuffer(mDevice, &bufferCreateInfo, NULL, &buffer)); // create buffer.
 
 	//!!! But the buffer doesn't allocate memory for itself, so we must do that manually !!!
 
 	//First, we find the memory requirements for the buffer.
 	VkMemoryRequirements memoryRequirements;
-	vkGetBufferMemoryRequirements(mDevice, mRaytracingTLAS_buffer, &memoryRequirements);
+	vkGetBufferMemoryRequirements(mDevice, buffer, &memoryRequirements);
 
 	//Now use obtained memory requirements info to allocate the memory for the buffer.
 	VkMemoryAllocateInfo allocateInfo = {};
@@ -298,18 +298,29 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 		- VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT: memory can be mapped with vkMapMemory
 		- VK_MEMORY_PROPERTY_HOST_COHERENT_BIT: memory written by the device(GPU) will be easily visible to the host(CPU), without having to call any extra flushing commands.
 	*/
-	allocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	allocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, memoryProperties);
 
-	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &mRaytracingTLAS_bufferMemory)); // allocate memory on device.
+	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &bufferMemory)); // allocate memory on device.
 
 	// Now associate that allocated memory with the buffer. With that, the buffer is backed by actual memory.
-	VK_CHECK_RESULT(vkBindBufferMemory(mDevice, mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory, 0));
+	VK_CHECK_RESULT(vkBindBufferMemory(mDevice, buffer, bufferMemory, 0));
+}
+
+void VulkanPipeline::destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory) noexcept {
+	// Destroy TLAS buffer memory
+	vkFreeMemory(mDevice, bufferMemory, NULL);
+	vkDestroyBuffer(mDevice, buffer, NULL);
+}
+
+void VulkanPipeline::createCoreBuffers() noexcept {
+	// This is to create the TLAS buffer memory
+	allocateBuffer(mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory, ((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2) * VULKAN_SIZEOF_RGBA32F, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	
 }
 
 void VulkanPipeline::destroyCoreBuffers() noexcept {
 	// Destroy TLAS buffer memory
-	vkFreeMemory(mDevice, mRaytracingTLAS_bufferMemory, NULL);
-	vkDestroyBuffer(mDevice, mRaytracingTLAS_buffer, NULL);
+	destroyBuffer(mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory);
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept {

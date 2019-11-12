@@ -50,7 +50,7 @@ namespace Tachyon {
 				 *
 				 * @return the index of a queue family that satisfy all requirements
 				 */
-				glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept;
+				glm::uint32 getQueueFamilyIndex() noexcept;
 
 				/**
 				 * Create the Vulkan logical device from the physical device.
@@ -60,12 +60,18 @@ namespace Tachyon {
 				void createLogicalDevice() noexcept;
 
 				/**
-				 * Creates all buffer required for accelection structures, geometry and other data related to the scene representation.
+				 * Creates all buffer required for accelection structures,
+				 * geometry and other data related to the scene representation.
 				 *
 				 * Note: must be called after createLogicalDevice()
 				 */
 				void createCoreBuffers() noexcept;
 
+				/**
+				 * Destroy all buffer for acceleration scrutures created by createCoreBuffers()
+				 * 
+				 * Note: must be called after createCoreBuffers()
+				 */
 				void destroyCoreBuffers() noexcept;
 
 				/**
@@ -74,6 +80,19 @@ namespace Tachyon {
 				 * Note: must be called after createLogicalDevice()
 				 */
 				uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) noexcept;
+
+				/**
+				 * Create a VkBuffer and VkDeviceMemory with the given size, memory usage bits and properties.
+				 * 
+				 * @param buffer the buffer that is going to be created
+				 * @param bufferMemory the allocated memory that backs the buffer
+				 * @param memorySize the size, in bytes to allocate
+				 * @param memoryUsage buffer usage, one of VK_IMAGE_USAGE_STORAGE_BIT, ... and so on...
+				 * @param memoryProperties properties of memory (a valid combination of VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+				 */
+				void allocateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize memorySize, VkBufferUsageFlags memoryUsage, VkMemoryPropertyFlags memoryProperties) noexcept;
+
+				void destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory) noexcept;
 
 				static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFn(
 					VkDebugReportFlagsEXT                       flags,
