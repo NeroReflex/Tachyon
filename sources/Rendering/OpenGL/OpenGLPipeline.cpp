@@ -89,13 +89,13 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	// TLAS TEXTURE CREATION
 	glCreateTextures(GL_TEXTURE_1D, 1, &mRaytracingTLAS);
 	glBindTexture(GL_TEXTURE_1D, mRaytracingTLAS);
-	glTextureStorage1D(mRaytracingTLAS, 1, GL_RGBA32F, (size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2);
+	glTextureStorage1D(mRaytracingTLAS, 1, GL_RGBA32F, mRaytracerRequirements.mTLASTexels_Width);
 	// END OF TLAS TEXTURE CREATION
 
 	// BLAS COLLECTION TEXTURE CREATION
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingBLASCollection);
 	glBindTexture(GL_TEXTURE_2D, mRaytracingBLASCollection);
-	glTextureStorage2D(mRaytracingBLASCollection, 1, GL_RGBA32F, (size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS + 1)) * 2, size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels);
+	glTextureStorage2D(mRaytracingBLASCollection, 1, GL_RGBA32F, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height);
 	// END OF BLAS COLLECTION TEXTURE CREATION
 
 	// MODELMATRIX TEXTURE CREATION
@@ -105,12 +105,9 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 	// END OF MODELMATRIX TEXTURE CREATION
 
 	// GEOMETRY COLLECTION TEXTURE CREATION
-	const size_t geometryX = size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation);
-	const size_t geometryY = size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS;
-	const size_t geometryZ = size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels;
 	glCreateTextures(GL_TEXTURE_3D, 1, &mRaytracingGeometryCollection);
 	glBindTexture(GL_TEXTURE_3D, mRaytracingGeometryCollection);
-	glTextureStorage3D(mRaytracingGeometryCollection, 1, GL_RGBA32F, geometryX, geometryY, geometryZ);
+	glTextureStorage3D(mRaytracingGeometryCollection, 1, GL_RGBA32F, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth);
 	// END OF GEOMETRY COLLECTION TEXTURE CREATION
 	
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs

@@ -34,6 +34,7 @@ target_link_libraries(Tachyon
 set(GLSL_COMPILE_DEBUG_FLAG "")
 string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" "Debug" is_debug_build)
 if (is_debug_build)
+	message("info: Compiling shaders for Debug")
 	set(GLSL_COMPILE_DEBUG_FLAG "-g")
 endif()
 

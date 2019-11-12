@@ -19,13 +19,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanPipeline::debugReportCallbackFn(
 	return VK_FALSE;
 }
 
-VulkanPipeline::VulkanPipeline() noexcept
-	: mTLASTexels_Width((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2),
-	mBLASCollectionTexels_Width((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS + 1)) * 2),
-	mBLASCollectionTexels_Height(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels),
-	mGeometryCollectionTexels_Width(size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation)),
-	mGeometryCollectionTexels_Height(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS),
-	mGeometryCollectionTexels_Depth(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) {
+VulkanPipeline::VulkanPipeline() noexcept {
 	createInstance();
 	findPhysicalDevice();
 	createLogicalDevice();
@@ -82,9 +76,9 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 
 
 		if ((deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
-			(deviceProperties.limits.maxImageDimension1D >= mTLASTexels_Width) &&
-			(deviceProperties.limits.maxImageDimension2D >= glm::max(mBLASCollectionTexels_Width, mBLASCollectionTexels_Height)) && 
-			(deviceProperties.limits.maxImageDimension3D >= glm::max(glm::max(mGeometryCollectionTexels_Width, mGeometryCollectionTexels_Height), mGeometryCollectionTexels_Depth)) && 
+			(deviceProperties.limits.maxImageDimension1D >= mRaytracerRequirements.mTLASTexels_Width) &&
+			(deviceProperties.limits.maxImageDimension2D >= glm::max(mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)) &&
+			(deviceProperties.limits.maxImageDimension3D >= glm::max(glm::max(mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height), mRaytracerRequirements.mGeometryCollectionTexels_Depth)) &&
 			(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
 
 			DBG_ONLY(	printf("Chosen Vulkan GPU: %s\n\n", deviceProperties.deviceName ) );
@@ -322,14 +316,72 @@ void VulkanPipeline::destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemor
 }
 
 void VulkanPipeline::createCoreBuffers() noexcept {
-	// This is to create the TLAS buffer memory
-	allocateBuffer(mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory, mTLASTexels_Width * VULKAN_SIZEOF_RGBA32F, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VkImageCreateInfo* tlasImageCreateInfo = new VkImageCreateInfo(); // Using stack will lead to stack overflow
+	tlasImageCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	tlasImageCreateInfo->pNext = NULL;
+	tlasImageCreateInfo->flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	tlasImageCreateInfo->format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	tlasImageCreateInfo->samples = VK_SAMPLE_COUNT_1_BIT;
+	tlasImageCreateInfo->tiling = VK_IMAGE_TILING_OPTIMAL;
+	tlasImageCreateInfo->usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	tlasImageCreateInfo->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	tlasImageCreateInfo->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	tlasImageCreateInfo->mipLevels = 1;
+	tlasImageCreateInfo->arrayLayers = 1;
+	tlasImageCreateInfo->imageType = VK_IMAGE_TYPE_1D;
+	tlasImageCreateInfo->extent.width = mRaytracerRequirements.mTLASTexels_Width;
+	tlasImageCreateInfo->extent.height = 1;
+	tlasImageCreateInfo->extent.depth = 1;
+
+	vkCreateImage(mDevice, tlasImageCreateInfo, NULL, &mRaytracingTLAS);
+	
+	// BLAS-Collection specific
+	VkImageCreateInfo* blasImageCreateInfo = new VkImageCreateInfo(); // Using stack will lead to stack overflow
+	blasImageCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	blasImageCreateInfo->pNext = NULL;
+	blasImageCreateInfo->flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	blasImageCreateInfo->format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	blasImageCreateInfo->samples = VK_SAMPLE_COUNT_1_BIT;
+	blasImageCreateInfo->tiling = VK_IMAGE_TILING_OPTIMAL;
+	blasImageCreateInfo->usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	blasImageCreateInfo->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	blasImageCreateInfo->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	blasImageCreateInfo->mipLevels = 1;
+	blasImageCreateInfo->arrayLayers = 1;
+	blasImageCreateInfo->imageType = VK_IMAGE_TYPE_2D;
+	blasImageCreateInfo->extent.width = mRaytracerRequirements.mBLASCollectionTexels_Width;
+	blasImageCreateInfo->extent.height = mRaytracerRequirements.mBLASCollectionTexels_Height;
+	blasImageCreateInfo->extent.depth = 1;
+	
+	// This is to create the BLAS-Collection
+	vkCreateImage(mDevice, blasImageCreateInfo, NULL, &mRaytracingBLASCollection);
+
+	delete tlasImageCreateInfo;
+	delete blasImageCreateInfo;
+
+	// Find memory requirements for all those images used as a buffer
+	VkMemoryRequirements raytracerTLASMemoryRequirements;
+	vkGetImageMemoryRequirements(mDevice, mRaytracingTLAS, &raytracerTLASMemoryRequirements);
+	VkMemoryRequirements raytracerBLASCollectionemoryRequirements;
+	vkGetImageMemoryRequirements(mDevice, mRaytracingBLASCollection, &raytracerBLASCollectionemoryRequirements);
+
+	//Now use obtained memory requirements info to allocate the memory for the buffer.
+	VkMemoryAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize = raytracerTLASMemoryRequirements.size + raytracerBLASCollectionemoryRequirements.size;
+	allocateInfo.memoryTypeIndex = findMemoryType(raytracerTLASMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &mRaytracingDeviceMemory)); // allocate memory on device.
 	
 }
 
 void VulkanPipeline::destroyCoreBuffers() noexcept {
-	// Destroy TLAS buffer memory
-	destroyBuffer(mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory);
+	// Destroy the memory backing-up all core images used to store raytracing input
+	vkFreeMemory(mDevice, mRaytracingDeviceMemory, NULL);
+
+	// Destroy all images
+	vkDestroyImage(mDevice, mRaytracingTLAS, NULL);
+	vkDestroyImage(mDevice, mRaytracingBLASCollection, NULL);
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept {

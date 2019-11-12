@@ -103,14 +103,7 @@ namespace Tachyon {
 					const char* pLayerPrefix,
 					const char* pMessage,
 					void* pUserData);
-
-				const size_t mTLASTexels_Width;
-				const size_t mBLASCollectionTexels_Width;
-				const size_t mBLASCollectionTexels_Height;
-				const size_t mGeometryCollectionTexels_Width;
-				const size_t mGeometryCollectionTexels_Height;
-				const size_t mGeometryCollectionTexels_Depth;
-
+				
 				std::vector<const char*> mEnabledExtensions;
 
 				std::vector<const char*> mEnabledLayers;
@@ -155,13 +148,23 @@ namespace Tachyon {
 				uint32_t mQueueFamilyIndex;
 
 				/**
-				 * This is the memory buffer on the GPU used to store texels used as scene BLAS.
-				 *
-				 * This buffer will always be used as rgba32f (its size must be multiplied by 4)
+				 * This is the device memory that backs all raytracing Acceleration structures and geometry.
 				 */
-				VkBuffer mRaytracingTLAS_buffer;
+				VkDeviceMemory mRaytracingDeviceMemory;
 
-				VkDeviceMemory mRaytracingTLAS_bufferMemory;
+				/**
+				 * This is the image on the GPU used to store texels used as the scene TLAS.
+				 *
+				 * Note: this buffer will always be used as rgba32f
+				 */
+				VkImage mRaytracingTLAS;
+
+				/**
+				 * This is the image on the GPU used to store texels used as the scene BLAS collection.
+				 *
+				 * Note: this buffer will always be used as rgba32f
+				 */
+				VkImage mRaytracingBLASCollection;
 			};
 		}
     }

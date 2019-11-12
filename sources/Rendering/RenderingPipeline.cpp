@@ -8,7 +8,17 @@ using namespace Tachyon::Rendering;
 
 RenderingPipeline::RenderingPipeline() noexcept
 	: mWindowWidth(0), mWindowHeight(0),
-	mRaytracerInfo(expOfTwo_maxModels, expOfTwo_maxCollectionsForModel, expOfTwo_maxGeometryOnCollection, expOfTwo_numOfVec4OnGeometrySerialization) {}
+	mRaytracerInfo(expOfTwo_maxModels, expOfTwo_maxCollectionsForModel, expOfTwo_maxGeometryOnCollection, expOfTwo_numOfVec4OnGeometrySerialization),
+	mRaytracerRequirements(
+		(size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2,
+		(size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS + 1)) * 2,
+		size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels,
+		4,
+		size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels,
+		size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation),
+		size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS,
+		size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels
+	) {}
 
 void RenderingPipeline::resize(glm::uint32 width, glm::uint32 height) noexcept {
 	// Execute callback before doing anything
