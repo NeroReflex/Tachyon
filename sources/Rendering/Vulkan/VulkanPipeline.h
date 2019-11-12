@@ -104,6 +104,13 @@ namespace Tachyon {
 					const char* pMessage,
 					void* pUserData);
 
+				const size_t mTLASTexels_Width;
+				const size_t mBLASCollectionTexels_Width;
+				const size_t mBLASCollectionTexels_Height;
+				const size_t mGeometryCollectionTexels_Width;
+				const size_t mGeometryCollectionTexels_Height;
+				const size_t mGeometryCollectionTexels_Depth;
+
 				std::vector<const char*> mEnabledExtensions;
 
 				std::vector<const char*> mEnabledLayers;

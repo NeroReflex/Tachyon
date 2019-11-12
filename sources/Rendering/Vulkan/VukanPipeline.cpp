@@ -19,7 +19,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanPipeline::debugReportCallbackFn(
 	return VK_FALSE;
 }
 
-VulkanPipeline::VulkanPipeline() noexcept {
+VulkanPipeline::VulkanPipeline() noexcept
+	: mTLASTexels_Width((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2),
+	mBLASCollectionTexels_Width((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS + 1)) * 2),
+	mBLASCollectionTexels_Height(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels),
+	mGeometryCollectionTexels_Width(size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation)),
+	mGeometryCollectionTexels_Height(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS),
+	mGeometryCollectionTexels_Depth(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) {
 	createInstance();
 	findPhysicalDevice();
 	createLogicalDevice();
@@ -76,6 +82,9 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 
 
 		if ((deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
+			(deviceProperties.limits.maxImageDimension1D >= mTLASTexels_Width) &&
+			(deviceProperties.limits.maxImageDimension2D >= glm::max(mBLASCollectionTexels_Width, mBLASCollectionTexels_Height)) && 
+			(deviceProperties.limits.maxImageDimension3D >= glm::max(glm::max(mGeometryCollectionTexels_Width, mGeometryCollectionTexels_Height), mGeometryCollectionTexels_Depth)) && 
 			(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
 
 			DBG_ONLY(	printf("Chosen Vulkan GPU: %s\n\n", deviceProperties.deviceName ) );
@@ -314,7 +323,7 @@ void VulkanPipeline::destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemor
 
 void VulkanPipeline::createCoreBuffers() noexcept {
 	// This is to create the TLAS buffer memory
-	allocateBuffer(mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory, ((size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2) * VULKAN_SIZEOF_RGBA32F, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	allocateBuffer(mRaytracingTLAS_buffer, mRaytracingTLAS_bufferMemory, mTLASTexels_Width * VULKAN_SIZEOF_RGBA32F, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
 }
 
