@@ -356,23 +356,104 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 	// This is to create the BLAS-Collection
 	vkCreateImage(mDevice, blasImageCreateInfo, NULL, &mRaytracingBLASCollection);
 
+	// ModelMatrix-Collection specific
+	VkImageCreateInfo* modelMatrixImageCreateInfo = new VkImageCreateInfo(); // Using stack will lead to stack overflow
+	modelMatrixImageCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	modelMatrixImageCreateInfo->pNext = NULL;
+	modelMatrixImageCreateInfo->flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	modelMatrixImageCreateInfo->format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	modelMatrixImageCreateInfo->samples = VK_SAMPLE_COUNT_1_BIT;
+	modelMatrixImageCreateInfo->tiling = VK_IMAGE_TILING_OPTIMAL;
+	modelMatrixImageCreateInfo->usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	modelMatrixImageCreateInfo->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	modelMatrixImageCreateInfo->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	modelMatrixImageCreateInfo->mipLevels = 1;
+	modelMatrixImageCreateInfo->arrayLayers = 1;
+	modelMatrixImageCreateInfo->imageType = VK_IMAGE_TYPE_2D;
+	modelMatrixImageCreateInfo->extent.width = mRaytracerRequirements.mModelMatrixCollection_Width;
+	modelMatrixImageCreateInfo->extent.height = mRaytracerRequirements.mModelMatrixCollection_Height;
+	modelMatrixImageCreateInfo->extent.depth = 1;
+
+	// This is to create the ModelMatrix-Collection
+	vkCreateImage(mDevice, modelMatrixImageCreateInfo, NULL, &mRaytracingModelMatrix);
+
+	// ModelMatrix-Collection specific
+	VkImageCreateInfo* geometryImageCreateInfo = new VkImageCreateInfo(); // Using stack will lead to stack overflow
+	geometryImageCreateInfo->sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	geometryImageCreateInfo->pNext = NULL;
+	geometryImageCreateInfo->flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	geometryImageCreateInfo->format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	geometryImageCreateInfo->samples = VK_SAMPLE_COUNT_1_BIT;
+	geometryImageCreateInfo->tiling = VK_IMAGE_TILING_OPTIMAL;
+	geometryImageCreateInfo->usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	geometryImageCreateInfo->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	geometryImageCreateInfo->initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	geometryImageCreateInfo->mipLevels = 1;
+	geometryImageCreateInfo->arrayLayers = 1;
+	geometryImageCreateInfo->imageType = VK_IMAGE_TYPE_3D;
+	geometryImageCreateInfo->extent.width = mRaytracerRequirements.mGeometryCollectionTexels_Width;
+	geometryImageCreateInfo->extent.height = mRaytracerRequirements.mGeometryCollectionTexels_Height;
+	geometryImageCreateInfo->extent.depth = mRaytracerRequirements.mGeometryCollectionTexels_Depth;
+
+	// This is to create the ModelMatrix-Collection
+	vkCreateImage(mDevice, geometryImageCreateInfo, NULL, &mRaytracingGeometryCollection);
+
 	delete tlasImageCreateInfo;
 	delete blasImageCreateInfo;
+	delete modelMatrixImageCreateInfo;
+	delete geometryImageCreateInfo;
 
 	// Find memory requirements for all those images used as a buffer
 	VkMemoryRequirements raytracerTLASMemoryRequirements;
 	vkGetImageMemoryRequirements(mDevice, mRaytracingTLAS, &raytracerTLASMemoryRequirements);
 	VkMemoryRequirements raytracerBLASCollectionemoryRequirements;
 	vkGetImageMemoryRequirements(mDevice, mRaytracingBLASCollection, &raytracerBLASCollectionemoryRequirements);
+	VkMemoryRequirements raytracerModelMatrixCollectionemoryRequirements;
+	vkGetImageMemoryRequirements(mDevice, mRaytracingModelMatrix, &raytracerModelMatrixCollectionemoryRequirements);
+	VkMemoryRequirements raytracerGeometryCollectionemoryRequirements;
+	vkGetImageMemoryRequirements(mDevice, mRaytracingGeometryCollection, &raytracerGeometryCollectionemoryRequirements);
+
+	// This is the minimum unaligned space (in bytes) needed to store core buffers
+	size_t global_core_buffers_size = (raytracerTLASMemoryRequirements.size + 2*raytracerTLASMemoryRequirements.alignment) +
+		(raytracerBLASCollectionemoryRequirements.size + raytracerBLASCollectionemoryRequirements.alignment) +
+		(raytracerModelMatrixCollectionemoryRequirements.size + raytracerModelMatrixCollectionemoryRequirements.alignment) +
+		(raytracerGeometryCollectionemoryRequirements.size + raytracerGeometryCollectionemoryRequirements.alignment);
+	size_t remaining = global_core_buffers_size;
+
+	// Memory must be aligned
+	void* ptr = (void*)(uintptr_t(raytracerTLASMemoryRequirements.alignment));
+	VkDeviceSize mRaytracingTLASCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerTLASMemoryRequirements.alignment, raytracerTLASMemoryRequirements.size, ptr, remaining));
+	DBG_ASSERT((mRaytracingTLASCollectionOffset != 0));
+	VkDeviceSize mRaytracingBLASCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerBLASCollectionemoryRequirements.alignment, raytracerBLASCollectionemoryRequirements.size, ptr, remaining));
+	DBG_ASSERT((mRaytracingBLASCollectionOffset != 0));
+	VkDeviceSize mRaytracingModelMatrixCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerModelMatrixCollectionemoryRequirements.alignment, raytracerModelMatrixCollectionemoryRequirements.size, ptr, remaining));
+	DBG_ASSERT((mRaytracingModelMatrixCollectionOffset != 0));
+	VkDeviceSize mRaytracingGeometryCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerGeometryCollectionemoryRequirements.alignment, raytracerGeometryCollectionemoryRequirements.size, ptr, remaining));
+	DBG_ASSERT((mRaytracingGeometryCollectionOffset != 0));
+	DBG_ASSERT((remaining >= 0));
 
 	//Now use obtained memory requirements info to allocate the memory for the buffer.
 	VkMemoryAllocateInfo allocateInfo = {};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateInfo.allocationSize = raytracerTLASMemoryRequirements.size + raytracerBLASCollectionemoryRequirements.size;
+	allocateInfo.allocationSize = global_core_buffers_size;
 	allocateInfo.memoryTypeIndex = findMemoryType(raytracerTLASMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &mRaytracingDeviceMemory)); // allocate memory on device.
+	// Allocate a big chunk of memory on the device
+	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &mRaytracingDeviceMemory));
 	
+	/*
+	Debug Report: Validation:  [ VUID-vkBindImageMemory-memoryOffset-01048 ] Object: 0x6dc7200000000005 (Type = 10) | vkBindImageMemory(): memoryOffset is 0x2a00 but must be an integer
+		multiple of the VkMemoryRequirements::alignment value 0x400, returned from a call to vkGetImageMemoryRequirements with image.
+		The Vulkan spec states: memoryOffset must be an integer multiple of the alignment member of the VkMemoryRequirements structure
+		returned from a call to vkGetImageMemoryRequirements with image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkBindImageMemory-memoryOffset-01048)
+	Debug Report: Driver: vkBindImageMemory: memoryOffset 2a00 is not aligned to 400
+	*/
+
+	// Associate each image with a slice of the allocated memory
+	VK_CHECK_RESULT(vkBindImageMemory(mDevice, mRaytracingTLAS, mRaytracingDeviceMemory, mRaytracingTLASCollectionOffset));
+	VK_CHECK_RESULT(vkBindImageMemory(mDevice, mRaytracingBLASCollection, mRaytracingDeviceMemory, mRaytracingBLASCollectionOffset));
+	VK_CHECK_RESULT(vkBindImageMemory(mDevice, mRaytracingModelMatrix, mRaytracingDeviceMemory, mRaytracingModelMatrixCollectionOffset));
+	VK_CHECK_RESULT(vkBindImageMemory(mDevice, mRaytracingGeometryCollection, mRaytracingDeviceMemory, mRaytracingGeometryCollectionOffset));
 }
 
 void VulkanPipeline::destroyCoreBuffers() noexcept {
@@ -382,6 +463,7 @@ void VulkanPipeline::destroyCoreBuffers() noexcept {
 	// Destroy all images
 	vkDestroyImage(mDevice, mRaytracingTLAS, NULL);
 	vkDestroyImage(mDevice, mRaytracingBLASCollection, NULL);
+	vkDestroyImage(mDevice, mRaytracingModelMatrix, NULL);
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept {

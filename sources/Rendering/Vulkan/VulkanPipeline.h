@@ -165,6 +165,20 @@ namespace Tachyon {
 				 * Note: this buffer will always be used as rgba32f
 				 */
 				VkImage mRaytracingBLASCollection;
+
+				/**
+				 * This is the image on the GPU used to store texels used to place an object into the 3D space.
+				 *
+				 * Note: this buffer will always be used as rgba32f
+				 */
+				VkImage mRaytracingModelMatrix;
+
+				/**
+				 * This is the image on the GPU used to store texels used tostore geometry.
+				 *
+				 * Note: this buffer will always be used as rgba32f
+				 */
+				VkImage mRaytracingGeometryCollection;
 			};
 		}
     }
