@@ -414,7 +414,7 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 	vkGetImageMemoryRequirements(mDevice, mRaytracingGeometryCollection, &raytracerGeometryCollectionemoryRequirements);
 
 	// This is the space (in bytes) needed to store core buffers in a worst case scenario of alignment 
-	size_t global_core_buffers_size = (raytracerTLASMemoryRequirements.size + 2*raytracerTLASMemoryRequirements.alignment) +
+	const size_t global_core_buffers_size = (raytracerTLASMemoryRequirements.size + 2*raytracerTLASMemoryRequirements.alignment) +
 		(raytracerBLASCollectionemoryRequirements.size + raytracerBLASCollectionemoryRequirements.alignment) +
 		(raytracerModelMatrixCollectionemoryRequirements.size + raytracerModelMatrixCollectionemoryRequirements.alignment) +
 		(raytracerGeometryCollectionemoryRequirements.size + raytracerGeometryCollectionemoryRequirements.alignment);
@@ -423,12 +423,20 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 	// Memory must be aligned
 	void* ptr = (void*)(uintptr_t(1));
 	VkDeviceSize mRaytracingTLASCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerTLASMemoryRequirements.alignment, raytracerTLASMemoryRequirements.size, ptr, remaining));
+	remaining -= raytracerTLASMemoryRequirements.size;
+	ptr = (reinterpret_cast<char*>(ptr)) +raytracerTLASMemoryRequirements.size;
 	DBG_ASSERT((mRaytracingTLASCollectionOffset != 0));
 	VkDeviceSize mRaytracingBLASCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerBLASCollectionemoryRequirements.alignment, raytracerBLASCollectionemoryRequirements.size, ptr, remaining));
+	remaining -= raytracerBLASCollectionemoryRequirements.size;
+	ptr = (reinterpret_cast<char*>(ptr)) + raytracerBLASCollectionemoryRequirements.size;
 	DBG_ASSERT((mRaytracingBLASCollectionOffset != 0));
 	VkDeviceSize mRaytracingModelMatrixCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerModelMatrixCollectionemoryRequirements.alignment, raytracerModelMatrixCollectionemoryRequirements.size, ptr, remaining));
+	remaining -= raytracerModelMatrixCollectionemoryRequirements.size;
+	ptr = (reinterpret_cast<char*>(ptr)) + raytracerModelMatrixCollectionemoryRequirements.size;
 	DBG_ASSERT((mRaytracingModelMatrixCollectionOffset != 0));
 	VkDeviceSize mRaytracingGeometryCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerGeometryCollectionemoryRequirements.alignment, raytracerGeometryCollectionemoryRequirements.size, ptr, remaining));
+	remaining -= raytracerGeometryCollectionemoryRequirements.size;
+	ptr = (reinterpret_cast<char*>(ptr)) + raytracerGeometryCollectionemoryRequirements.size;
 	DBG_ASSERT((mRaytracingGeometryCollectionOffset != 0));
 	DBG_ASSERT((remaining >= 0));
 

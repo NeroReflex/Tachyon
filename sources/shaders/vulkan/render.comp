@@ -16,18 +16,22 @@ layout(rgba32f, binding = 4) uniform writeonly image2D debugOutput;
 
 layout(rgba32f, binding = 5) uniform writeonly image2D renderTarget; // Raytracing output texture
 
-layout (location = 0) uniform uint width;
-layout (location = 1) uniform uint height;
+layout (std140, binding=0) uniform screen {
+	uniform uint width;
+	uniform uint height;
+};
 
-layout (location = 2) uniform vec3 cameraPosition;
-layout (location = 3) uniform vec3 cameraViewDir;
-layout (location = 4) uniform vec3 cameraUpVector;
-layout (location = 5) uniform float cameraFoV;
-layout (location = 6)  uniform float cameraAspect;
+layout (std140, binding=1) uniform camera {
+	uniform vec3 cameraPosition;
+	uniform vec3 cameraViewDir;
+	uniform vec3 cameraUpVector;
+	uniform float cameraFoV;
+	uniform float cameraAspect;
 
-layout (location = 7) uniform vec3 cameraLowerLeftCorner;
-layout (location = 8) uniform vec3 cameraHorizontal;
-layout (location = 9) uniform vec3 cameraVertical;
+	uniform vec3 cameraLowerLeftCorner;
+	uniform vec3 cameraHorizontal;
+	uniform vec3 cameraVertical;
+};
 
 /**
  * This is the entry point for the rendering program.
