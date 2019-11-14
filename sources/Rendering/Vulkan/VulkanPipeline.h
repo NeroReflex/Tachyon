@@ -94,6 +94,8 @@ namespace Tachyon {
 
 				void destroyBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory) noexcept;
 
+				void createPipeline() noexcept;
+
 				static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFn(
 					VkDebugReportFlagsEXT                       flags,
 					VkDebugReportObjectTypeEXT                  objectType,

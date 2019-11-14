@@ -413,7 +413,7 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 	VkMemoryRequirements raytracerGeometryCollectionemoryRequirements;
 	vkGetImageMemoryRequirements(mDevice, mRaytracingGeometryCollection, &raytracerGeometryCollectionemoryRequirements);
 
-	// This is the minimum unaligned space (in bytes) needed to store core buffers
+	// This is the space (in bytes) needed to store core buffers in a worst case scenario of alignment 
 	size_t global_core_buffers_size = (raytracerTLASMemoryRequirements.size + 2*raytracerTLASMemoryRequirements.alignment) +
 		(raytracerBLASCollectionemoryRequirements.size + raytracerBLASCollectionemoryRequirements.alignment) +
 		(raytracerModelMatrixCollectionemoryRequirements.size + raytracerModelMatrixCollectionemoryRequirements.alignment) +
@@ -421,7 +421,7 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 	size_t remaining = global_core_buffers_size;
 
 	// Memory must be aligned
-	void* ptr = (void*)(uintptr_t(raytracerTLASMemoryRequirements.alignment));
+	void* ptr = (void*)(uintptr_t(1));
 	VkDeviceSize mRaytracingTLASCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerTLASMemoryRequirements.alignment, raytracerTLASMemoryRequirements.size, ptr, remaining));
 	DBG_ASSERT((mRaytracingTLASCollectionOffset != 0));
 	VkDeviceSize mRaytracingBLASCollectionOffset = reinterpret_cast<intptr_t>(std::align(raytracerBLASCollectionemoryRequirements.alignment, raytracerBLASCollectionemoryRequirements.size, ptr, remaining));
@@ -441,14 +441,6 @@ void VulkanPipeline::createCoreBuffers() noexcept {
 	// Allocate a big chunk of memory on the device
 	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &mRaytracingDeviceMemory));
 	
-	/*
-	Debug Report: Validation:  [ VUID-vkBindImageMemory-memoryOffset-01048 ] Object: 0x6dc7200000000005 (Type = 10) | vkBindImageMemory(): memoryOffset is 0x2a00 but must be an integer
-		multiple of the VkMemoryRequirements::alignment value 0x400, returned from a call to vkGetImageMemoryRequirements with image.
-		The Vulkan spec states: memoryOffset must be an integer multiple of the alignment member of the VkMemoryRequirements structure
-		returned from a call to vkGetImageMemoryRequirements with image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkBindImageMemory-memoryOffset-01048)
-	Debug Report: Driver: vkBindImageMemory: memoryOffset 2a00 is not aligned to 400
-	*/
-
 	// Associate each image with a slice of the allocated memory
 	VK_CHECK_RESULT(vkBindImageMemory(mDevice, mRaytracingTLAS, mRaytracingDeviceMemory, mRaytracingTLASCollectionOffset));
 	VK_CHECK_RESULT(vkBindImageMemory(mDevice, mRaytracingBLASCollection, mRaytracingDeviceMemory, mRaytracingBLASCollectionOffset));
@@ -464,6 +456,15 @@ void VulkanPipeline::destroyCoreBuffers() noexcept {
 	vkDestroyImage(mDevice, mRaytracingTLAS, NULL);
 	vkDestroyImage(mDevice, mRaytracingBLASCollection, NULL);
 	vkDestroyImage(mDevice, mRaytracingModelMatrix, NULL);
+}
+
+void VulkanPipeline::createPipeline() noexcept {
+	VkShaderModuleCreateInfo insertModuleCreation;
+	insertModuleCreation.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	insertModuleCreation.pNext = NULL;
+	//insertModuleCreation.codeSize = ;
+	//insertModuleCreation.pCode = ;
+
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept {
