@@ -10,24 +10,16 @@
 #include "../core.glsl"
 #include "../intersection.glsl"
 
-struct InputGeometry {
-	vec4 centroid_radius;
+layout(std430, binding = 4) buffer insertionGeometry {
+	uint targetBLAS;
+	vec4 geometry[]; // This is the collection of geometry to be organized on the BLAS
 };
 
-struct InputGeometryCollection {
-	InputGeometry inputCollection[1 << expOfTwo_maxCollectionsForModel];
-};
-
-Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
-	Geometry outGeometry = Geometry(inGeometry.centroid_radius.xyz, inGeometry.centroid_radius.w);
+Geometry transformToGPURepresentation(in const vec4 inGeometry) {
+	Geometry outGeometry = Geometry(inGeometry.xyz, inGeometry.w);
 
 	return outGeometry;
 }
-
-layout(std430, binding = 3) buffer insertionGeometry {
-	uint targetBLAS;
-	InputGeometryCollection geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
-};
 
 /*
 layout(std430, binding = 4) buffer insertionGeometryMorton {
@@ -76,9 +68,10 @@ void main() {
 
 	// Copy the geometry on the final destination.
 	WriteGeometry_ByIndexes(
-		targetBLAS, gl_GlobalInvocationID.y,
+		targetBLAS,
+		gl_GlobalInvocationID.y,
 		gl_GlobalInvocationID.x,
-		transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x])
+		transformToGPURepresentation(geometry[((1 << expOfTwo_maxGeometryOnCollection) * gl_GlobalInvocationID.y) + gl_GlobalInvocationID.x])
 	);
 
 	// Wait for all geometry to be in-place

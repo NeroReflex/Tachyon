@@ -47,6 +47,7 @@ OpenGLPipeline::OpenGLPipeline() noexcept
 		})
     ),
 	mRaytracerOutputTexture(0),
+	mRaytracerDebugOutput(0),
 	mRaytracingTLAS(0) {
 
 	std::array<glm::vec4, 4> screenTrianglesPosition = {

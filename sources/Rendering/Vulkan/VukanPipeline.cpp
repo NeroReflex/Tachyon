@@ -4,6 +4,13 @@ using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 
+#include "shaders/vulkan/tonemapping.vert.spv.h" // tonemapping_vertVK, tonemapping_vertVK_size
+#include "shaders/vulkan/tonemapping.frag.spv.h" // tonemapping_fragVK, tonemapping_fragVK_size
+#include "shaders/vulkan/raytrace_insert.comp.spv.h" // raytrace_insert_compVK, raytrace_insert_compVK_size
+#include "shaders/vulkan/raytrace_flush.comp.spv.h" // raytrace_flush_compVK, raytrace_flush_compVK_size
+#include "shaders/vulkan/raytrace_render.comp.spv.h" // raytrace_render_compVK, raytrace_render_compVK_size
+#include "shaders/vulkan/raytrace_update.comp.spv.h" // raytrace_update_compVK, raytrace_update_compVK_size
+
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanPipeline::debugReportCallbackFn(
 	VkDebugReportFlagsEXT                       flags,
 	VkDebugReportObjectTypeEXT                  objectType,
@@ -24,6 +31,7 @@ VulkanPipeline::VulkanPipeline() noexcept {
 	findPhysicalDevice();
 	createLogicalDevice();
 	createCoreBuffers();
+	createPipeline();
 }
 
 VulkanPipeline::~VulkanPipeline() {
@@ -38,6 +46,9 @@ VulkanPipeline::~VulkanPipeline() {
 
 	// The first step is to destroy all memory buffers and allocated memory on the GPU
 	destroyCoreBuffers();
+
+	// Next all pipelines
+	destroyPipeline();
 
 	/*
 	vkDestroyShaderModule(device, computeShaderModule, NULL);
@@ -166,9 +177,9 @@ void VulkanPipeline::createInstance() noexcept {
 	createInfo.pApplicationInfo = &applicationInfo;
 
 	// Give our desired layers and extensions to vulkan.
-	createInfo.enabledLayerCount = mEnabledLayers.size();
+	createInfo.enabledLayerCount = static_cast<uint32_t>(mEnabledLayers.size());
 	createInfo.ppEnabledLayerNames = mEnabledLayers.data();
-	createInfo.enabledExtensionCount = mEnabledExtensions.size();
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(mEnabledExtensions.size());
 	createInfo.ppEnabledExtensionNames = mEnabledExtensions.data();
 
 	// TODO: the second parameter specify a custom memory allocator to be used within the created instance
@@ -212,7 +223,7 @@ void VulkanPipeline::createLogicalDevice() noexcept {
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	deviceCreateInfo.enabledLayerCount = mEnabledLayers.size();  // need to specify validation layers here as well.
+	deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mEnabledLayers.size());  // need to specify validation layers here as well.
 	deviceCreateInfo.ppEnabledLayerNames = mEnabledLayers.data();
 	deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo; // when creating the logical device, we also specify what queues it has.
 	deviceCreateInfo.queueCreateInfoCount = 1;
@@ -464,14 +475,90 @@ void VulkanPipeline::destroyCoreBuffers() noexcept {
 	vkDestroyImage(mDevice, mRaytracingTLAS, NULL);
 	vkDestroyImage(mDevice, mRaytracingBLASCollection, NULL);
 	vkDestroyImage(mDevice, mRaytracingModelMatrix, NULL);
+	vkDestroyImage(mDevice, mRaytracingGeometryCollection, NULL);
 }
 
 void VulkanPipeline::createPipeline() noexcept {
-	VkShaderModuleCreateInfo insertModuleCreation;
-	insertModuleCreation.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	insertModuleCreation.pNext = NULL;
-	//insertModuleCreation.codeSize = ;
-	//insertModuleCreation.pCode = ;
+	/*
+	 * This maps to the core resource system:
+	 * layout(rgba32f, binding = 0) uniform TLAS_MEMORY_MODEL image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
+	 * layout(rgba32f, binding = 1) uniform BLAS_MOEMORY_MODEL image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
+	 * layout(rgba32f, binding = 2) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
+	 * layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
+	 */
+	VkDescriptorSetLayoutBinding* coreDescriptorSetLayoutBinding = new VkDescriptorSetLayoutBinding[4];
+	coreDescriptorSetLayoutBinding[0].binding = 0;
+	coreDescriptorSetLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	coreDescriptorSetLayoutBinding[0].descriptorCount = 1;
+	coreDescriptorSetLayoutBinding[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	coreDescriptorSetLayoutBinding[1].binding = 1;
+	coreDescriptorSetLayoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	coreDescriptorSetLayoutBinding[1].descriptorCount = 1;
+	coreDescriptorSetLayoutBinding[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	coreDescriptorSetLayoutBinding[2].binding = 2;
+	coreDescriptorSetLayoutBinding[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	coreDescriptorSetLayoutBinding[2].descriptorCount = 1;
+	coreDescriptorSetLayoutBinding[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	coreDescriptorSetLayoutBinding[3].binding = 3;
+	coreDescriptorSetLayoutBinding[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	coreDescriptorSetLayoutBinding[3].descriptorCount = 1;
+	coreDescriptorSetLayoutBinding[3].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+
+	// Create the insert pipeline
+	VkShaderModuleCreateInfo *insertModuleCreation = new VkShaderModuleCreateInfo();
+	insertModuleCreation->sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	insertModuleCreation->pNext = NULL;
+	insertModuleCreation->codeSize = raytrace_insert_compVK_size;
+	insertModuleCreation->pCode = reinterpret_cast<const uint32_t*>(raytrace_insert_compVK);
+	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, insertModuleCreation, NULL, &mRaytracerInsertModule));
+	VkPipelineShaderStageCreateInfo* shaderStageCreateInfo = new VkPipelineShaderStageCreateInfo();
+	shaderStageCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStageCreateInfo->stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	shaderStageCreateInfo->module = mRaytracerInsertModule;
+	shaderStageCreateInfo->pName = "main";
+	VkDescriptorSetLayoutBinding* insertDescriptorSetLayoutBinding = new VkDescriptorSetLayoutBinding[5];
+	insertDescriptorSetLayoutBinding[0] = coreDescriptorSetLayoutBinding[0];
+	insertDescriptorSetLayoutBinding[1] = coreDescriptorSetLayoutBinding[1];
+	insertDescriptorSetLayoutBinding[2] = coreDescriptorSetLayoutBinding[2];
+	insertDescriptorSetLayoutBinding[3] = coreDescriptorSetLayoutBinding[3];
+	insertDescriptorSetLayoutBinding[4].binding = 4; // layout(std430, binding = 4) buffer insertionGeometry
+	insertDescriptorSetLayoutBinding[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	insertDescriptorSetLayoutBinding[4].descriptorCount = 1;
+	insertDescriptorSetLayoutBinding[4].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	insertDescriptorSetLayoutBinding[4].pImmutableSamplers = NULL;
+	VkComputePipelineCreateInfo* insertPipelineCreateInfo = new VkComputePipelineCreateInfo();
+	insertPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	VkDescriptorSetLayoutCreateInfo* insertDescriptorSetLayoutCreateInfo = new VkDescriptorSetLayoutCreateInfo;
+	insertDescriptorSetLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	insertDescriptorSetLayoutCreateInfo->pNext = NULL;
+	insertDescriptorSetLayoutCreateInfo->flags = 0;
+	insertDescriptorSetLayoutCreateInfo->bindingCount = 5; // only a single binding in this descriptor set layout. 
+	insertDescriptorSetLayoutCreateInfo->pBindings = insertDescriptorSetLayoutBinding;
+	VkDescriptorSetLayout* insertDescriptorSetLayout = new VkDescriptorSetLayout();
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, insertDescriptorSetLayoutCreateInfo, NULL, insertDescriptorSetLayout));
+	VkPipelineLayoutCreateInfo* insertPipelineLayoutCreateInfo = new VkPipelineLayoutCreateInfo();
+	insertPipelineLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	insertPipelineLayoutCreateInfo->setLayoutCount = 1;
+	insertPipelineCreateInfo->stage = *shaderStageCreateInfo;
+	insertPipelineLayoutCreateInfo->pSetLayouts = insertDescriptorSetLayout;
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, insertPipelineLayoutCreateInfo, NULL, &mRaytracerInsertPipelineLayout));
+	insertPipelineCreateInfo->layout = mRaytracerInsertPipelineLayout;
+	VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, insertPipelineCreateInfo, NULL, &mRaytracerInsertPipeline));
+	vkDestroyDescriptorSetLayout(mDevice, *insertDescriptorSetLayout, NULL);
+	delete insertModuleCreation;
+	delete shaderStageCreateInfo;
+	delete[] insertDescriptorSetLayoutBinding;
+	delete insertDescriptorSetLayoutCreateInfo;
+	delete insertPipelineCreateInfo;
+	delete insertPipelineLayoutCreateInfo;
+	
+}
+
+void VulkanPipeline::destroyPipeline() noexcept {
+	vkDestroyPipeline(mDevice, mRaytracerInsertPipeline, NULL);
+	vkDestroyPipelineLayout(mDevice, mRaytracerInsertPipelineLayout, NULL);
+	vkDestroyShaderModule(mDevice, mRaytracerInsertModule, NULL);
 
 }
 

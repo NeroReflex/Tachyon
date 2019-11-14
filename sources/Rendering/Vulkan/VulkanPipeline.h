@@ -96,6 +96,8 @@ namespace Tachyon {
 
 				void createPipeline() noexcept;
 
+				void destroyPipeline() noexcept;
+
 				static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallbackFn(
 					VkDebugReportFlagsEXT                       flags,
 					VkDebugReportObjectTypeEXT                  objectType,
@@ -181,6 +183,26 @@ namespace Tachyon {
 				 * Note: this buffer will always be used as rgba32f
 				 */
 				VkImage mRaytracingGeometryCollection;
+
+				VkShaderModule mRaytracerFlushModule;
+
+				VkPipeline mRaytracerFlushPipeline;
+
+				VkPipelineLayout mRaytracerInsertPipelineLayout;
+				VkShaderModule mRaytracerInsertModule;
+				VkPipeline mRaytracerInsertPipeline;
+
+				VkShaderModule mRaytracerUpdateModule;
+
+				VkPipeline mRaytracerUpdatePipeline;
+
+				VkShaderModule mRaytracerRenderModule;
+
+				VkPipeline mRaytracerRenderPipeline;
+
+				VkShaderModule mRaytracerWriterModule;
+
+				VkPipeline mDisplayWriterPipeline;
 			};
 		}
     }
