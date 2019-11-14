@@ -1,0 +1,27 @@
+#version 450 core
+
+#include "../config.glsl"
+#include "../utils.glsl"
+#include "../ray.glsl"
+#include "../camera.glsl"
+#include "../geometry.glsl"
+#include "../aabb.glsl"
+#include "../bvh.glsl"
+#include "../core.glsl"
+#include "../intersection.glsl"
+
+layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+
+/**
+ * This is the entry point for the TLAS update program.
+ * The basic idea is that we want the AABB of each leaf on the TLAS to be the AABB of the root
+ * of the corresponding BLAS, but transformated accordingly to the ModelMatrix.
+ *
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(maxModels, 1, 1).
+ */
+void main() {
+	// If this work doen't map to a BLAS do nothing
+	if ((gl_GlobalInvocationID.x >= (1 << expOfTwo_maxModels)) || (gl_GlobalInvocationID.y != 0) || (gl_GlobalInvocationID.z != 0)) return;
+
+	UpdateTLASFromLeafToRoot_ByIndex(gl_GlobalInvocationID.x);
+}

@@ -1,3 +1,6 @@
+#ifndef CONFIG_GLSL
+#define CONFIG_GLSL
+
 /*
 #define expOfTwo_maxModels 9
 #define expOfTwo_maxGeometryOnCollection 3
@@ -10,3 +13,38 @@
 #define expOfTwo_maxCollectionsForModel 4
 
 #define expOfTwo_numOfVec4OnGeometrySerialization 1
+
+#define numberOfTreeElementsToContainExpOfTwoLeafs( expOfTwo ) ((1 << (expOfTwo+1))-1)
+
+#if defined(RENDER)
+	#define TLAS_MEMORY_MODEL readonly
+	#define TLAS_READONLY
+
+	#define BLAS_MOEMORY_MODEL readonly
+	#define BLAS_READONLY
+
+	#define GEOMETRY_MEMORY_MODEL readonly
+	#define GEOMETRY_READONLY
+
+	#define MODELMATRIX_MEMORY_MODEL readonly
+	#define MODELMATRIX_READONLY
+
+	#elif defined(TLAS_UPDATE)
+	#define TLAS_MEMORY_MODEL coherent
+
+	#define BLAS_MOEMORY_MODEL readonly
+	#define BLAS_READONLY
+
+	#define GEOMETRY_MEMORY_MODEL readonly
+	#define GEOMETRY_READONLY
+
+	#define MODELMATRIX_MEMORY_MODEL readonly
+	#define MODELMATRIX_READONLY
+#else
+	#define TLAS_MEMORY_MODEL coherent
+	#define BLAS_MOEMORY_MODEL coherent
+	#define GEOMETRY_MEMORY_MODEL coherent
+	#define MODELMATRIX_MEMORY_MODEL coherent
+#endif
+
+#endif // CONFIG_GLSL

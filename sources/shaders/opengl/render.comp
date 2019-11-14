@@ -1,0 +1,72 @@
+#version 450 core
+
+#include "../config.glsl"
+#include "../utils.glsl"
+#include "../ray.glsl"
+#include "../camera.glsl"
+#include "../geometry.glsl"
+#include "../aabb.glsl"
+#include "../bvh.glsl"
+#include "../core.glsl"
+#include "../intersection.glsl"
+
+layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
+
+layout(rgba32f, binding = 4) uniform writeonly image2D debugOutput;
+
+layout(rgba32f, binding = 5) uniform writeonly image2D renderTarget; // Raytracing output texture
+
+layout(location = 0) uniform uint width;
+layout(location = 1) uniform uint height;
+
+layout(location = 2) uniform vec3 cameraPosition;
+layout(location = 3) uniform vec3 cameraViewDir;
+layout(location = 4) uniform vec3 cameraUpVector;
+layout(location = 5) uniform float cameraFoV;
+layout(location = 6) uniform float cameraAspect;
+
+layout(location = 7) uniform vec3 cameraLowerLeftCorner;
+layout(location = 8) uniform vec3 cameraHorizontal;
+layout(location = 9) uniform vec3 cameraVertical;
+
+/**
+ * This is the entry point for the rendering program.
+ *
+ * Usage: the compute shader MUST be dispatched as glDispatchCompute(width, height, 1).
+ */
+void main() {
+	// Avoid calculating useless pixels
+	if ((gl_GlobalInvocationID.x >= width) || (gl_GlobalInvocationID.y >= height)) return;
+
+	// base pixel color for image
+	vec4 pixel = vec4(0, 0, 0, 0);
+
+	// get index in global work group i.e x,y position
+	const ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+
+	// Get UV cordinates of the output texture
+	const float u = float(gl_GlobalInvocationID.x) / float(width);
+	const float v = float(gl_GlobalInvocationID.y) / float(height);
+
+	// Generate camera
+	const Camera camera = Camera(cameraPosition, cameraViewDir, cameraUpVector, cameraFoV, cameraAspect);
+
+	// Generate camera ray
+	//const Ray cameraRay = generateCameraRay(camera, u, v);
+	const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
+
+	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
+
+	if (intersectAABB(cameraRay, ReadAABBFromBLAS_ByIndexes(0, 0), ReadModelMatrix_ByIndex(0))) {
+		imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 1));
+	}
+	else {
+		imageStore(debugOutput, pixel_coords, vec4(0, 0, 1, 1));
+	}
+
+
+	pixel = vec4(vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point)))), 1.0);
+
+	// output to a specific pixel in the image
+	imageStore(renderTarget, pixel_coords, pixel);
+}
