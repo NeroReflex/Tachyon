@@ -16,12 +16,12 @@ layout(rgba32f, binding = 4) uniform writeonly image2D debugOutput;
 
 layout(rgba32f, binding = 5) uniform writeonly image2D renderTarget; // Raytracing output texture
 
-layout (std140, binding=0) uniform screen {
+layout (std140, binding=6) uniform screen {
 	uniform uint width;
 	uniform uint height;
 };
 
-layout (std140, binding=1) uniform camera {
+layout (std140, binding=7) uniform camera {
 	uniform vec3 cameraPosition;
 	uniform vec3 cameraViewDir;
 	uniform vec3 cameraUpVector;

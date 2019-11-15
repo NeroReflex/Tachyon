@@ -504,18 +504,133 @@ void VulkanPipeline::createPipeline() noexcept {
 	coreDescriptorSetLayoutBinding[3].descriptorCount = 1;
 	coreDescriptorSetLayoutBinding[3].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
+	// Create the render pipeline
+	VkShaderModule* raytracerRenderModule = new VkShaderModule();
+	VkShaderModuleCreateInfo* renderModuleCreation = new VkShaderModuleCreateInfo();
+	renderModuleCreation->sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	renderModuleCreation->pNext = NULL;
+	renderModuleCreation->codeSize = raytrace_render_compVK_size;
+	renderModuleCreation->pCode = reinterpret_cast<const uint32_t*>(raytrace_render_compVK);
+	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, renderModuleCreation, NULL, raytracerRenderModule));
+	VkPipelineShaderStageCreateInfo* shaderStageCreateInfo = new VkPipelineShaderStageCreateInfo();
+	shaderStageCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStageCreateInfo->stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	shaderStageCreateInfo->module = *raytracerRenderModule;
+	shaderStageCreateInfo->pName = "main";
+	std::vector<VkDescriptorSetLayoutBinding> renderDescriptorSetLayoutBinding;
+	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[0]);
+	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[1]);
+	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[2]);
+	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[3]);
+	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
+	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
+	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
+	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
+	renderDescriptorSetLayoutBinding[4].binding = 5; // layout(rgba32f, binding = 5) uniform writeonly image2D renderTarget
+	renderDescriptorSetLayoutBinding[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	renderDescriptorSetLayoutBinding[4].descriptorCount = 1;
+	renderDescriptorSetLayoutBinding[4].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	renderDescriptorSetLayoutBinding[4].pImmutableSamplers = NULL;
+	renderDescriptorSetLayoutBinding[5].binding = 4; // layout(rgba32f, binding = 4) uniform writeonly image2D debugOutput
+	renderDescriptorSetLayoutBinding[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	renderDescriptorSetLayoutBinding[5].descriptorCount = 1;
+	renderDescriptorSetLayoutBinding[5].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	renderDescriptorSetLayoutBinding[5].pImmutableSamplers = NULL;
+	renderDescriptorSetLayoutBinding[6].binding = 6; // layout (std140, binding=6) uniform screen
+	renderDescriptorSetLayoutBinding[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	renderDescriptorSetLayoutBinding[6].descriptorCount = 1;
+	renderDescriptorSetLayoutBinding[6].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	renderDescriptorSetLayoutBinding[6].pImmutableSamplers = NULL;
+	renderDescriptorSetLayoutBinding[7].binding = 7; // layout (std140, binding=7) uniform camera
+	renderDescriptorSetLayoutBinding[7].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	renderDescriptorSetLayoutBinding[7].descriptorCount = 1;
+	renderDescriptorSetLayoutBinding[7].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	renderDescriptorSetLayoutBinding[7].pImmutableSamplers = NULL;
+	VkComputePipelineCreateInfo* renderPipelineCreateInfo = new VkComputePipelineCreateInfo();
+	renderPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	VkDescriptorSetLayoutCreateInfo* renderDescriptorSetLayoutCreateInfo = new VkDescriptorSetLayoutCreateInfo;
+	renderDescriptorSetLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	renderDescriptorSetLayoutCreateInfo->pNext = NULL;
+	renderDescriptorSetLayoutCreateInfo->flags = 0;
+	renderDescriptorSetLayoutCreateInfo->bindingCount = renderDescriptorSetLayoutBinding.size(); // only a single binding in this descriptor set layout. 
+	renderDescriptorSetLayoutCreateInfo->pBindings = renderDescriptorSetLayoutBinding.data();
+	VkDescriptorSetLayout* renderDescriptorSetLayout = new VkDescriptorSetLayout();
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, renderDescriptorSetLayoutCreateInfo, NULL, renderDescriptorSetLayout));
+	VkPipelineLayoutCreateInfo* renderPipelineLayoutCreateInfo = new VkPipelineLayoutCreateInfo();
+	renderPipelineLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	renderPipelineLayoutCreateInfo->setLayoutCount = 1;
+	renderPipelineCreateInfo->stage = *shaderStageCreateInfo;
+	renderPipelineLayoutCreateInfo->pSetLayouts = renderDescriptorSetLayout;
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, renderPipelineLayoutCreateInfo, NULL, &mRaytracerRenderPipelineLayout));
+	renderPipelineCreateInfo->layout = mRaytracerRenderPipelineLayout;
+	VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, renderPipelineCreateInfo, NULL, &mRaytracerRenderPipeline));
+	vkDestroyDescriptorSetLayout(mDevice, *renderDescriptorSetLayout, NULL);
+	vkDestroyShaderModule(mDevice, *raytracerRenderModule, NULL);
+	delete raytracerRenderModule;
+	delete renderModuleCreation;
+	delete shaderStageCreateInfo;
+	delete renderDescriptorSetLayoutCreateInfo;
+	delete renderPipelineCreateInfo;
+	delete renderPipelineLayoutCreateInfo;
+
+	// Create the flush pipeline
+	VkShaderModule* raytracerFlushModule = new VkShaderModule();
+	VkShaderModuleCreateInfo* flushModuleCreation = new VkShaderModuleCreateInfo();
+	flushModuleCreation->sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	flushModuleCreation->pNext = NULL;
+	flushModuleCreation->codeSize = raytrace_flush_compVK_size;
+	flushModuleCreation->pCode = reinterpret_cast<const uint32_t*>(raytrace_flush_compVK);
+	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, flushModuleCreation, NULL, raytracerFlushModule));
+	/*VkPipelineShaderStageCreateInfo* */ shaderStageCreateInfo = new VkPipelineShaderStageCreateInfo();
+	shaderStageCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStageCreateInfo->stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	shaderStageCreateInfo->module = *raytracerFlushModule;
+	shaderStageCreateInfo->pName = "main";
+	VkDescriptorSetLayoutBinding* flushDescriptorSetLayoutBinding = new VkDescriptorSetLayoutBinding[4];
+	flushDescriptorSetLayoutBinding[0] = coreDescriptorSetLayoutBinding[0];
+	flushDescriptorSetLayoutBinding[1] = coreDescriptorSetLayoutBinding[1];
+	flushDescriptorSetLayoutBinding[2] = coreDescriptorSetLayoutBinding[2];
+	flushDescriptorSetLayoutBinding[3] = coreDescriptorSetLayoutBinding[3];
+	VkComputePipelineCreateInfo* flushPipelineCreateInfo = new VkComputePipelineCreateInfo();
+	flushPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	VkDescriptorSetLayoutCreateInfo* flushDescriptorSetLayoutCreateInfo = new VkDescriptorSetLayoutCreateInfo;
+	flushDescriptorSetLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	flushDescriptorSetLayoutCreateInfo->pNext = NULL;
+	flushDescriptorSetLayoutCreateInfo->flags = 0;
+	flushDescriptorSetLayoutCreateInfo->bindingCount = 4; // only a single binding in this descriptor set layout. 
+	flushDescriptorSetLayoutCreateInfo->pBindings = flushDescriptorSetLayoutBinding;
+	VkDescriptorSetLayout* flushDescriptorSetLayout = new VkDescriptorSetLayout();
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, flushDescriptorSetLayoutCreateInfo, NULL, flushDescriptorSetLayout));
+	VkPipelineLayoutCreateInfo* flushPipelineLayoutCreateInfo = new VkPipelineLayoutCreateInfo();
+	flushPipelineLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	flushPipelineLayoutCreateInfo->setLayoutCount = 1;
+	flushPipelineCreateInfo->stage = *shaderStageCreateInfo;
+	flushPipelineLayoutCreateInfo->pSetLayouts = flushDescriptorSetLayout;
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, flushPipelineLayoutCreateInfo, NULL, &mRaytracerFlushPipelineLayout));
+	flushPipelineCreateInfo->layout = mRaytracerFlushPipelineLayout;
+	VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, flushPipelineCreateInfo, NULL, &mRaytracerFlushPipeline));
+	vkDestroyDescriptorSetLayout(mDevice, *flushDescriptorSetLayout, NULL);
+	vkDestroyShaderModule(mDevice, *raytracerFlushModule, NULL);
+	delete raytracerFlushModule;
+	delete flushModuleCreation;
+	delete shaderStageCreateInfo;
+	delete[] flushDescriptorSetLayoutBinding;
+	delete flushDescriptorSetLayoutCreateInfo;
+	delete flushPipelineCreateInfo;
+	delete flushPipelineLayoutCreateInfo;
 
 	// Create the insert pipeline
+	VkShaderModule* raytracerInsertModule = new VkShaderModule();
 	VkShaderModuleCreateInfo *insertModuleCreation = new VkShaderModuleCreateInfo();
 	insertModuleCreation->sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	insertModuleCreation->pNext = NULL;
 	insertModuleCreation->codeSize = raytrace_insert_compVK_size;
 	insertModuleCreation->pCode = reinterpret_cast<const uint32_t*>(raytrace_insert_compVK);
-	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, insertModuleCreation, NULL, &mRaytracerInsertModule));
-	VkPipelineShaderStageCreateInfo* shaderStageCreateInfo = new VkPipelineShaderStageCreateInfo();
+	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, insertModuleCreation, NULL, raytracerInsertModule));
+	/* VkPipelineShaderStageCreateInfo* */ shaderStageCreateInfo = new VkPipelineShaderStageCreateInfo();
 	shaderStageCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStageCreateInfo->stage = VK_SHADER_STAGE_COMPUTE_BIT;
-	shaderStageCreateInfo->module = mRaytracerInsertModule;
+	shaderStageCreateInfo->module = *raytracerInsertModule;
 	shaderStageCreateInfo->pName = "main";
 	VkDescriptorSetLayoutBinding* insertDescriptorSetLayoutBinding = new VkDescriptorSetLayoutBinding[5];
 	insertDescriptorSetLayoutBinding[0] = coreDescriptorSetLayoutBinding[0];
@@ -546,6 +661,8 @@ void VulkanPipeline::createPipeline() noexcept {
 	insertPipelineCreateInfo->layout = mRaytracerInsertPipelineLayout;
 	VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, insertPipelineCreateInfo, NULL, &mRaytracerInsertPipeline));
 	vkDestroyDescriptorSetLayout(mDevice, *insertDescriptorSetLayout, NULL);
+	vkDestroyShaderModule(mDevice, *raytracerInsertModule, NULL);
+	delete raytracerInsertModule;
 	delete insertModuleCreation;
 	delete shaderStageCreateInfo;
 	delete[] insertDescriptorSetLayoutBinding;
@@ -553,13 +670,18 @@ void VulkanPipeline::createPipeline() noexcept {
 	delete insertPipelineCreateInfo;
 	delete insertPipelineLayoutCreateInfo;
 	
+
 }
 
 void VulkanPipeline::destroyPipeline() noexcept {
+	vkDestroyPipeline(mDevice, mRaytracerFlushPipeline, NULL);
+	vkDestroyPipelineLayout(mDevice, mRaytracerFlushPipelineLayout, NULL);
+	
 	vkDestroyPipeline(mDevice, mRaytracerInsertPipeline, NULL);
 	vkDestroyPipelineLayout(mDevice, mRaytracerInsertPipelineLayout, NULL);
-	vkDestroyShaderModule(mDevice, mRaytracerInsertModule, NULL);
-
+	
+	vkDestroyPipeline(mDevice, mRaytracerRenderPipeline, NULL);
+	vkDestroyPipelineLayout(mDevice, mRaytracerRenderPipelineLayout, NULL);
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept {

@@ -184,24 +184,19 @@ namespace Tachyon {
 				 */
 				VkImage mRaytracingGeometryCollection;
 
-				VkShaderModule mRaytracerFlushModule;
-
+				VkPipelineLayout mRaytracerFlushPipelineLayout;
 				VkPipeline mRaytracerFlushPipeline;
 
 				VkPipelineLayout mRaytracerInsertPipelineLayout;
-				VkShaderModule mRaytracerInsertModule;
 				VkPipeline mRaytracerInsertPipeline;
 
 				VkShaderModule mRaytracerUpdateModule;
-
 				VkPipeline mRaytracerUpdatePipeline;
 
-				VkShaderModule mRaytracerRenderModule;
-
+				VkPipelineLayout mRaytracerRenderPipelineLayout;
 				VkPipeline mRaytracerRenderPipeline;
 
 				VkShaderModule mRaytracerWriterModule;
-
 				VkPipeline mDisplayWriterPipeline;
 			};
 		}
