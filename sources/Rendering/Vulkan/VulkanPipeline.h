@@ -10,6 +10,13 @@ namespace Tachyon {
 		namespace Vulkan {
 			class VulkanPipeline final :
 				virtual public Rendering::RenderingPipeline {
+				
+				struct SwapChainSupportDetails {
+					VkSurfaceCapabilitiesKHR capabilities;
+					std::vector<VkSurfaceFormatKHR> formats;
+					std::vector<VkPresentModeKHR> presentModes;
+				};
+
 			public:
 				VulkanPipeline(const VulkanPipeline&) = delete;
 
@@ -31,11 +38,19 @@ namespace Tachyon {
 				void onRender(const Core::Camera& camera) noexcept final;
 
 			private:
+				SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) const noexcept;
+
 				/**
 				 * Create a Vulkan instance.
 				 */
 				void createInstance() noexcept;
 
+				/**
+				 * Check if the given physical device support all required extensions.
+				 *
+				 * @param device the physical device
+				 * @return TRUE iif the given device does support all required extensions
+				 */
 				bool checkDeviceExtensionSupport(VkPhysicalDevice device) noexcept;
 
 				/*

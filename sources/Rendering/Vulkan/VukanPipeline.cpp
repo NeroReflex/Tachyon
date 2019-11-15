@@ -118,6 +118,36 @@ bool VulkanPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device) noexce
 	return requiredExtensions.empty();
 }
 
+VulkanPipeline::SwapChainSupportDetails VulkanPipeline::querySwapChainSupport(VkPhysicalDevice device) const noexcept {
+	SwapChainSupportDetails details;
+	/*
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+	uint32_t formatCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+	if (formatCount != 0) {
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+	}
+
+	uint32_t presentModeCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+	if (presentModeCount != 0) {
+		details.presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+	}
+
+	bool swapChainAdequate = false;
+	if (extensionsSupported) {
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+	}
+	*/
+	return details;
+}
+
 void VulkanPipeline::createInstance() noexcept {
 	/*
 	By enabling validation layers, Vulkan will emit warnings if the API
@@ -265,19 +295,21 @@ glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept {
 	for (; i < queueFamilies.size(); ++i) {
 		VkQueueFamilyProperties props = queueFamilies[i];
 
+		if (!glfwGetPhysicalDevicePresentationSupport(mInstance, mPhysicalDevice, i)) continue;
+
 		if (props.queueCount > 0 && (
 			(props.queueFlags & VK_QUEUE_COMPUTE_BIT) && 
-			(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+			//(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
 			(props.queueFlags & VK_QUEUE_TRANSFER_BIT)
 			)) {
 			// found a candidate!
-			break;
+			return i;
 		}
 	}
 
-	DBG_ASSERT((i != queueFamilies.size())); // could not find a queue family that supports required operations
+	DBG_ASSERT( false ); // could not find a queue family that supports required operations
 
-	return i;
+	return std::numeric_limits<glm::uint32>::max();
 }
 
 uint32_t VulkanPipeline::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) noexcept {
