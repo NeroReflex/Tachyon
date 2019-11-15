@@ -33,6 +33,11 @@ layout (std140, binding=7) uniform camera {
 	uniform vec3 cameraVertical;
 };
 
+layout (std140, binding = 8) uniform tonemapping {
+	uniform float gamma;
+	uniform float exposure;
+};
+
 /**
  * This is the entry point for the rendering program.
  *
@@ -63,13 +68,18 @@ void main() {
 
 	if (intersectAABB(cameraRay, ReadAABBFromBLAS_ByIndexes(0, 0), ReadModelMatrix_ByIndex(0))) {
 		imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 1));
-	}
-	else {
+	} else {
 		imageStore(debugOutput, pixel_coords, vec4(0, 0, 1, 1));
 	}
+	
+	// Base pixel colour for image
+	vec3 hdrColor = vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point))));
 
+	// Exposure tone mapping
+	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
 
-	pixel = vec4(vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point)))), 1.0);
+	// Apply gamma correction and output the result
+	pixel = vec4(pow(mapped, vec3(1.0 / gamma)), 1.0);
 
 	// output to a specific pixel in the image
 	imageStore(renderTarget, pixel_coords, pixel);

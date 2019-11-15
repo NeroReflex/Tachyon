@@ -4,8 +4,6 @@ using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 
-#include "shaders/vulkan/tonemapping.vert.spv.h" // tonemapping_vertVK, tonemapping_vertVK_size
-#include "shaders/vulkan/tonemapping.frag.spv.h" // tonemapping_fragVK, tonemapping_fragVK_size
 #include "shaders/vulkan/raytrace_insert.comp.spv.h" // raytrace_insert_compVK, raytrace_insert_compVK_size
 #include "shaders/vulkan/raytrace_flush.comp.spv.h" // raytrace_flush_compVK, raytrace_flush_compVK_size
 #include "shaders/vulkan/raytrace_render.comp.spv.h" // raytrace_render_compVK, raytrace_render_compVK_size
@@ -86,7 +84,8 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
 
-		if ((deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
+		if ((checkDeviceExtensionSupport(physicalDevice)) &&
+			(deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
 			(deviceProperties.limits.maxImageDimension1D >= mRaytracerRequirements.mTLASTexels_Width) &&
 			(deviceProperties.limits.maxImageDimension2D >= glm::max(mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)) &&
 			(deviceProperties.limits.maxImageDimension3D >= glm::max(glm::max(mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height), mRaytracerRequirements.mGeometryCollectionTexels_Depth)) &&
@@ -101,6 +100,22 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 	}
 
 	DBG_ASSERT(deviceFound); // No suitable Vulkan device found
+}
+
+bool VulkanPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device) noexcept {
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+	std::set<std::string> requiredExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
+
+	for (const auto& extension : availableExtensions) {
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	return requiredExtensions.empty();
 }
 
 void VulkanPipeline::createInstance() noexcept {
@@ -504,90 +519,6 @@ void VulkanPipeline::createPipeline() noexcept {
 	coreDescriptorSetLayoutBinding[3].descriptorCount = 1;
 	coreDescriptorSetLayoutBinding[3].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-	std::array<VkPipelineShaderStageCreateInfo, 2> displayWriterStageCreateInfo;
-
-	// Create the final render step
-	VkShaderModule* displayWriterVertexModule = new VkShaderModule();
-	VkShaderModuleCreateInfo* displayWriterVertexModuleCreation = new VkShaderModuleCreateInfo();
-	displayWriterVertexModuleCreation->sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	displayWriterVertexModuleCreation->pNext = NULL;
-	displayWriterVertexModuleCreation->codeSize = tonemapping_vertVK_size;
-	displayWriterVertexModuleCreation->pCode = reinterpret_cast<const uint32_t*>(tonemapping_vertVK);
-	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, displayWriterVertexModuleCreation, NULL, displayWriterVertexModule));
-	VkPipelineShaderStageCreateInfo* vertexShaderStageCreateInfo = &displayWriterStageCreateInfo[0];
-	vertexShaderStageCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertexShaderStageCreateInfo->stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertexShaderStageCreateInfo->module = *displayWriterVertexModule;
-	vertexShaderStageCreateInfo->pName = "main";
-
-	VkShaderModule* displayWriterFragmentModule = new VkShaderModule();
-	VkShaderModuleCreateInfo* displayWriterFragmentModuleCreation = &displayWriterStageCreateInfo[1];
-	displayWriterFragmentModuleCreation->sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	displayWriterFragmentModuleCreation->pNext = NULL;
-	displayWriterFragmentModuleCreation->codeSize = tonemapping_fragVK_size;
-	displayWriterFragmentModuleCreation->pCode = reinterpret_cast<const uint32_t*>(tonemapping_fragVK_size);
-	VK_CHECK_RESULT(vkCreateShaderModule(mDevice, displayWriterFragmentModuleCreation, NULL, displayWriterFragmentModule));
-	VkPipelineShaderStageCreateInfo* vertexShaderStageCreateInfo = new VkPipelineShaderStageCreateInfo();
-	vertexShaderStageCreateInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertexShaderStageCreateInfo->stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	vertexShaderStageCreateInfo->module = *displayWriterFragmentModule;
-	vertexShaderStageCreateInfo->pName = "main";
-
-
-	std::vector<VkDescriptorSetLayoutBinding> displayWriterDescriptorSetLayoutBinding(2);
-	displayWriterDescriptorSetLayoutBinding[0].binding = 0; // layout (std140, binding = 0) uniform tonemapping
-	displayWriterDescriptorSetLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	displayWriterDescriptorSetLayoutBinding[0].descriptorCount = 1;
-	displayWriterDescriptorSetLayoutBinding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	displayWriterDescriptorSetLayoutBinding[0].pImmutableSamplers = NULL;
-	displayWriterDescriptorSetLayoutBinding[1].binding = 1; // layout (binding = 1) uniform sampler2D outputSampler
-	displayWriterDescriptorSetLayoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-	displayWriterDescriptorSetLayoutBinding[1].descriptorCount = 1;
-	displayWriterDescriptorSetLayoutBinding[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	displayWriterDescriptorSetLayoutBinding[1].pImmutableSamplers = NULL;
-
-
-	VkVertexInputBindingDescription* vertexInputBindingDescription = new VkVertexInputBindingDescription();
-	vertexInputBindingDescription->binding = 0;
-	vertexInputBindingDescription->stride = 0;
-	vertexInputBindingDescription->inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-	VkPipelineVertexInputStateCreateInfo* vertexInputInfo = new VkPipelineVertexInputStateCreateInfo();
-	vertexInputInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo->vertexBindingDescriptionCount = 1;
-	vertexInputInfo->pVertexBindingDescriptions = vertexInputBindingDescription;
-	vertexInputInfo->vertexAttributeDescriptionCount = 0;
-	vertexInputInfo->pVertexAttributeDescriptions = nullptr; // Optional
-
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-	VkGraphicsPipelineCreateInfo* displayWriterPipelineCreateInfo = new VkGraphicsPipelineCreateInfo();
-	displayWriterPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	displayWriterPipelineCreateInfo->pNext = NULL;
-	displayWriterPipelineCreateInfo->flags = 0; // VK_PIPELINE_CREATE_DISPATCH_BASE
-	displayWriterPipelineCreateInfo->stageCount = displayWriterStageCreateInfo.size();
-	displayWriterPipelineCreateInfo->pStages = displayWriterStageCreateInfo.data();
-	displayWriterPipelineCreateInfo->pVertexInputState = vertexInputInfo;
-	/*
-    const VkPipelineInputAssemblyStateCreateInfo*    pInputAssemblyState;
-    const VkPipelineTessellationStateCreateInfo*     pTessellationState;
-    const VkPipelineViewportStateCreateInfo*         pViewportState;
-    const VkPipelineRasterizationStateCreateInfo*    pRasterizationState;
-    const VkPipelineMultisampleStateCreateInfo*      pMultisampleState;
-    const VkPipelineDepthStencilStateCreateInfo*     pDepthStencilState;
-    const VkPipelineColorBlendStateCreateInfo*       pColorBlendState;
-    const VkPipelineDynamicStateCreateInfo*          pDynamicState;
-    VkPipelineLayout                                 layout;
-    VkRenderPass                                     renderPass;
-    uint32_t                                         subpass;
-    VkPipeline                                       basePipelineHandle;
-    int32_t                                          basePipelineIndex;
-	*/
-
-
 	// Create the render pipeline
 	VkShaderModule* raytracerRenderModule = new VkShaderModule();
 	VkShaderModuleCreateInfo* renderModuleCreation = new VkShaderModuleCreateInfo();
@@ -606,6 +537,7 @@ void VulkanPipeline::createPipeline() noexcept {
 	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[1]);
 	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[2]);
 	renderDescriptorSetLayoutBinding.emplace_back(coreDescriptorSetLayoutBinding[3]);
+	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
 	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
 	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
 	renderDescriptorSetLayoutBinding.emplace_back(VkDescriptorSetLayoutBinding());
@@ -630,6 +562,11 @@ void VulkanPipeline::createPipeline() noexcept {
 	renderDescriptorSetLayoutBinding[7].descriptorCount = 1;
 	renderDescriptorSetLayoutBinding[7].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 	renderDescriptorSetLayoutBinding[7].pImmutableSamplers = NULL;
+	renderDescriptorSetLayoutBinding[8].binding = 8; // layout (std140, binding = 8) uniform tonemapping
+	renderDescriptorSetLayoutBinding[8].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	renderDescriptorSetLayoutBinding[8].descriptorCount = 1;
+	renderDescriptorSetLayoutBinding[8].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	renderDescriptorSetLayoutBinding[8].pImmutableSamplers = NULL;
 	VkComputePipelineCreateInfo* renderPipelineCreateInfo = new VkComputePipelineCreateInfo();
 	renderPipelineCreateInfo->sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	VkDescriptorSetLayoutCreateInfo* renderDescriptorSetLayoutCreateInfo = new VkDescriptorSetLayoutCreateInfo;

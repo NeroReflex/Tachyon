@@ -15,6 +15,7 @@
 #include <vector>
 #include <array>
 #include <list>
+#include <set>
 
 // STL memory
 #include <memory>

@@ -36,6 +36,8 @@ namespace Tachyon {
 				 */
 				void createInstance() noexcept;
 
+				bool checkDeviceExtensionSupport(VkPhysicalDevice device) noexcept;
+
 				/*
 				 * Select the most suitable physical device that can be used with Vulkan.
 				 *

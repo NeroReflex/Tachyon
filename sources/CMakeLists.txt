@@ -105,7 +105,7 @@ if(VULKAN_SUPPORT)
 		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DRENDER -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_render.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/render.comp"
 		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_render.comp.spv.h" "raytrace_render_compVK"
 
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/nuke.comp"
+		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/flush.comp"
 		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_flush.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_flush.comp.spv.h" "raytrace_flush_compVK"
 
 		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DBVH_INSERT -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_insert.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/insert.comp"
@@ -114,16 +114,10 @@ if(VULKAN_SUPPORT)
 		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_UPDATE -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_update.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/update.comp"
 		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_update.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_update.comp.spv.h" "raytrace_update_compVK"
 
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -o "${EMBEDDED_VULKAN_SHADERS_DIR}/tonemapping.vert.spv" "${SHADERS_SOURCE_DIR}/vulkan/tonemapping.vert"
-		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/tonemapping.vert.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/tonemapping.vert.spv.h" "tonemapping_vertVK"
-
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -o "${EMBEDDED_VULKAN_SHADERS_DIR}/tonemapping.frag.spv" "${SHADERS_SOURCE_DIR}/vulkan/tonemapping.frag"
-		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/tonemapping.frag.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/tonemapping.frag.spv.h" "tonemapping_fragVK"
-
 		DEPENDS bin2c_serialize
 		
 		COMMENT "Compiling Vulkan shaders to SPIR-V"
-		SOURCES ${SHADERS_SOURCE_DIR}/vulkan/render.comp ${SHADERS_SOURCE_DIR}/vulkan/nuke.comp ${SHADERS_SOURCE_DIR}/vulkan/insert.comp ${SHADERS_SOURCE_DIR}/vulkan/update.comp ${SHADERS_SOURCE_DIR}/vulkan/tonemapping.vert ${SHADERS_SOURCE_DIR}/vulkan/tonemapping.frag
+		SOURCES ${SHADERS_SOURCE_DIR}/vulkan/render.comp ${SHADERS_SOURCE_DIR}/vulkan/flush.comp ${SHADERS_SOURCE_DIR}/vulkan/insert.comp ${SHADERS_SOURCE_DIR}/vulkan/update.comp
 	)
 
 	add_dependencies(Tachyon spirv_vulkan_shaders)
