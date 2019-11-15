@@ -486,7 +486,7 @@ void VulkanPipeline::createPipeline() noexcept {
 	 * layout(rgba32f, binding = 2) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
 	 * layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
 	 */
-	VkDescriptorSetLayoutBinding* coreDescriptorSetLayoutBinding = new VkDescriptorSetLayoutBinding[4];
+	std::array<VkDescriptorSetLayoutBinding, 4> coreDescriptorSetLayoutBinding;
 	coreDescriptorSetLayoutBinding[0].binding = 0;
 	coreDescriptorSetLayoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	coreDescriptorSetLayoutBinding[0].descriptorCount = 1;

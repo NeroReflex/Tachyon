@@ -196,7 +196,7 @@ namespace Tachyon {
 				VkPipelineLayout mRaytracerRenderPipelineLayout;
 				VkPipeline mRaytracerRenderPipeline;
 
-				VkShaderModule mRaytracerWriterModule;
+				VkPipelineLayout mDisplayWriterPipelineLayout;
 				VkPipeline mDisplayWriterPipeline;
 			};
 		}
