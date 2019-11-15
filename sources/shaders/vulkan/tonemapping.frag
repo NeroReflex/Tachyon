@@ -8,7 +8,7 @@ layout (std140, binding = 0) uniform tonemapping {
 };
 
 // Values that stay constant for the whole mesh.
-layout (binding = 5) uniform sampler2D outputSampler;
+layout (binding = 1) uniform sampler2D outputSampler;
 
 void main() {
 	/*
