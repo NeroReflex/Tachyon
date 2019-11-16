@@ -1,12 +1,16 @@
 #include "Core/Camera.h"
-#include "Rendering/OpenGL/OpenGLPipeline.h"
-#include "Rendering/Vulkan/VulkanPipeline.h"
 
+#if defined(OPENGL_SUPPORT)
+	#include "Rendering/OpenGL/OpenGLPipeline.h"
+#elif defined(VULKAN_SUPPORT)
+	#include "Rendering/Vulkan/VulkanPipeline.h"
+#endif
+/*
 #if defined(WIN32)
 #include <wingdi.h>
 #pragma comment(lib, "Opengl32.lib")
 #endif
-
+*/
 void GLAPIENTRY
 MessageCallback(GLenum source,
 	GLenum type,
@@ -56,7 +60,7 @@ int main(int argc, char** argv) {
 	}
 
 #if defined(VULKAN_SUPPORT)
-	wglMakeCurrent(NULL, NULL);
+	/*wglMakeCurrent(NULL, NULL);*/
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #elif defined(OPENGL_SUPPORT)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);

@@ -1,22 +1,9 @@
-set(OPENGL_SOURCES "")
-set(OPENGL_SUPPORT false)
-set(VULKAN_SOURCES "")
-set(VULKAN_SUPPORT false)
-
-if(OPENGL_FOUND)
-	message("info: OpenGL renderer enabled, disabling the renderer")
-	file(GLOB_RECURSE OPENGL_SOURCES Rendering/OpenGL/*.cpp)
-	set(OPENGL_SUPPORT true)
-else()
-	message("Warning: OpenGL could not be found.")
-endif()
-
-if (VULKAN_FOUND)
+if (USE_VULKAN)
 	message("info: Vulkan renderer enabled")
 	file(GLOB_RECURSE VULKAN_SOURCES Rendering/Vulkan/*.cpp)
-	set(VULKAN_SUPPORT true)
-else()
-	message("Warning: Vulkan SDK could be found, disabling the renderer")
+elseif(USE_OPENGL)
+	message("info: OpenGL renderer enabled, disabling the renderer")
+	file(GLOB_RECURSE OPENGL_SOURCES Rendering/OpenGL/*.cpp)
 endif()
 
 add_executable(Tachyon main.cpp Core/Camera.cpp Rendering/RenderingPipeline.cpp Rendering/GeometryPrimitive.cpp ${OPENGL_SOURCES} ${VULKAN_SOURCES})
@@ -39,8 +26,7 @@ if (is_debug_build)
 endif()
 
 set(SHADERS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/sources/shaders)
-
-if(OPENGL_SUPPORT)
+if(USE_OPENGL)
 	add_compile_definitions(OPENGL_SUPPORT)
 
 	add_dependencies(Tachyon gl3w)
@@ -82,9 +68,7 @@ if(OPENGL_SUPPORT)
 	)
 
 	add_dependencies(Tachyon spirv_opengl_shaders)
-endif(OPENGL_SUPPORT)
-
-if(VULKAN_SUPPORT)
+elseif(USE_VULKAN)
 	add_compile_definitions(VULKAN_SUPPORT)
 
 	include_directories(${Vulkan_INCLUDE_DIRS})
@@ -121,6 +105,6 @@ if(VULKAN_SUPPORT)
 	)
 
 	add_dependencies(Tachyon spirv_vulkan_shaders)
-endif(VULKAN_SUPPORT)
+endif()
 
 

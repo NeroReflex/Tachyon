@@ -5,6 +5,9 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 project (Tachyon)
 
+option(USE_OPENGL "Enable OpenGL support if the SKD is present" ON)
+option(USE_VULKAN "Enable vulkan support if the SDK is present" OFF)
+
 include(${PROJECT_SOURCE_DIR}/cmake/file2c.cmake)
 
 # add the bin2c_serialize target
@@ -19,19 +22,31 @@ find_package (Threads)
 # Include GLM
 include_directories(${PROJECT_SOURCE_DIR}/external/glm/glm)
 
-# OpenGL library new profile if possible
-set(OpenGL_GL_PREFERENCE GLVND)
-find_package(OpenGL)
+if (((USE_OPENGL) AND (USE_VULKAN)) OR ((NOT USE_OPENGL) AND (NOT USE_VULKAN)))
+	message(FATAL_ERROR "O usi Vulkan o usi OpenGL. Deciditi, Porco Dio!")
+endif()
 
-# Include Vulkan library
-find_package(Vulkan)
+if (USE_OPENGL)
+	set(OpenGL_GL_PREFERENCE GLVND) # OpenGL library new profile if possible
+	find_package(OpenGL REQUIRED)
+else()
+	set(OPENGL_FOUND false)
+endif()
+
+if (USE_VULKAN)
+	find_package(Vulkan REQUIRED)
+else()
+	set(VULKAN_FOUND false)
+endif()
 
 # Include GL3W
-if (OPENGL_FOUND)
-message("OpenGL found: including gl3w")
-add_subdirectory(${PROJECT_SOURCE_DIR}/external/gl3w)
-include_directories(${PROJECT_SOURCE_DIR}/external/gl3w/include)
-endif(OPENGL_FOUND)
+if (USE_OPENGL)
+	if (OPENGL_FOUND)
+		message("OpenGL found: including gl3w")
+		add_subdirectory(${PROJECT_SOURCE_DIR}/external/gl3w)
+		include_directories(${PROJECT_SOURCE_DIR}/external/gl3w/include)
+	endif()
+endif()
 
 # Include GLFW
 find_package(glfw3 REQUIRED)
