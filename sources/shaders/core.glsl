@@ -1,18 +1,19 @@
 #ifndef CORE_GLSL
 #define CORE_GLSL
 
+#include "config.glsl"
 #include "utils.glsl"
 #include "geometry.glsl"
 #include "aabb.glsl"
 #include "bvh.glsl"
 
-layout(rgba32f, binding = 0) uniform TLAS_MEMORY_MODEL image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
+layout(rgba32f, binding = TLAS_BINDING) uniform TLAS_MEMORY_MODEL image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
 
-layout(rgba32f, binding = 1) uniform BLAS_MOEMORY_MODEL image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
+layout(rgba32f, binding = BLAS_BINDING) uniform BLAS_MOEMORY_MODEL image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
 
-layout(rgba32f, binding = 2) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
+layout(rgba32f, binding = GEOMETRY_BINDING) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
 
-layout(rgba32f, binding = 3) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
+layout(rgba32f, binding = BLAS_ATTRIBUTES_BINDING) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
 
 mat4 ReadModelMatrix_ByIndex(const in uint index) {
 	return mat4(

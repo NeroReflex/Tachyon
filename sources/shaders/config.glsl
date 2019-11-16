@@ -47,4 +47,11 @@
 	#define MODELMATRIX_MEMORY_MODEL coherent
 #endif
 
+#define TLAS_BINDING 0
+#define BLAS_BINDING 1
+#define GEOMETRY_BINDING 2
+#define BLAS_ATTRIBUTES_BINDING 3
+#define OUTPUT_BINDING 4
+#define DEBUG_BINDING 5
+
 #endif // CONFIG_GLSL

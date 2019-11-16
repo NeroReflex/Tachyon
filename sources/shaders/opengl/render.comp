@@ -12,9 +12,9 @@
 
 layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
 
-layout(rgba32f, binding = 4) uniform writeonly image2D debugOutput;
+layout(rgba32f, binding = DEBUG_BINDING) uniform writeonly image2D debugOutput;
 
-layout(rgba32f, binding = 5) uniform writeonly image2D renderTarget; // Raytracing output texture
+layout(rgba32f, binding = OUTPUT_BINDING) uniform writeonly image2D renderTarget; // Raytracing output texture
 
 layout (location = 0) uniform uint width;
 layout (location = 1) uniform uint height;
