@@ -111,6 +111,21 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 	glBindTexture(GL_TEXTURE_3D, mRaytracingGeometryCollection);
 	glTextureStorage3D(mRaytracingGeometryCollection, 1, GL_RGBA32F, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth);
 	// END OF GEOMETRY COLLECTION TEXTURE CREATION
+
+	glViewport(0, 0, getWidth(), getHeight());
+
+	// OUTPUT TEXTURE CREATION
+	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
+	glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
+	glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, getWidth(), getHeight());
+	// END OF OUTPUT TEXTURE CREATION
+
+	// DEBUG TEXTURE CREATION
+	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerDebugOutput);
+	glBindTexture(GL_TEXTURE_2D, mRaytracerDebugOutput);
+	glTextureStorage2D(mRaytracerDebugOutput, 1, GL_RGBA32F, getWidth(), getHeight());
+	glBindImageTexture(DEBUG_BINDING, mRaytracerDebugOutput, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	// END OF DEBUG TEXTURE CREATION
 	
 	// The VAO with the screen quad needs to be binded only once as the raytracing never uses any other VAOs
 	glBindVertexArray(mQuadVAO);
@@ -205,13 +220,13 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 	glViewport(0, 0, newWidth, newHeight);
 
 	// Create a new 2D texture used to store the raw raytrace result (without gamma correction)
-	if (mRaytracerOutputTexture) glDeleteTextures(1, &mRaytracerOutputTexture); // Remove the previous texture to avoid GPU memory leak(s)
+	glDeleteTextures(1, &mRaytracerOutputTexture); // Remove the previous texture to avoid GPU memory leak(s)
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerOutputTexture);
 	glBindTexture(GL_TEXTURE_2D, mRaytracerOutputTexture);
 	glTextureStorage2D(mRaytracerOutputTexture, 1, GL_RGBA32F, newWidth, newHeight);
 
 	// debug output
-	if (mRaytracerDebugOutput) glDeleteTextures(1, &mRaytracerDebugOutput);
+	glDeleteTextures(1, &mRaytracerDebugOutput);
 	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracerDebugOutput);
 	glBindTexture(GL_TEXTURE_2D, mRaytracerDebugOutput);
 	glTextureStorage2D(mRaytracerDebugOutput, 1, GL_RGBA32F, newWidth, newHeight);
