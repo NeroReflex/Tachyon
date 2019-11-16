@@ -38,7 +38,13 @@ namespace Tachyon {
 				void onRender(const Core::Camera& camera) noexcept final;
 
 			private:
+				VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept;
+
 				SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) const noexcept;
+
+				VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const noexcept;
+
+				VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept;
 
 				/**
 				 * Create a Vulkan instance.
@@ -61,13 +67,18 @@ namespace Tachyon {
 				void findPhysicalDevice() noexcept;
 
 				/**
-				 * Search for a family queue in the locigal device that satisfy all requrements.
+				 * Create the best swapchain possible for the selected device.
 				 *
 				 * Note: must be called after findPhysicalDevice()
-				 *
-				 * @return the index of a queue family that satisfy all requirements
 				 */
-				glm::uint32 getQueueFamilyIndex() noexcept;
+				void createSwapChain() noexcept;
+
+				/**
+				 * Search for a family queue in the physical device that satisfy all requrements.
+				 *
+				 * Note: must be called after findPhysicalDevice()
+				 */
+				void pickQueueFamilyIndex() noexcept;
 
 				/**
 				 * Create the Vulkan logical device from the physical device.
@@ -129,6 +140,12 @@ namespace Tachyon {
 
 				std::vector<const char*> mEnabledLayers;
 
+				struct SurfaceSwapchain {
+					VkSurfaceFormatKHR surfaceFormat;
+					VkPresentModeKHR presentMode;
+					VkExtent2D extent;
+				} mSurfaceSwapchain;
+
 				/**
 				 * In order to use Vulkan, you must create an instance.
 				 */
@@ -138,10 +155,17 @@ namespace Tachyon {
 				VkDebugReportCallbackEXT debugReportCallback;
 #endif
 
+				SwapChainSupportDetails mSwapChainSupport;
+
 				/**
 				 * The render surface.
 				 */
 				VkSurfaceKHR mSurface;
+
+				/**
+				 * The swapchain.
+				 */
+				VkSwapchainKHR mSwapChain;
 
 				/**
 				 * The physical device is some device on the system that supports usage of Vulkan.
@@ -163,6 +187,10 @@ namespace Tachyon {
 				 * graphics operations, for instance.
 				 */
 				VkQueue mQueue;
+
+				VkQueueFamilyProperties mQueueProperties;
+
+
 
 				/**
 				 * Groups of queues that have the same capabilities(for instance, they all supports graphics and computer operations),

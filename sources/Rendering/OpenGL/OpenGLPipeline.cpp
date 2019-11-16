@@ -219,7 +219,7 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 }
 
 void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, GLuint targetBLAS) noexcept {
-	DBG_ASSERT( (targetBLAS < (1 << mRaytracerInfo.expOfTwo_numberOfModels)) );
+	DBG_ASSERT( (targetBLAS < (static_cast<GLuint>(1) << mRaytracerInfo.expOfTwo_numberOfModels)) );
 
 	static_assert( (sizeof(GeometryPrimitive) == sizeof(glm::vec4) ), "Geometry type not matching input GLSL");
 	

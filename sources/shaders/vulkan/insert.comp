@@ -21,11 +21,8 @@ Geometry transformToGPURepresentation(in const vec4 inGeometry) {
 	return outGeometry;
 }
 
-/*
-layout(std430, binding = 4) buffer insertionGeometryMorton {
-	uint mortonCode[]; // This is the BLAS collection
-};
-*/
+shared uint mortonCode[(1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection)];
+
 
 // Expands a 10-bit integer into 30 bits
 // by inserting 2 zeros after each bit.

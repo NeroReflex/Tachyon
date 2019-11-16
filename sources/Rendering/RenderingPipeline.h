@@ -22,7 +22,7 @@ namespace Tachyon {
 
 			void reset() noexcept;
 
-			void render(const Core::Camera& camera, glm::uint32 width, glm::uint32 height) noexcept;
+			void render(const Core::Camera& camera) noexcept;
 
 		protected:
 			virtual void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
@@ -63,6 +63,8 @@ namespace Tachyon {
 				const glm::uint32 mGeometryCollectionTexels_Height;
 				const glm::uint32 mGeometryCollectionTexels_Depth;
 
+				RaytracingGPUDataRequirements() = delete;
+
 				inline RaytracingGPUDataRequirements(
 					glm::uint32 TLASTexels_Width,
 					glm::uint32 BLASCollectionTexels_Width, glm::uint32 BLASCollectionTexels_Height,
@@ -80,6 +82,8 @@ namespace Tachyon {
 
 		private:
 			void resize(glm::uint32 width, glm::uint32 height) noexcept;
+
+			GLFWwindow* mWindow;
 
 			glm::uint32 mWindowWidth, mWindowHeight;
 		};

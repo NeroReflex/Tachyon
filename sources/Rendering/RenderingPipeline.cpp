@@ -7,7 +7,7 @@ using namespace Tachyon::Rendering;
 #include "shaders/config.glsl"
 
 RenderingPipeline::RenderingPipeline(GLFWwindow* window) noexcept
-	: mWindowWidth(0), mWindowHeight(0),
+	: mWindow(window), mWindowWidth(0), mWindowHeight(0),
 	mRaytracerInfo(expOfTwo_maxModels, expOfTwo_maxCollectionsForModel, expOfTwo_maxGeometryOnCollection, expOfTwo_numOfVec4OnGeometrySerialization),
 	mRaytracerRequirements(
 		(size_t(1) << (mRaytracerInfo.expOfTwo_numberOfModels + 1)) * 2,
@@ -18,7 +18,16 @@ RenderingPipeline::RenderingPipeline(GLFWwindow* window) noexcept
 		size_t(1) << (mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection + mRaytracerInfo.expOfTwo_numberOfTesselsForGeometryTexturazation),
 		size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS,
 		size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels
-	) {}
+	) {
+
+	if (mWindow) {
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+		mWindowWidth = static_cast<glm::uint32>(windowWidth);
+		mWindowHeight = static_cast<glm::uint32>(windowHeight);
+	}
+}
 
 void RenderingPipeline::resize(glm::uint32 width, glm::uint32 height) noexcept {
 	// Execute callback before doing anything
@@ -41,8 +50,11 @@ void RenderingPipeline::reset() noexcept {
 	onReset();
 }
 
-void RenderingPipeline::render(const Core::Camera& camera, glm::uint32 width, glm::uint32 height) noexcept {
-	if ((width != getWidth()) || (height != getHeight())) resize(width, height);
+void RenderingPipeline::render(const Core::Camera& camera) noexcept {
+	int windowWidth, windowHeight;
+	glfwGetWindowSize(mWindow, &windowWidth, &windowHeight);
+
+	if ((static_cast<glm::uint32>(windowWidth) != getWidth()) || (static_cast<glm::uint32>(windowHeight) != getHeight())) resize(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
 	onRender(camera);
 }

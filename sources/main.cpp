@@ -2,6 +2,11 @@
 #include "Rendering/OpenGL/OpenGLPipeline.h"
 #include "Rendering/Vulkan/VulkanPipeline.h"
 
+#if defined(WIN32)
+#include <wingdi.h>
+#pragma comment(lib, "Opengl32.lib")
+#endif
+
 void GLAPIENTRY
 MessageCallback(GLenum source,
 	GLenum type,
@@ -51,6 +56,7 @@ int main(int argc, char** argv) {
 	}
 
 #if defined(VULKAN_SUPPORT)
+	wglMakeCurrent(NULL, NULL);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #elif defined(OPENGL_SUPPORT)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -69,10 +75,6 @@ int main(int argc, char** argv) {
 
 		return EXIT_FAILURE;
 	}
-
-	int windowWidth, windowHeight;
-	glfwGetWindowSize(window, &windowWidth, &windowHeight);
-
 
 	// Now it is safe to create the renderer
 	std::unique_ptr<Tachyon::Rendering::RenderingPipeline> raytracer = nullptr;
@@ -137,6 +139,8 @@ int main(int argc, char** argv) {
 		std::cerr << "Error: unable to create the renderer for an unknown reason." << std::endl;
 	}
 	
+	int windowWidth, windowHeight;
+	glfwGetWindowSize(window, &windowWidth, &windowHeight);
 	Tachyon::Core::Camera camera(glm::vec3(0, 90.3, 0), glm::vec3(0, 90, -1), glm::float32(60), glm::float32(windowWidth) / glm::float32(windowHeight));
 
 	raytracer->reset();
@@ -155,7 +159,7 @@ int main(int argc, char** argv) {
 		camera.setAspect(windowWidth, windowHeight);
 
 		// Render the scene
-		raytracer->render(camera, static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
+		raytracer->render(camera);
 
 		glfwSwapBuffers(window);
 	}

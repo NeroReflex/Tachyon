@@ -38,6 +38,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 
 	findPhysicalDevice();
 	createLogicalDevice();
+	createSwapChain();
 	createCoreBuffers();
 	createPipeline();
 }
@@ -66,8 +67,14 @@ VulkanPipeline::~VulkanPipeline() {
 	vkDestroyPipeline(device, pipeline, NULL);
 	vkDestroyCommandPool(mDevice, commandPool, NULL);*/
 
+	
+	vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
+
 	// at this point everything about the logical device has been destroyed, so it's safe to destroy the device
 	vkDestroyDevice(mDevice, NULL);
+
+	// The surface depends on the vulkan instance and must be deleted
+	vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
 
 	// As I am for sure not going to use vulkan for anything else at this point just destroy the instance
 	vkDestroyInstance(mInstance, NULL);
@@ -108,6 +115,7 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 			DBG_ONLY(	printf("Chosen Vulkan GPU: %s\n\n", deviceProperties.deviceName ) );
 
 			mPhysicalDevice = physicalDevice;
+			mSwapChainSupport = swapChainSupport;
 			deviceFound = true;
 			break;
 		}
@@ -132,6 +140,39 @@ bool VulkanPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device) noexce
 	return requiredExtensions.empty();
 }
 
+VkExtent2D VulkanPipeline::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept {
+	if (capabilities.currentExtent.width != UINT32_MAX) {
+		return capabilities.currentExtent;
+	} else {
+		VkExtent2D actualExtent = { getWidth(), getHeight() };
+
+		actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
+		actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
+
+		return actualExtent;
+	}
+}
+
+VkPresentModeKHR VulkanPipeline::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept {
+	for (const auto& availablePresentMode : availablePresentModes) {
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			return availablePresentMode;
+		}
+	}
+
+	return VK_PRESENT_MODE_FIFO_KHR; // This is the only one to be available
+}
+
+VkSurfaceFormatKHR VulkanPipeline::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const noexcept {
+	for (const auto& availableFormat : availableFormats) {
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+			return availableFormat;
+		}
+	}
+
+	return availableFormats[0];
+}
+
 VulkanPipeline::SwapChainSupportDetails VulkanPipeline::querySwapChainSupport(VkPhysicalDevice device) const noexcept {
 	SwapChainSupportDetails details;
 	
@@ -154,6 +195,39 @@ VulkanPipeline::SwapChainSupportDetails VulkanPipeline::querySwapChainSupport(Vk
 	}
 	
 	return details;
+}
+
+void VulkanPipeline::createSwapChain() noexcept {
+	mSurfaceSwapchain.surfaceFormat = chooseSwapSurfaceFormat(mSwapChainSupport.formats);
+	mSurfaceSwapchain.presentMode = chooseSwapPresentMode(mSwapChainSupport.presentModes);
+	mSurfaceSwapchain.extent = chooseSwapExtent(mSwapChainSupport.capabilities);
+
+	uint32_t imageCount = mSwapChainSupport.capabilities.minImageCount + 2;
+
+	if (mSwapChainSupport.capabilities.maxImageCount > 0 && imageCount > mSwapChainSupport.capabilities.maxImageCount) {
+		imageCount = mSwapChainSupport.capabilities.maxImageCount;
+	}
+
+	VkSwapchainCreateInfoKHR* createInfo = new VkSwapchainCreateInfoKHR();
+	createInfo->sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo->surface = mSurface;
+	createInfo->preTransform = mSwapChainSupport.capabilities.currentTransform;
+	createInfo->queueFamilyIndexCount = 1;
+	createInfo->pQueueFamilyIndices = &mQueueFamilyIndex;
+	createInfo->imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	createInfo->compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo->clipped = VK_TRUE;
+	createInfo->oldSwapchain = VK_NULL_HANDLE;
+	createInfo->minImageCount = imageCount;
+	createInfo->presentMode = mSurfaceSwapchain.presentMode;
+	createInfo->imageFormat = mSurfaceSwapchain.surfaceFormat.format;
+	createInfo->imageColorSpace = mSurfaceSwapchain.surfaceFormat.colorSpace;
+	createInfo->imageExtent = mSurfaceSwapchain.extent;
+	createInfo->imageArrayLayers = 1;
+	createInfo->imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(mDevice, createInfo, NULL, &mSwapChain));
+	
 }
 
 void VulkanPipeline::createInstance() noexcept {
@@ -260,10 +334,11 @@ void VulkanPipeline::createInstance() noexcept {
 }
 
 void VulkanPipeline::createLogicalDevice() noexcept {
+	pickQueueFamilyIndex(); // find queue family with all required capability and store that queue in mQueueFamilyIndex (referenced later on).
+
 	// When creating the device, we also specify what queues it has.
 	VkDeviceQueueCreateInfo queueCreateInfo = {};
 	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	mQueueFamilyIndex = getQueueFamilyIndex(); // find queue family with all required capability.
 	queueCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
 	queueCreateInfo.queueCount = 1; // create one queue in this family. We don't need more.
 	float queuePriorities = 1.0;  // we only have one queue, so this is not that imporant. 
@@ -289,9 +364,8 @@ void VulkanPipeline::createLogicalDevice() noexcept {
 }
 
 // Returns the index of a queue family that supports compute operations. 
-glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept {
+void VulkanPipeline::pickQueueFamilyIndex() noexcept {
 	uint32_t queueFamilyCount;
-
 	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, NULL);
 
 	// Retrieve all queue families.
@@ -299,25 +373,26 @@ glm::uint32 VulkanPipeline::getQueueFamilyIndex() noexcept {
 	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, queueFamilies.data());
 
 	// Now find a family that supports compute.
-	uint32_t i = 0;
-	for (; i < queueFamilies.size(); ++i) {
-		VkQueueFamilyProperties props = queueFamilies[i];
+	for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
+		const VkQueueFamilyProperties& props = queueFamilies[i];
 
-		if (!glfwGetPhysicalDevicePresentationSupport(mInstance, mPhysicalDevice, i)) continue;
-
-		if (props.queueCount > 0 && (
+		if ((glfwGetPhysicalDevicePresentationSupport(mInstance, mPhysicalDevice, i)) &&
+			(props.queueCount) > 0 && (
 			(props.queueFlags & VK_QUEUE_COMPUTE_BIT) && 
-			//(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+			(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
 			(props.queueFlags & VK_QUEUE_TRANSFER_BIT)
 			)) {
 			// found a candidate!
-			return i;
+
+			mQueueFamilyIndex = i;
+
+			mQueueProperties = props;
+
+			return;
 		}
 	}
 
 	DBG_ASSERT( false ); // could not find a queue family that supports required operations
-
-	return std::numeric_limits<glm::uint32>::max();
 }
 
 uint32_t VulkanPipeline::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) noexcept {
@@ -613,7 +688,7 @@ void VulkanPipeline::createPipeline() noexcept {
 	renderDescriptorSetLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	renderDescriptorSetLayoutCreateInfo->pNext = NULL;
 	renderDescriptorSetLayoutCreateInfo->flags = 0;
-	renderDescriptorSetLayoutCreateInfo->bindingCount = renderDescriptorSetLayoutBinding.size(); // only a single binding in this descriptor set layout. 
+	renderDescriptorSetLayoutCreateInfo->bindingCount = static_cast<uint32_t>(renderDescriptorSetLayoutBinding.size()); // only a single binding in this descriptor set layout. 
 	renderDescriptorSetLayoutCreateInfo->pBindings = renderDescriptorSetLayoutBinding.data();
 	VkDescriptorSetLayout* renderDescriptorSetLayout = new VkDescriptorSetLayout();
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, renderDescriptorSetLayoutCreateInfo, NULL, renderDescriptorSetLayout));
