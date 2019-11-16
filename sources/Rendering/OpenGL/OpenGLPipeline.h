@@ -20,7 +20,7 @@ namespace Tachyon {
 
 				~OpenGLPipeline() override;
 
-				OpenGLPipeline() noexcept;
+				OpenGLPipeline(GLFWwindow* window) noexcept;
 
 				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept final;
 				

@@ -8,7 +8,7 @@ namespace Tachyon {
 
 		class RenderingPipeline {
 		public:
-			RenderingPipeline() noexcept;
+			RenderingPipeline(GLFWwindow* window) noexcept;
 
 			RenderingPipeline(const RenderingPipeline&) = delete;
 

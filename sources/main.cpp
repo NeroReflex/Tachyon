@@ -50,9 +50,9 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 
-	std::unique_ptr<Tachyon::Rendering::Vulkan::VulkanPipeline> vulkanRenderer(new Tachyon::Rendering::Vulkan::VulkanPipeline());
-
-#if defined(OPENGL_SUPPORT)
+#if defined(VULKAN_SUPPORT)
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#elif defined(OPENGL_SUPPORT)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -73,19 +73,30 @@ int main(int argc, char** argv) {
 	int windowWidth, windowHeight;
 	glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
-#if defined(OPENGL_SUPPORT)
+
+	// Now it is safe to create the renderer
+	std::unique_ptr<Tachyon::Rendering::RenderingPipeline> raytracer = nullptr;
+#if defined(VULKAN_SUPPORT)
+	if (!glfwVulkanSupported()) {
+		std::cerr << "Error: Vulkan unavailable, cannot initialize the renderer." << std::endl;
+
+		return EXIT_FAILURE;
+	}
+
+	raytracer.reset(new Tachyon::Rendering::Vulkan::VulkanPipeline(window));
+#elif defined(OPENGL_SUPPORT)
 
 	// Make the window's context current
 	glfwMakeContextCurrent(window);
 
 	if (gl3wInit()) {
-		std::cout << "Error: cannot initialize OpenGL context" << std::endl;
+		std::cerr << "Error: cannot initialize OpenGL context" << std::endl;
 
 		return EXIT_FAILURE;
 	}
 
 	if (!gl3wIsSupported(4, 5)) {
-		std::cout << "Error: OpenGL 4.5 is required to run this application. Please, update your video driver!" << std::endl;
+		std::cerr << "Error: OpenGL 4.5 is required to run this application. Please, update your video driver!" << std::endl;
 
 		return EXIT_FAILURE;
 	}
@@ -119,10 +130,13 @@ int main(int argc, char** argv) {
 
 	std::cout << "Max SSBO Block size: " << maxBlockSize << std::endl;
 
+	raytracer.reset(new Tachyon::Rendering::OpenGL::OpenGLPipeline(window));
 #endif
 
-	// Now it is safe to create the renderer
-	std::unique_ptr<Tachyon::Rendering::OpenGL::OpenGLPipeline> raytracer(new Tachyon::Rendering::OpenGL::OpenGLPipeline());
+	if (!raytracer) {
+		std::cerr << "Error: unable to create the renderer for an unknown reason." << std::endl;
+	}
+	
 	Tachyon::Core::Camera camera(glm::vec3(0, 90.3, 0), glm::vec3(0, 90, -1), glm::float32(60), glm::float32(windowWidth) / glm::float32(windowHeight));
 
 	raytracer->reset();

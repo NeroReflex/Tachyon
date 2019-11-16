@@ -24,8 +24,18 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanPipeline::debugReportCallbackFn(
 	return VK_FALSE;
 }
 
-VulkanPipeline::VulkanPipeline() noexcept {
+VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
+	: RenderingPipeline(window) {
+	// Load required extensions from GLFW
+	uint32_t extensionsCount;
+	const char** extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+	for (uint32_t j = 0; j < extensionsCount; ++j)
+		mEnabledExtensions.push_back(extensions[j]);
+
 	createInstance();
+
+	VK_CHECK_RESULT(glfwCreateWindowSurface(mInstance, window, NULL, &mSurface));
+
 	findPhysicalDevice();
 	createLogicalDevice();
 	createCoreBuffers();
@@ -83,8 +93,12 @@ void VulkanPipeline::findPhysicalDevice() noexcept {
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
+		bool swapChainAdequate = false;
+		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 
-		if ((checkDeviceExtensionSupport(physicalDevice)) &&
+		if ((swapChainAdequate) &&
+			(checkDeviceExtensionSupport(physicalDevice)) &&
 			(deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
 			(deviceProperties.limits.maxImageDimension1D >= mRaytracerRequirements.mTLASTexels_Width) &&
 			(deviceProperties.limits.maxImageDimension2D >= glm::max(mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)) &&
@@ -120,31 +134,25 @@ bool VulkanPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device) noexce
 
 VulkanPipeline::SwapChainSupportDetails VulkanPipeline::querySwapChainSupport(VkPhysicalDevice device) const noexcept {
 	SwapChainSupportDetails details;
-	/*
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+	
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
 
 	if (formatCount != 0) {
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.formats.data());
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
 
 	if (presentModeCount != 0) {
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.presentModes.data());
 	}
-
-	bool swapChainAdequate = false;
-	if (extensionsSupported) {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-	}
-	*/
+	
 	return details;
 }
 

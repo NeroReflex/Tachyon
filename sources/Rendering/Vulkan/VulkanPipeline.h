@@ -26,7 +26,7 @@ namespace Tachyon {
 
 				~VulkanPipeline() override;
 
-				VulkanPipeline() noexcept;
+				VulkanPipeline(GLFWwindow* window) noexcept;
 
 				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept final;
 				
@@ -137,6 +137,11 @@ namespace Tachyon {
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS)
 				VkDebugReportCallbackEXT debugReportCallback;
 #endif
+
+				/**
+				 * The render surface.
+				 */
+				VkSurfaceKHR mSurface;
 
 				/**
 				 * The physical device is some device on the system that supports usage of Vulkan.

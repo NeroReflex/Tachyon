@@ -16,8 +16,8 @@ using namespace Tachyon::Rendering::OpenGL::Pipeline;
 #include "shaders/opengl/raytrace_render.comp.spv.h" // raytrace_render_compOGL, raytrace_render_compOGL_size
 #include "shaders/opengl/raytrace_update.comp.spv.h" // raytrace_update_compOGL, raytrace_update_compOGL_size
 
-OpenGLPipeline::OpenGLPipeline() noexcept
-    : RenderingPipeline(),
+OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
+    : RenderingPipeline(window),
 	mRaytracerFlush(
 		new Pipeline::Program(
 		std::initializer_list<std::shared_ptr<const Shader>>{

@@ -56,6 +56,7 @@
 VK_CHECK_RESULT(f) f
 #endif
 
+#define GLFW_INCLUDE_VULKAN
 #endif
 
 // GLFW
