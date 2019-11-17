@@ -16,9 +16,6 @@ layout(rgba32f, binding = DEBUG_BINDING) uniform writeonly image2D debugOutput;
 
 layout(rgba32f, binding = OUTPUT_BINDING) uniform writeonly image2D renderTarget; // Raytracing output texture
 
-layout (location = 0) uniform uint width;
-layout (location = 1) uniform uint height;
-
 layout (location = 2) uniform vec3 cameraPosition;
 layout (location = 3) uniform vec3 cameraViewDir;
 layout (location = 4) uniform vec3 cameraUpVector;
@@ -35,8 +32,10 @@ layout (location = 9) uniform vec3 cameraVertical;
  * Usage: the compute shader MUST be dispatched as glDispatchCompute(width, height, 1).
  */
 void main() {
+	ivec2 renderTargetSize = imageSize(renderTarget);
+
 	// Avoid calculating useless pixels
-	if ((gl_GlobalInvocationID.x >= width) || (gl_GlobalInvocationID.y >= height)) return;
+	if ((gl_GlobalInvocationID.x >= renderTargetSize.x) || (gl_GlobalInvocationID.y >= renderTargetSize.y)) return;
 
 	// base pixel color for image
 	vec4 pixel = vec4(0, 0, 0, 0);
@@ -45,8 +44,8 @@ void main() {
 	const ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
 
 	// Get UV cordinates of the output texture
-	const float u = float(gl_GlobalInvocationID.x) / float(width);
-	const float v = float(gl_GlobalInvocationID.y) / float(height);
+	const float u = float(gl_GlobalInvocationID.x) / float(renderTargetSize.x);
+	const float v = float(gl_GlobalInvocationID.y) / float(renderTargetSize.y);
 
 	// Generate camera
 	const Camera camera = Camera(cameraPosition, cameraViewDir, cameraUpVector, cameraFoV, cameraAspect);
