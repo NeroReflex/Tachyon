@@ -14,6 +14,10 @@ struct InputGeometry {
 	vec4 centroid_radius;
 };
 
+vec3 getMortonPointFromInputGeometry(const in InputGeometry inGeom) {
+	return inGeom.centroid_radius.xyz;
+}
+
 struct InputGeometryCollection {
 	InputGeometry inputCollection[1 << expOfTwo_maxCollectionsForModel];
 };
@@ -30,11 +34,7 @@ layout(std430, binding = 3) buffer insertionGeometry {
 	InputGeometryCollection geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
 };
 
-/*
-layout(std430, binding = 4) buffer insertionGeometryMorton {
-	uint mortonCode[]; // This is the BLAS collection
-};
-*/
+shared uint mortonCode[(1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection)];
 
 // Expands a 10-bit integer into 30 bits
 // by inserting 2 zeros after each bit.
@@ -75,9 +75,14 @@ layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
 void main() {
 	if ((gl_GlobalInvocationID.y >= (1 << expOfTwo_maxCollectionsForModel)) || (gl_GlobalInvocationID.x >= (1 << expOfTwo_maxGeometryOnCollection))) return;
 
+	mortonCode[(gl_GlobalInvocationID.y * (1 << expOfTwo_maxGeometryOnCollection)) + gl_GlobalInvocationID.x] = morton3D(getMortonPointFromInputGeometry(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x]));
+
+	barrier(); // Ater this barrier all morton codes have been calculated and geometry is going to be sorted
+
 	// Copy the geometry on the final destination.
 	WriteGeometry_ByIndexes(
-		targetBLAS, gl_GlobalInvocationID.y,
+		targetBLAS,
+		gl_GlobalInvocationID.y,
 		gl_GlobalInvocationID.x,
 		transformToGPURepresentation(geometryToInsert[gl_GlobalInvocationID.y].inputCollection[gl_GlobalInvocationID.x])
 	);

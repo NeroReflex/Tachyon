@@ -65,8 +65,7 @@ void main() {
 
 	if (intersectAABB(cameraRay, ReadAABBFromBLAS_ByIndexes(0, 0), ReadModelMatrix_ByIndex(0))) {
 		imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 1));
-	}
-	else {
+	} else {
 		imageStore(debugOutput, pixel_coords, vec4(0, 0, 1, 1));
 	}
 
