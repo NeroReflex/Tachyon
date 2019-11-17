@@ -4,8 +4,11 @@
 
 layout (location = 0) out vec4 FragColor;
 
-layout(location = 0) uniform float gamma; // Acceptable value: 2.2
-layout(location = 1) uniform float exposure; // Acceptable value: 0.1
+layout (std430, binding = HDR_BINDING) buffer hdr {
+	float gamma;
+	float exposure;
+};
+
 
 // Values that stay constant for the whole mesh.
 layout (binding = OUTPUT_BINDING) uniform sampler2D outputSampler;

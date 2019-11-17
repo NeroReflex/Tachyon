@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Camera.h"
+#include "Core/HDR.h"
 #include "GeometryPrimitive.h"
 
 namespace Tachyon {
@@ -22,12 +23,12 @@ namespace Tachyon {
 
 			void reset() noexcept;
 
-			void render(const Core::Camera& camera) noexcept;
+			void render(const Core::HDR& hdr, const Core::Camera& camera) noexcept;
 
 		protected:
 			virtual void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept;
 
-			virtual void onRender(const Core::Camera& camera) noexcept = 0;
+			virtual void onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept = 0;
 
 			virtual void onReset() noexcept = 0;
 

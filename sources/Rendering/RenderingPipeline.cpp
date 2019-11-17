@@ -50,13 +50,13 @@ void RenderingPipeline::reset() noexcept {
 	onReset();
 }
 
-void RenderingPipeline::render(const Core::Camera& camera) noexcept {
+void RenderingPipeline::render(const Core::HDR& hdr, const Core::Camera& camera) noexcept {
 	int windowWidth, windowHeight;
 	glfwGetWindowSize(mWindow, &windowWidth, &windowHeight);
 
 	if ((static_cast<glm::uint32>(windowWidth) != getWidth()) || (static_cast<glm::uint32>(windowHeight) != getHeight())) resize(static_cast<glm::uint32>(windowWidth), static_cast<glm::uint32>(windowHeight));
 
-	onRender(camera);
+	onRender(hdr, camera);
 }
 
 void RenderingPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {}

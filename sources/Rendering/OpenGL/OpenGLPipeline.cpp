@@ -65,10 +65,16 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 	glCreateVertexArrays(1, &mQuadVAO);
 	glBindVertexArray(mQuadVAO);
 
-	// Create final VBOs
-	glCreateBuffers(1, &mQuadVBO);
+	// Create the HDR buffer
+	glCreateBuffers(1, &mHDRBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, mHDRBuffer);
+	glNamedBufferStorage(mHDRBuffer, sizeof(Core::HDR), NULL, GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT);
+	mHDRMappedBuffer = reinterpret_cast<Core::HDR*>(glMapNamedBuffer(mHDRBuffer, GL_WRITE_ONLY));
+	DBG_ASSERT((mHDRMappedBuffer != nullptr));
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, HDR_BINDING, mHDRBuffer);
 
 	// Finalize VBOs
+	glCreateBuffers(1, &mQuadVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, mQuadVBO);
 	glNamedBufferStorage(mQuadVBO, sizeof(glm::vec4) * screenTrianglesPosition.size(), screenTrianglesPosition.data(), 0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
@@ -141,6 +147,9 @@ OpenGLPipeline::~OpenGLPipeline() {
 	// Avoid removing a VAO while it is currently bound
 	glBindVertexArray(0);
 
+	// Remove the HDR buffer
+	glUnmapBuffer(mHDRBuffer);
+
 	// Remove main VAO
 	glDeleteVertexArrays(1, &mQuadVAO);
 
@@ -163,7 +172,7 @@ void OpenGLPipeline::onReset() noexcept {
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-void OpenGLPipeline::onRender(const Core::Camera& camera) noexcept {
+void OpenGLPipeline::onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept {
 	// Clear the previously rendered scene
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -201,8 +210,11 @@ void OpenGLPipeline::onRender(const Core::Camera& camera) noexcept {
 
 	// Switch to the tone mapper program
 	Program::use(*mDisplayWriter);
+	glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
-	// Set parameters to obtain hdr
+	// Set HDR paremeters for rendering
+	*mHDRMappedBuffer = hdr;
+
 	mDisplayWriter->setUniform("gamma", glm::float32(2.2));
 	mDisplayWriter->setUniform("exposure", glm::float32(0.1));
 

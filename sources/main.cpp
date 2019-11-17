@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 		camera.setAspect(windowWidth, windowHeight);
 
 		// Render the scene
-		raytracer->render(camera);
+		raytracer->render(Tachyon::Core::HDR(), camera);
 
 		glfwSwapBuffers(window);
 	}

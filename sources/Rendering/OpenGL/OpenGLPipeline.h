@@ -31,7 +31,7 @@ namespace Tachyon {
 
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept final;
 
-				void onRender(const Core::Camera& camera) noexcept final;
+				void onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept final;
 
 			private:
 				void update() noexcept;
@@ -46,6 +46,13 @@ namespace Tachyon {
 				std::unique_ptr<Pipeline::Program> mRaytracerRender;
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
+
+				GLuint mHDRBuffer;
+
+				/**
+				 * This is the mHDRBuffer memory mapped on the CPU.
+				 */
+				Core::HDR* mHDRMappedBuffer;
 
 				GLuint mRaytracingTLAS;
 

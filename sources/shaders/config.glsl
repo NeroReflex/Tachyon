@@ -47,6 +47,8 @@
 	#define MODELMATRIX_MEMORY_MODEL coherent
 #endif
 
+#define HDR_BINDING 10
+
 #define TLAS_BINDING 0
 #define BLAS_BINDING 1
 #define GEOMETRY_BINDING 2
