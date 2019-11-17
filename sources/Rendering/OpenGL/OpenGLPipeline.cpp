@@ -65,17 +65,23 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 	glCreateVertexArrays(1, &mQuadVAO);
 	glBindVertexArray(mQuadVAO);
 
-	// Create the HDR buffer
+	// Create the HDR uniform buffer
 	glCreateBuffers(1, &mHDRUniformBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, mHDRUniformBuffer);
 	glNamedBufferStorage(mHDRUniformBuffer, sizeof(Core::HDR), NULL, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_UNIFORM_BUFFER, HDR_BINDING, mHDRUniformBuffer);
 
-	// Create the camera buffer
+	// Create the camera uniform buffer
 	glCreateBuffers(1, &mCameraUniformBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, mCameraUniformBuffer);
 	glNamedBufferStorage(mCameraUniformBuffer, sizeof(Core::Camera), NULL, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_UNIFORM_BUFFER, CAMERA_BINDING, mCameraUniformBuffer);
+
+	// Create the insertion geometry attributes buffer
+	glCreateBuffers(1, &mGeometryInsertAttributesUniformBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, mGeometryInsertAttributesUniformBuffer);
+	glNamedBufferStorage(mGeometryInsertAttributesUniformBuffer, sizeof(glm::uint32), NULL, GL_DYNAMIC_STORAGE_BIT);
+	glBindBufferBase(GL_UNIFORM_BUFFER, GEOMETRY_INSERTT_ATTR_BINDING, mGeometryInsertAttributesUniformBuffer);
 
 	// Finalize VBOs
 	glCreateBuffers(1, &mQuadVBO);
@@ -155,6 +161,9 @@ OpenGLPipeline::~OpenGLPipeline() {
 	glDeleteBuffers(1, &mHDRUniformBuffer);
 
 	// Remove the camera buffer
+	glDeleteBuffers(1, &mCameraUniformBuffer);
+
+	// Remove the insert geometry attr buffer uniform
 	glDeleteBuffers(1, &mCameraUniformBuffer);
 
 	// Remove main VAO
@@ -252,15 +261,16 @@ void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCol
 		primitivesCollection.emplace_back(GeometryPrimitive());
 	}
 
-	// Prepare the tomporary input geometry SSBO
+	Program::use(*mRaytracerInsert);
+
+	// Prepare the temporary input geometry SSBO
 	GLuint temporaryInputGeometry;
 	glCreateBuffers(1, &temporaryInputGeometry);
 	glNamedBufferStorage(temporaryInputGeometry, sizeof(glm::vec4) * (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS) * size_t(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection), primitivesCollection.data(), 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, temporaryInputGeometry);
-
-	Program::use(*mRaytracerInsert);
-
-	mRaytracerInsert->setUniform("targetBLAS", targetBLAS);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_INSERT_BINDING, temporaryInputGeometry);
+	
+	glBindBufferBase(GL_UNIFORM_BUFFER, GEOMETRY_INSERTT_ATTR_BINDING, mGeometryInsertAttributesUniformBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::uint32), reinterpret_cast<const void*>(&targetBLAS));
 
 	glBindImageTexture(TLAS_BINDING, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glBindImageTexture(BLAS_BINDING, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);

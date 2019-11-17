@@ -54,6 +54,11 @@ namespace Tachyon {
 				 */
 				GLuint mCameraUniformBuffer;
 
+				/**
+				 * Used to specify geometry attributes while creating a new BLAS.
+				 */
+				GLuint mGeometryInsertAttributesUniformBuffer;
+
 				GLuint mRaytracingTLAS;
 
 				GLuint mRaytracingBLASCollection;

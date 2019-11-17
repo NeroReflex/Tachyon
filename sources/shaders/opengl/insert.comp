@@ -28,9 +28,11 @@ Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
 	return outGeometry;
 }
 
-layout(location = 0) uniform uint targetBLAS;
+layout(std140, binding = GEOMETRY_INSERTT_ATTR_BINDING) uniform geometryAttr {
+	uint targetBLAS;
+};
 
-layout(std430, binding = 3) buffer insertionGeometry {
+layout(std430, binding = GEOMETRY_INSERT_BINDING) buffer insertionGeometry {
 	InputGeometryCollection geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
 };
 
