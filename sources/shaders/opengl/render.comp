@@ -16,7 +16,7 @@ layout(rgba32f, binding = DEBUG_BINDING) uniform writeonly image2D debugOutput;
 
 layout(rgba32f, binding = OUTPUT_BINDING) uniform writeonly image2D renderTarget; // Raytracing output texture
 
-layout (std140, binding = HDR_BINDING) buffer hdr {
+layout (std140, binding = HDR_BINDING) uniform hdr {
 	float gamma;
 	float exposure;
 };
