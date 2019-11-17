@@ -4,33 +4,10 @@
 
 layout (location = 0) out vec4 FragColor;
 
-layout (std430, binding = HDR_BINDING) buffer hdr {
-	float gamma;
-	float exposure;
-};
-
-
 // Values that stay constant for the whole mesh.
 layout (binding = OUTPUT_BINDING) uniform sampler2D outputSampler;
 
 void main() {
-	/*
-	// base pixel colour for image
-	texture(output_image, vec2(gl_FragCoord.xy) / vec2(textureSize(outputSampler, 0))).rgb;
-
-	// Exposure tone mapping
-	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
-
 	// Apply gamma correction and output the result
-	FragColor = vec4(pow(mapped, vec3(1.0 / gamma)), 1.0);
-	*/
-
-	// Base pixel colour for image
-	vec3 hdrColor = texture(outputSampler, vec2(gl_FragCoord.xy) / vec2(textureSize(outputSampler, 0))).rgb;
-
-	// Exposure tone mapping
-	vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
-
-	// Apply gamma correction and output the result
-	FragColor = vec4(pow(mapped, vec3(1.0 / gamma)), 1.0);
+	FragColor = vec4(texture(outputSampler, vec2(gl_FragCoord.xy) / vec2(textureSize(outputSampler, 0))).rgb, 1.0);
 }

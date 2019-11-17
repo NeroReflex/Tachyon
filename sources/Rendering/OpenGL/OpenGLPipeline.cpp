@@ -149,6 +149,7 @@ OpenGLPipeline::~OpenGLPipeline() {
 
 	// Remove the HDR buffer
 	glUnmapBuffer(mHDRBuffer);
+	glDeleteBuffers(1, &mHDRBuffer);
 
 	// Remove main VAO
 	glDeleteVertexArrays(1, &mQuadVAO);
