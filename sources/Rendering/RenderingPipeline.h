@@ -19,7 +19,7 @@ namespace Tachyon {
 
 			virtual ~RenderingPipeline() = default;
 
-			virtual void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept = 0;
+			virtual void enqueueModel(std::vector<GeometryPrimitive>&& primitive, glm::uint32 location, glm::mat4 modelMatrix) noexcept = 0;
 
 			void reset() noexcept;
 

@@ -80,7 +80,7 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 	// Create the insertion geometry attributes buffer
 	glCreateBuffers(1, &mGeometryInsertAttributesUniformBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, mGeometryInsertAttributesUniformBuffer);
-	glNamedBufferStorage(mGeometryInsertAttributesUniformBuffer, sizeof(glm::uint32), NULL, GL_DYNAMIC_STORAGE_BIT);
+	glNamedBufferStorage(mGeometryInsertAttributesUniformBuffer, sizeof(glm::uint32) + sizeof(glm::mat4), NULL, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_UNIFORM_BUFFER, GEOMETRY_INSERTT_ATTR_BINDING, mGeometryInsertAttributesUniformBuffer);
 
 	// Finalize VBOs
@@ -250,7 +250,7 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 
 }
 
-void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, GLuint targetBLAS) noexcept {
+void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, glm::uint32 targetBLAS, glm::mat4 modelMatrix) noexcept {
 	DBG_ASSERT( (targetBLAS < (static_cast<GLuint>(1) << mRaytracerInfo.expOfTwo_numberOfModels)) );
 
 	static_assert( (sizeof(GeometryPrimitive) == sizeof(glm::vec4) ), "Geometry type not matching input GLSL");
