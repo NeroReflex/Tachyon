@@ -73,6 +73,12 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 	DBG_ASSERT((mHDRMappedBuffer != nullptr));
 	glBindBufferBase(GL_UNIFORM_BUFFER, HDR_BINDING, mHDRBuffer);
 
+	// Create the camera buffer
+	glCreateBuffers(1, &mCameraUniformBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, mCameraUniformBuffer);
+	glNamedBufferStorage(mCameraUniformBuffer, sizeof(Core::Camera), NULL, GL_DYNAMIC_STORAGE_BIT);
+	glBindBufferBase(GL_UNIFORM_BUFFER, CAMERA_BINDING, mCameraUniformBuffer);
+
 	// Finalize VBOs
 	glCreateBuffers(1, &mQuadVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, mQuadVBO);
@@ -189,18 +195,12 @@ void OpenGLPipeline::onRender(const Core::HDR& hdr, const Core::Camera& camera) 
 	glBindImageTexture(GEOMETRY_BINDING, mRaytracingGeometryCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 	glBindImageTexture(BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 
+	// Bind the camera uniform buffer
+	glBindBufferBase(GL_UNIFORM_BUFFER, CAMERA_BINDING, mCameraUniformBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Core::Camera), reinterpret_cast<const void*>(&camera));
+	
 	// Bind the texture to be written by the raytracer
 	glBindImageTexture(OUTPUT_BINDING, mRaytracerOutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-	// Set camera parameters
-	mRaytracerRender->setUniform("cameraPosition", camera.getCameraPosition());
-	mRaytracerRender->setUniform("cameraViewDir", camera.getViewDirection());
-	mRaytracerRender->setUniform("cameraUpVector", camera.getUp());
-	mRaytracerRender->setUniform("cameraFoV", camera.getFieldOfView());
-	mRaytracerRender->setUniform("cameraAspect", camera.getAspectRatio());
-	mRaytracerRender->setUniform("cameraLowerLeftCorner", camera.getRaytracingLowerLeftCorner());
-	mRaytracerRender->setUniform("cameraHorizontal", camera.getRaytracingHorizontal());
-	mRaytracerRender->setUniform("cameraVertical", camera.getRaytracingVertical());
 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);

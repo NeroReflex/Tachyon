@@ -47,8 +47,11 @@
 	#define MODELMATRIX_MEMORY_MODEL coherent
 #endif
 
+// UNIFORMs bindings
+#define CAMERA_BINDING 9
 #define HDR_BINDING 10
 
+// TEXTUREs binding
 #define TLAS_BINDING 0
 #define BLAS_BINDING 1
 #define GEOMETRY_BINDING 2

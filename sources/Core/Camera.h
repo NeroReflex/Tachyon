@@ -6,7 +6,8 @@ namespace Tachyon {
 	namespace Core {
 		class Camera {
 		public:
-			static const glm::vec3 UPVector;
+			constexpr static glm::vec3 UPVector = glm::vec3(0, 1, 0);
+			constexpr static glm::vec3 UPReversedVector = glm::vec3(0, -1, 0);
 			
 			Camera(glm::vec3 lookfrom, glm::vec3 lookat, glm::float32 vfov, glm::float32 aspect, glm::vec3 vup = Camera::UPVector) noexcept;
 
@@ -34,22 +35,31 @@ namespace Tachyon {
 			void update() noexcept;
 
 			/**
-			 * Field of View in degrees.
-			 */
-			glm::float32 mFoV;
-			glm::float32 mAspectRatio;
-			glm::vec3 mUPVector;
-
-			/**
 			 * Camera position in space
 			 */
-			glm::vec3 mOrigin;
+			alignas(sizeof(glm::vec4)) glm::vec3 mOrigin;
 
 			/**
 			 * Camera looking direction
 			 */
-			glm::vec3 mLookingDir;
+			alignas(sizeof(glm::vec4)) glm::vec3 mLookingDir;
+
+			/**
+			 * Camera UP vector use (0, -1, 0) to reverse
+			 */
+			alignas(sizeof(glm::vec4)) glm::vec3 mUPVector;
 			
+			/**
+			 * Field of View in degrees.
+			 */
+			alignas(sizeof(glm::float32)) glm::float32 mFoV;
+
+			/**
+			 * Aspect ratio (16:9 and so on...)
+			 */
+			alignas(sizeof(glm::float32)) glm::float32 mAspectRatio;
+
+
 			glm::vec3 mLowerLeftCorner;
 			glm::vec3 mHorizontal;
 			glm::vec3 mVertical;

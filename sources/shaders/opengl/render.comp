@@ -21,15 +21,13 @@ layout (std140, binding = HDR_BINDING) uniform hdr {
 	float exposure;
 };
 
-layout (location = 2) uniform vec3 cameraPosition;
-layout (location = 3) uniform vec3 cameraViewDir;
-layout (location = 4) uniform vec3 cameraUpVector;
-layout (location = 5) uniform float cameraFoV;
-layout (location = 6)  uniform float cameraAspect;
-
-layout (location = 7) uniform vec3 cameraLowerLeftCorner;
-layout (location = 8) uniform vec3 cameraHorizontal;
-layout (location = 9) uniform vec3 cameraVertical;
+layout (std140, binding = CAMERA_BINDING) uniform cameraData {
+	vec3 cameraPosition;
+	vec3 cameraViewDir;
+	vec3 cameraUpVector;
+	float cameraFoV;
+	float cameraAspect;
+};
 
 /**
  * This is the entry point for the rendering program.
@@ -56,8 +54,8 @@ void main() {
 	const Camera camera = Camera(cameraPosition, cameraViewDir, cameraUpVector, cameraFoV, cameraAspect);
 
 	// Generate camera ray
-	//const Ray cameraRay = generateCameraRay(camera, u, v);
-	const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
+	const Ray cameraRay = generateCameraRayFromCamera(camera, u, v);
+	//const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
 
 	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
 

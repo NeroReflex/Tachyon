@@ -54,6 +54,11 @@ namespace Tachyon {
 				 */
 				Core::HDR* mHDRMappedBuffer;
 
+				/**
+				 * Used to specify the camera to the render shader.
+				 */
+				GLuint mCameraUniformBuffer;
+
 				GLuint mRaytracingTLAS;
 
 				GLuint mRaytracingBLASCollection;
