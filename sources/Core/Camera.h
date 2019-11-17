@@ -60,9 +60,11 @@ namespace Tachyon {
 			alignas(sizeof(glm::float32)) glm::float32 mAspectRatio;
 
 
-			glm::vec3 mLowerLeftCorner;
-			glm::vec3 mHorizontal;
-			glm::vec3 mVertical;
+			alignas(sizeof(glm::vec4)) glm::vec3 mLowerLeftCorner;
+
+			alignas(sizeof(glm::vec4)) glm::vec3 mHorizontal;
+
+			alignas(sizeof(glm::vec4)) glm::vec3 mVertical;
 		};
 	}
 }

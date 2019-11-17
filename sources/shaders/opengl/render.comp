@@ -27,6 +27,10 @@ layout (std140, binding = CAMERA_BINDING) uniform cameraData {
 	vec3 cameraUpVector;
 	float cameraFoV;
 	float cameraAspect;
+
+	vec3 cameraLowerLeftCorner;
+	vec3 cameraHorizontal;
+	vec3 cameraVertical;
 };
 
 /**
@@ -54,8 +58,8 @@ void main() {
 	const Camera camera = Camera(cameraPosition, cameraViewDir, cameraUpVector, cameraFoV, cameraAspect);
 
 	// Generate camera ray
-	const Ray cameraRay = generateCameraRayFromCamera(camera, u, v);
-	//const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
+	//const Ray cameraRay = generateCameraRayFromCamera(camera, u, v);
+	const Ray cameraRay = generateCameraRayFromScreenCoord(camera.lookFrom, cameraLowerLeftCorner, cameraHorizontal, cameraVertical, u, v);
 
 	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
 
