@@ -47,12 +47,7 @@ namespace Tachyon {
 
 				std::unique_ptr<Pipeline::Program> mDisplayWriter;
 
-				GLuint mHDRBuffer;
-
-				/**
-				 * This is the mHDRBuffer memory mapped on the CPU.
-				 */
-				Core::HDR* mHDRMappedBuffer;
+				GLuint mHDRUniformBuffer;
 
 				/**
 				 * Used to specify the camera to the render shader.
