@@ -2,6 +2,8 @@
 
 #include "Rendering/RenderingPipeline.h"
 
+#include "Utils/Instance.h"
+
 // befause a float is 4 bytes, and a vec4 is four floats
 #define VULKAN_SIZEOF_RGBA32F 4 * 4
 
@@ -18,6 +20,8 @@ namespace Tachyon {
 				};
 
 			public:
+				VulkanPipeline(GLFWwindow* window) noexcept;
+
 				VulkanPipeline(const VulkanPipeline&) = delete;
 
 				VulkanPipeline(VulkanPipeline&&) = delete;
@@ -26,16 +30,14 @@ namespace Tachyon {
 
 				~VulkanPipeline() override;
 
-				VulkanPipeline(GLFWwindow* window) noexcept;
-
-				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, GLuint location) noexcept final;
+				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, const GeometryInsertAttributes& insertData) noexcept final;
 				
 			protected:
 				void onReset() noexcept final;
 
 				void onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept final;
 
-				void onRender(const Core::Camera& camera) noexcept final;
+				void onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept final;
 
 			private:
 				VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept;
@@ -45,11 +47,6 @@ namespace Tachyon {
 				VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const noexcept;
 
 				VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept;
-
-				/**
-				 * Create a Vulkan instance.
-				 */
-				void createInstance() noexcept;
 
 				/**
 				 * Check if the given physical device support all required extensions.
@@ -135,10 +132,6 @@ namespace Tachyon {
 					const char* pLayerPrefix,
 					const char* pMessage,
 					void* pUserData);
-				
-				std::vector<const char*> mEnabledExtensions;
-
-				std::vector<const char*> mEnabledLayers;
 
 				struct SurfaceSwapchain {
 					VkSurfaceFormatKHR surfaceFormat;
@@ -149,11 +142,7 @@ namespace Tachyon {
 				/**
 				 * In order to use Vulkan, you must create an instance.
 				 */
-				VkInstance mInstance;
-
-#if defined(VULKAN_ENABLE_VALIDATION_LAYERS)
-				VkDebugReportCallbackEXT debugReportCallback;
-#endif
+				std::shared_ptr<Utils::Instance> gInstance;
 
 				SwapChainSupportDetails mSwapChainSupport;
 

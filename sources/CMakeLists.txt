@@ -56,7 +56,7 @@ add_custom_target(
 	
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}/shaders
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}/shaders/opengl
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}
 
 	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -DRENDER -o "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_render.comp.spv" "${SHADERS_SOURCE_DIR}/programs/render.comp"
 	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/raytrace_render.comp.spv.h" "raytrace_render_comp${GLSL_EMBED_TARGET_POSTFIX}"
@@ -80,6 +80,6 @@ add_custom_target(
 		
 	COMMENT "Compiling shaders to SPIR-V"
 	SOURCES ${SHADERS_SOURCE_DIR}/programs/render.comp ${SHADERS_SOURCE_DIR}/programs/flush.comp ${SHADERS_SOURCE_DIR}/programs/insert.comp ${SHADERS_SOURCE_DIR}/programs/update.comp ${SHADERS_SOURCE_DIR}/programs/tonemapping.vert ${SHADERS_SOURCE_DIR}/programs/tonemapping.frag
-	)
+)
 
 add_dependencies(Tachyon spirv_shaders)

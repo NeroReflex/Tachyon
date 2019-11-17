@@ -5,8 +5,8 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 
 project (Tachyon)
 
-option(USE_OPENGL "Enable OpenGL support if the SKD is present" ON)
-option(USE_VULKAN "Enable vulkan support if the SDK is present" OFF)
+option(USE_OPENGL "Enable OpenGL support if the SKD is present" OFF)
+option(USE_VULKAN "Enable vulkan support if the SDK is present" ON)
 
 include(${PROJECT_SOURCE_DIR}/cmake/file2c.cmake)
 
