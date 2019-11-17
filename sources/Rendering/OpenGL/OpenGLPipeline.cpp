@@ -250,9 +250,7 @@ void OpenGLPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 
 }
 
-void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, glm::uint32 targetBLAS, glm::mat4 modelMatrix) noexcept {
-	DBG_ASSERT( (targetBLAS < (static_cast<GLuint>(1) << mRaytracerInfo.expOfTwo_numberOfModels)) );
-
+void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCollection, const GeometryInsertAttributes& insertData) noexcept {
 	static_assert( (sizeof(GeometryPrimitive) == sizeof(glm::vec4) ), "Geometry type not matching input GLSL");
 	
 	// When creating the SSBO used to write geometry on the GPU the primitivesCollection vector will be read sequentially for the entire SSBO length, so make sure that won't generate a SEGFAULT or incorrect AABBs...
@@ -270,7 +268,7 @@ void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCol
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_INSERT_BINDING, temporaryInputGeometry);
 	
 	glBindBufferBase(GL_UNIFORM_BUFFER, GEOMETRY_INSERTT_ATTR_BINDING, mGeometryInsertAttributesUniformBuffer);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::uint32), reinterpret_cast<const void*>(&targetBLAS));
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GeometryInsertAttributes), reinterpret_cast<const void*>(&insertData));
 
 	glBindImageTexture(TLAS_BINDING, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 	glBindImageTexture(BLAS_BINDING, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);

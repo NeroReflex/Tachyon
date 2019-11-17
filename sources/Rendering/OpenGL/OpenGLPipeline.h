@@ -22,10 +22,8 @@ namespace Tachyon {
 
 				OpenGLPipeline(GLFWwindow* window) noexcept;
 
-				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, glm::uint32 location, glm::mat4 modelMatrix) noexcept final;
+				void enqueueModel(std::vector<GeometryPrimitive>&& primitive, const GeometryInsertAttributes& insertData) noexcept final;
 				
-				
-
 			protected:
 				void onReset() noexcept final;
 

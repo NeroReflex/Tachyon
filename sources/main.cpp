@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
 		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, 90, -1), 0.5),
 		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0.75, 90, -1.5), 0.25),
 		Tachyon::Rendering::GeometryPrimitive(glm::vec3(0, -10.5, -1), 100),
-		}, 0, glm::mat4(1));
+		}, Tachyon::Rendering::RenderingPipeline::GeometryInsertAttributes(glm::mat4(1), 0));
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();

@@ -29,6 +29,7 @@ Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
 }
 
 layout(std140, binding = GEOMETRY_INSERTT_ATTR_BINDING) uniform geometryAttr {
+	mat4 modelMatrix;
 	uint targetBLAS;
 };
 
@@ -115,7 +116,7 @@ void main() {
 	}
 
 	// At the very end, flag the BLAS as used/occupied
-	WriteModelMatrix_ByIndex(targetBLAS, identityTransform);
+	WriteModelMatrix_ByIndex(targetBLAS, modelMatrix);
 
 	// Perform a TLAS update after everything has been written on BLAS and geometry data collection
 	barrier();
