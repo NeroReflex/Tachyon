@@ -38,7 +38,7 @@ void main() {
 			WriteAABBOnTLAS_ByIndex(indexOfNodeInTLAS, emptyAABB);
 		}
 
-		// This nuke the entire BLAS
+		// This nukes the entire BLAS
 		for (uint blasLinearNode = 0; blasLinearNode < (numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxModels)); ++blasLinearNode) {
 			WriteAABBOnBLAS_ByIndexes(indexOfBLASToNuke, blasLinearNode, emptyAABB);
 

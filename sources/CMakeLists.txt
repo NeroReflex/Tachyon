@@ -46,7 +46,7 @@ if(USE_OPENGL)
 		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DRENDER -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_render.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/render.comp"
 		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/raytrace_render.comp.spv.h" "raytrace_render_compOGL"
 
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/nuke.comp"
+		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/flush.comp"
 		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/raytrace_flush.comp.spv.h" "raytrace_flush_compOGL"
 
 		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DBVH_INSERT -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/insert.comp"
@@ -64,7 +64,7 @@ if(USE_OPENGL)
 		DEPENDS bin2c_serialize
 		
 		COMMENT "Compiling OpenGL shaders to SPIR-V"
-		SOURCES ${SHADERS_SOURCE_DIR}/opengl/render.comp ${SHADERS_SOURCE_DIR}/opengl/nuke.comp ${SHADERS_SOURCE_DIR}/opengl/insert.comp ${SHADERS_SOURCE_DIR}/opengl/update.comp ${SHADERS_SOURCE_DIR}/opengl/tonemapping.vert ${SHADERS_SOURCE_DIR}/opengl/tonemapping.frag
+		SOURCES ${SHADERS_SOURCE_DIR}/opengl/render.comp ${SHADERS_SOURCE_DIR}/opengl/flush.comp ${SHADERS_SOURCE_DIR}/opengl/insert.comp ${SHADERS_SOURCE_DIR}/opengl/update.comp ${SHADERS_SOURCE_DIR}/opengl/tonemapping.vert ${SHADERS_SOURCE_DIR}/opengl/tonemapping.frag
 	)
 
 	add_dependencies(Tachyon spirv_opengl_shaders)

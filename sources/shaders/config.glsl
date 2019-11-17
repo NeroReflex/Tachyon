@@ -48,8 +48,8 @@
 #endif
 
 // UNIFORMs bindings
-#define CAMERA_BINDING 9
-#define HDR_BINDING 10
+#define CAMERA_BINDING 6
+#define HDR_BINDING 7
 
 // TEXTUREs binding
 #define TLAS_BINDING 0
