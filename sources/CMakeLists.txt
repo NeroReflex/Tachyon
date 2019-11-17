@@ -25,49 +25,17 @@ if (is_debug_build)
 	set(GLSL_COMPILE_DEBUG_FLAG "-g")
 endif()
 
+set(GLSL_TARGET_SHADER_DIR "opengl")
+set(GLSL_TARGET_ENV "opengl4.5")
+set(GLSL_EMBED_TARGET_POSTFIX "OGL")
+set(EMBEDDED_GLSL_SHADERS_DIR ${CMAKE_BINARY_DIR}/opengl)
+
 set(SHADERS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/sources/shaders)
 if(USE_OPENGL)
 	add_compile_definitions(OPENGL_SUPPORT)
 
 	add_dependencies(Tachyon gl3w)
 	target_link_libraries(Tachyon gl3w)
-
-	# Generate OpenGL SPIR-V
-	set(EMBEDDED_GL_SHADERS_DIR ${CMAKE_BINARY_DIR}/opengl)
-	include_directories(${EMBEDDED_GL_SHADERS_DIR})
-
-	add_custom_target(
-		spirv_opengl_shaders ALL
-	
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}/shaders
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl
-
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DRENDER -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_render.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/render.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/raytrace_render.comp.spv.h" "raytrace_render_compOGL"
-
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/flush.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_flush.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/raytrace_flush.comp.spv.h" "raytrace_flush_compOGL"
-
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DBVH_INSERT -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/insert.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_insert.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/raytrace_insert.comp.spv.h" "raytrace_insert_compOGL"
-
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_UPDATE -o "${EMBEDDED_GL_SHADERS_DIR}/raytrace_update.comp.spv" "${SHADERS_SOURCE_DIR}/opengl/update.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/raytrace_update.comp.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/raytrace_update.comp.spv.h" "raytrace_update_compOGL"
-
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -o "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.vert.spv" "${SHADERS_SOURCE_DIR}/opengl/tonemapping.vert"
-		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.vert.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/tonemapping.vert.spv.h" "tonemapping_vertOGL"
-
-		COMMAND glslc --target-env=opengl4.5 ${GLSL_COMPILE_DEBUG_FLAG} -o "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.frag.spv" "${SHADERS_SOURCE_DIR}/opengl/tonemapping.frag"
-		COMMAND bin2c_serialize "${EMBEDDED_GL_SHADERS_DIR}/tonemapping.frag.spv" "${EMBEDDED_GL_SHADERS_DIR}/shaders/opengl/tonemapping.frag.spv.h" "tonemapping_fragOGL"
-
-		DEPENDS bin2c_serialize
-		
-		COMMENT "Compiling OpenGL shaders to SPIR-V"
-		SOURCES ${SHADERS_SOURCE_DIR}/opengl/render.comp ${SHADERS_SOURCE_DIR}/opengl/flush.comp ${SHADERS_SOURCE_DIR}/opengl/insert.comp ${SHADERS_SOURCE_DIR}/opengl/update.comp ${SHADERS_SOURCE_DIR}/opengl/tonemapping.vert ${SHADERS_SOURCE_DIR}/opengl/tonemapping.frag
-	)
-
-	add_dependencies(Tachyon spirv_opengl_shaders)
 elseif(USE_VULKAN)
 	add_compile_definitions(VULKAN_SUPPORT)
 
@@ -75,36 +43,43 @@ elseif(USE_VULKAN)
 
 	target_link_libraries(Tachyon ${Vulkan_LIBRARIES})
 
-	# Generate OpenGL SPIR-V
-	set(EMBEDDED_VULKAN_SHADERS_DIR ${CMAKE_BINARY_DIR}/vulkan)
-	include_directories(${EMBEDDED_VULKAN_SHADERS_DIR})
-
-	add_custom_target(
-		spirv_vulkan_shaders ALL
-	
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_VULKAN_SHADERS_DIR}
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_VULKAN_SHADERS_DIR}/shaders
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan
-
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DRENDER -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_render.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/render.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_render.comp.spv.h" "raytrace_render_compVK"
-
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/flush.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_flush.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_flush.comp.spv.h" "raytrace_flush_compVK"
-
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DBVH_INSERT -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_insert.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/insert.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_insert.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_insert.comp.spv.h" "raytrace_insert_compVK"
-
-		COMMAND glslc --target-env=vulkan ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_UPDATE -o "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_update.comp.spv" "${SHADERS_SOURCE_DIR}/vulkan/update.comp"
-		COMMAND bin2c_serialize "${EMBEDDED_VULKAN_SHADERS_DIR}/raytrace_update.comp.spv" "${EMBEDDED_VULKAN_SHADERS_DIR}/shaders/vulkan/raytrace_update.comp.spv.h" "raytrace_update_compVK"
-
-		DEPENDS bin2c_serialize
-		
-		COMMENT "Compiling Vulkan shaders to SPIR-V"
-		SOURCES ${SHADERS_SOURCE_DIR}/vulkan/render.comp ${SHADERS_SOURCE_DIR}/vulkan/flush.comp ${SHADERS_SOURCE_DIR}/vulkan/insert.comp ${SHADERS_SOURCE_DIR}/vulkan/update.comp
-	)
-
-	add_dependencies(Tachyon spirv_vulkan_shaders)
+	set(GLSL_TARGET_SHADER_DIR "vulkan")
+	set(GLSL_TARGET_ENV "vulkan")
+	set(GLSL_EMBED_TARGET_POSTFIX "VK")
+	set(EMBEDDED_GLSL_SHADERS_DIR ${CMAKE_BINARY_DIR}/vulkan)
 endif()
 
+include_directories(${EMBEDDED_GLSL_SHADERS_DIR})
 
+add_custom_target(
+	spirv_shaders ALL
+	
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}/shaders
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${EMBEDDED_GLSL_SHADERS_DIR}/shaders/opengl
+
+	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -DRENDER -o "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_render.comp.spv" "${SHADERS_SOURCE_DIR}/programs/render.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_render.comp.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/raytrace_render.comp.spv.h" "raytrace_render_comp${GLSL_EMBED_TARGET_POSTFIX}"
+
+	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_FLUSH -o "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_flush.comp.spv" "${SHADERS_SOURCE_DIR}/programs/flush.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_flush.comp.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/raytrace_flush.comp.spv.h" "raytrace_flush_comp${GLSL_EMBED_TARGET_POSTFIX}"
+
+	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -DBVH_INSERT -o "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_insert.comp.spv" "${SHADERS_SOURCE_DIR}/programs/insert.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_insert.comp.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/raytrace_insert.comp.spv.h" "raytrace_insert_comp${GLSL_EMBED_TARGET_POSTFIX}"
+
+	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -DTLAS_UPDATE -o "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_update.comp.spv" "${SHADERS_SOURCE_DIR}/programs/update.comp"
+	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/raytrace_update.comp.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/raytrace_update.comp.spv.h" "raytrace_update_comp${GLSL_EMBED_TARGET_POSTFIX}"
+
+	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -o "${EMBEDDED_GLSL_SHADERS_DIR}/tonemapping.vert.spv" "${SHADERS_SOURCE_DIR}/programs/tonemapping.vert"
+	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/tonemapping.vert.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/tonemapping.vert.spv.h" "tonemapping_vert${GLSL_EMBED_TARGET_POSTFIX}"
+
+	COMMAND glslc --target-env=${GLSL_TARGET_ENV} ${GLSL_COMPILE_DEBUG_FLAG} -o "${EMBEDDED_GLSL_SHADERS_DIR}/tonemapping.frag.spv" "${SHADERS_SOURCE_DIR}/programs/tonemapping.frag"
+	COMMAND bin2c_serialize "${EMBEDDED_GLSL_SHADERS_DIR}/tonemapping.frag.spv" "${EMBEDDED_GLSL_SHADERS_DIR}/shaders/${GLSL_TARGET_SHADER_DIR}/tonemapping.frag.spv.h" "tonemapping_frag${GLSL_EMBED_TARGET_POSTFIX}"
+
+	DEPENDS bin2c_serialize
+		
+	COMMENT "Compiling shaders to SPIR-V"
+	SOURCES ${SHADERS_SOURCE_DIR}/programs/render.comp ${SHADERS_SOURCE_DIR}/programs/flush.comp ${SHADERS_SOURCE_DIR}/programs/insert.comp ${SHADERS_SOURCE_DIR}/programs/update.comp ${SHADERS_SOURCE_DIR}/programs/tonemapping.vert ${SHADERS_SOURCE_DIR}/programs/tonemapping.frag
+	)
+
+add_dependencies(Tachyon spirv_shaders)
