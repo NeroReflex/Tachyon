@@ -24,6 +24,53 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanPipeline::debugReportCallbackFn(
 	return VK_FALSE;
 }
 
+VulkanPipeline::PhysicalDeviceSelector::PhysicalDeviceSelector(VkSurfaceKHR surface) noexcept
+	: mSurface(surface) {}
+
+bool VulkanPipeline::PhysicalDeviceSelector::operator()(VkPhysicalDevice physicalDevice) const noexcept {
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+
+	VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+	bool swapChainAdequate = false;
+	SwapChainSupportDetails swapChainSupport;
+
+	{ // retrieve swapchain data
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, mSurface, &swapChainSupport.capabilities);
+
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, mSurface, &formatCount, nullptr);
+
+		if (formatCount != 0) {
+			swapChainSupport.formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, mSurface, &formatCount, swapChainSupport.formats.data());
+		}
+
+		uint32_t presentModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, mSurface, &presentModeCount, nullptr);
+
+		if (presentModeCount != 0) {
+			swapChainSupport.presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, mSurface, &presentModeCount, swapChainSupport.presentModes.data());
+		}
+	}
+	
+	swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+
+	return swapChainAdequate;
+}
+
+bool VulkanPipeline::QueueFamilySelector::operator()(VkInstance instance, VkPhysicalDevice physicalDevice, const uint32_t& queueFamilyIndex, const VkQueueFamilyProperties& queueProperties) const noexcept {
+	return ((glfwGetPhysicalDevicePresentationSupport(instance, physicalDevice, queueFamilyIndex)) &&
+		(queueProperties.queueCount) > 0 &&
+		(queueProperties.queueFlags & VK_QUEUE_COMPUTE_BIT) &&
+		(queueProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+		(queueProperties.queueFlags & VK_QUEUE_TRANSFER_BIT)
+	);
+}
+
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window), gInstance(nullptr) {
 
@@ -38,8 +85,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 
 	VK_CHECK_RESULT(glfwCreateWindowSurface(gInstance->getNativeHandle(), window, NULL, &mSurface));
 
-	findPhysicalDevice();
-	createLogicalDevice();
+	//findPhysicalDevice();
+
+	//createLogicalDevice();
+
 	createSwapChain();
 	createCoreBuffers();
 	createPipeline();
@@ -71,66 +120,6 @@ VulkanPipeline::~VulkanPipeline() {
 
 	// As I am for sure not going to use vulkan for anything else at this point just destroy the instance
 	vkDestroyInstance(gInstance->getNativeHandle(), NULL);
-}
-
-void VulkanPipeline::findPhysicalDevice() noexcept {
-	//list all physical devices on the system with vkEnumeratePhysicalDevices
-	glm::uint32 deviceCount;
-	vkEnumeratePhysicalDevices(gInstance->getNativeHandle(), &deviceCount, NULL);
-	
-	DBG_ASSERT( (deviceCount > 0) ); // could not find a device with Vulkan support
-
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(gInstance->getNativeHandle(), &deviceCount, devices.data());
-
-	// TODO: better check features
-	bool deviceFound = false;
-	for (VkPhysicalDevice physicalDevice : devices) {
-
-		VkPhysicalDeviceFeatures deviceFeatures;
-		vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
-
-		VkPhysicalDeviceProperties deviceProperties;
-		vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-
-		bool swapChainAdequate = false;
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
-		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-
-		if ((swapChainAdequate) &&
-			(checkDeviceExtensionSupport(physicalDevice)) &&
-			(deviceProperties.limits.maxComputeWorkGroupInvocations >= (32*48)) &&
-			(deviceProperties.limits.maxImageDimension1D >= mRaytracerRequirements.mTLASTexels_Width) &&
-			(deviceProperties.limits.maxImageDimension2D >= glm::max(mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)) &&
-			(deviceProperties.limits.maxImageDimension3D >= glm::max(glm::max(mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height), mRaytracerRequirements.mGeometryCollectionTexels_Depth)) &&
-			(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)) {
-
-			DBG_ONLY(	printf("Chosen Vulkan GPU: %s\n\n", deviceProperties.deviceName ) );
-
-			mPhysicalDevice = physicalDevice;
-			mSwapChainSupport = swapChainSupport;
-			deviceFound = true;
-			break;
-		}
-	}
-
-	DBG_ASSERT(deviceFound); // No suitable Vulkan device found
-}
-
-bool VulkanPipeline::checkDeviceExtensionSupport(VkPhysicalDevice device) noexcept {
-	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-	std::set<std::string> requiredExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
-
-	for (const auto& extension : availableExtensions) {
-		requiredExtensions.erase(extension.extensionName);
-	}
-
-	return requiredExtensions.empty();
 }
 
 VkExtent2D VulkanPipeline::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept {
@@ -166,30 +155,6 @@ VkSurfaceFormatKHR VulkanPipeline::chooseSwapSurfaceFormat(const std::vector<VkS
 	return availableFormats[0];
 }
 
-VulkanPipeline::SwapChainSupportDetails VulkanPipeline::querySwapChainSupport(VkPhysicalDevice device) const noexcept {
-	SwapChainSupportDetails details;
-	
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
-
-	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
-
-	if (formatCount != 0) {
-		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.formats.data());
-	}
-
-	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
-
-	if (presentModeCount != 0) {
-		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.presentModes.data());
-	}
-	
-	return details;
-}
-
 void VulkanPipeline::createSwapChain() noexcept {
 	mSurfaceSwapchain.surfaceFormat = chooseSwapSurfaceFormat(mSwapChainSupport.formats);
 	mSurfaceSwapchain.presentMode = chooseSwapPresentMode(mSwapChainSupport.presentModes);
@@ -223,67 +188,7 @@ void VulkanPipeline::createSwapChain() noexcept {
 	
 }
 
-void VulkanPipeline::createLogicalDevice() noexcept {
-	pickQueueFamilyIndex(); // find queue family with all required capability and store that queue in mQueueFamilyIndex (referenced later on).
 
-	// When creating the device, we also specify what queues it has.
-	VkDeviceQueueCreateInfo queueCreateInfo = {};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
-	queueCreateInfo.queueCount = 1; // create one queue in this family. We don't need more.
-	float queuePriorities = 1.0;  // we only have one queue, so this is not that imporant. 
-	queueCreateInfo.pQueuePriorities = &queuePriorities;
-
-	//Now we create the logical device. The logical device allows us to interact with the physical device.
-	VkDeviceCreateInfo deviceCreateInfo = {};
-
-	// Specify any desired device features here. We do not need any for this application, though.
-	VkPhysicalDeviceFeatures deviceFeatures = {};
-
-	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mEnabledLayers.size());  // need to specify validation layers here as well.
-	deviceCreateInfo.ppEnabledLayerNames = mEnabledLayers.data();
-	deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo; // when creating the logical device, we also specify what queues it has.
-	deviceCreateInfo.queueCreateInfoCount = 1;
-	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
-
-	VK_CHECK_RESULT(vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, NULL, &mDevice)); // create logical device.
-
-	// Get a handle to the only member of the queue family.
-	vkGetDeviceQueue(mDevice, mQueueFamilyIndex, 0, &mQueue);
-}
-
-// Returns the index of a queue family that supports compute operations. 
-void VulkanPipeline::pickQueueFamilyIndex() noexcept {
-	uint32_t queueFamilyCount;
-	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, NULL);
-
-	// Retrieve all queue families.
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, queueFamilies.data());
-
-	// Now find a family that supports compute.
-	for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
-		const VkQueueFamilyProperties& props = queueFamilies[i];
-
-		if ((glfwGetPhysicalDevicePresentationSupport(gInstance->getNativeHandle(), mPhysicalDevice, i)) &&
-			(props.queueCount) > 0 && (
-			(props.queueFlags & VK_QUEUE_COMPUTE_BIT) && 
-			(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
-			(props.queueFlags & VK_QUEUE_TRANSFER_BIT)
-			)) {
-			// found a candidate!
-
-			mQueueFamilyIndex = i;
-
-			mQueueProperties = props;
-
-			return;
-		}
-	}
-
-	DBG_ASSERT( false ); // could not find a queue family that supports required operations
-}
 
 uint32_t VulkanPipeline::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) noexcept {
 	VkPhysicalDeviceMemoryProperties memoryProperties;

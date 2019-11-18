@@ -10,10 +10,11 @@ namespace Tachyon {
 				/**
 				 * Represents an object that depends on a vulkan instance.
 				 */
-				class InstanceObject {
+				class InstanceObject :
+					virtual public VulkanManaged {
 
 				public:
-					InstanceObject(const std::weak_ptr<Instance>& instance) noexcept;
+					InstanceObject(const std::shared_ptr<Instance>& instance) noexcept;
 
 					InstanceObject(const InstanceObject&) = delete;
 
@@ -24,6 +25,9 @@ namespace Tachyon {
 					virtual ~InstanceObject();
 
 					std::shared_ptr<Instance> getInstance() const noexcept;
+
+				protected:
+					const std::vector<const char*>& getInstanceEnabledValidationLayers() const noexcept;
 
 				private:
 					std::weak_ptr<Instance> mInstance;

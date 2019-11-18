@@ -8,8 +8,7 @@ endif()
 
 add_executable(Tachyon main.cpp Core/Camera.cpp Core/Triangle.cpp Core/HDR.cpp Rendering/RenderingPipeline.cpp Rendering/GeometryPrimitive.cpp ${OPENGL_SOURCES} ${VULKAN_SOURCES})
 
-# Set C++11 standard
-set_property(TARGET Tachyon PROPERTY CXX_STANDARD 11)
+set_property(TARGET Tachyon PROPERTY CXX_STANDARD 17)
 
 add_dependencies(Tachyon glfw)
 

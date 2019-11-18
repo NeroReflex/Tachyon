@@ -1,9 +1,30 @@
 #include "Instance.h"
+#include "PhysicalDevice.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Utils;
+
+Instance::PhysicalDeviceSupportingExtensionsSelector::PhysicalDeviceSupportingExtensionsSelector(std::vector<const char*> extensions) noexcept
+	: mRequiredExtensions(extensions) {}
+
+bool Instance::PhysicalDeviceSupportingExtensionsSelector::operator()(VkPhysicalDevice physicalDevice) const noexcept {
+	uint32_t extensionCount;
+	vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+	vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+	// TODO: move this out
+	std::set<std::string> requiredExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
+
+	for (const auto& extension : availableExtensions) {
+		requiredExtensions.erase(extension.extensionName);
+	}
+
+	return requiredExtensions.empty();
+}
 
 Instance::Instance(VkInstance instance) noexcept
 	: mInstance(instance) {}
@@ -136,6 +157,27 @@ const VkInstance& Instance::getNativeHandle() const noexcept
 	return mInstance;
 }
 
-std::shared_ptr<PhysicalDevice> Instance::selectPhysicalDevice() const noexcept {
-	
+std::shared_ptr<PhysicalDevice> Instance::selectPhysicalDevice(const PhysicalDeviceSelector& selector, std::optional<VkSurfaceKHR> surface) const noexcept {
+	//list all physical devices on the system with vkEnumeratePhysicalDevices
+	glm::uint32 deviceCount;
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, NULL);
+
+	DBG_ASSERT((deviceCount > 0)); // could not find a device with Vulkan support
+
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+
+	uint64_t bestScore = 0;
+	VkPhysicalDevice bestDevice;
+	for (VkPhysicalDevice physicalDevice : devices) {
+		if (selector(physicalDevice)) {
+			uint64_t currentDeviceScore = 1;
+
+			if (currentDeviceScore > bestScore) {
+				bestDevice = physicalDevice;
+			}
+		}
+	}
+
+	return (bestScore > 0) ? std::make_shared<PhysicalDevice>(this->shared_from_this(), std::move(bestDevice), surface) : std::shared_ptr<PhysicalDevice>(nullptr);
 }

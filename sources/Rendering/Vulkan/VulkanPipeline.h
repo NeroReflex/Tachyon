@@ -3,6 +3,7 @@
 #include "Rendering/RenderingPipeline.h"
 
 #include "Utils/Instance.h"
+#include "Utils/PhysicalDevice.h"
 
 // befause a float is 4 bytes, and a vec4 is four floats
 #define VULKAN_SIZEOF_RGBA32F 4 * 4
@@ -13,6 +14,24 @@ namespace Tachyon {
 			class VulkanPipeline final :
 				virtual public Rendering::RenderingPipeline {
 				
+				class PhysicalDeviceSelector :
+					Utils::Instance::PhysicalDeviceSelector {
+
+					VkSurfaceKHR mSurface;
+
+				public:
+					PhysicalDeviceSelector(VkSurfaceKHR surface) noexcept;
+
+					bool operator()(VkPhysicalDevice physicalDevice) const noexcept override;
+				};
+
+				class QueueFamilySelector :
+					virtual public Utils::PhysicalDevice::QueueFamilySelector {
+
+				public:
+					bool operator()(VkInstance instance, VkPhysicalDevice physicalDevice, const uint32_t& queueFamilyIndex, const VkQueueFamilyProperties& queueProperties) const noexcept override;
+				};
+
 				struct SwapChainSupportDetails {
 					VkSurfaceCapabilitiesKHR capabilities;
 					std::vector<VkSurfaceFormatKHR> formats;
@@ -42,26 +61,9 @@ namespace Tachyon {
 			private:
 				VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept;
 
-				SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) const noexcept;
-
 				VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const noexcept;
 
 				VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept;
-
-				/**
-				 * Check if the given physical device support all required extensions.
-				 *
-				 * @param device the physical device
-				 * @return TRUE iif the given device does support all required extensions
-				 */
-				bool checkDeviceExtensionSupport(VkPhysicalDevice device) noexcept;
-
-				/*
-				 * Select the most suitable physical device that can be used with Vulkan.
-				 *
-				 * Note: must be called after createInstance()
-				 */
-				void findPhysicalDevice() noexcept;
 
 				/**
 				 * Create the best swapchain possible for the selected device.
@@ -69,20 +71,6 @@ namespace Tachyon {
 				 * Note: must be called after findPhysicalDevice()
 				 */
 				void createSwapChain() noexcept;
-
-				/**
-				 * Search for a family queue in the physical device that satisfy all requrements.
-				 *
-				 * Note: must be called after findPhysicalDevice()
-				 */
-				void pickQueueFamilyIndex() noexcept;
-
-				/**
-				 * Create the Vulkan logical device from the physical device.
-				 *
-				 * Note: must be called after findPhysicalDevice()
-				 */
-				void createLogicalDevice() noexcept;
 
 				/**
 				 * Creates all buffer required for accelection structures,

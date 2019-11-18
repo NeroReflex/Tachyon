@@ -8,6 +8,7 @@
 // STL data types
 #include <functional>
 #include <string>
+#include <optional>
 
 // STL containers
 #include <initializer_list>
