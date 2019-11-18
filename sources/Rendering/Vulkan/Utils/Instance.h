@@ -29,7 +29,7 @@ namespace Tachyon {
 				public:
 					Instance(VkInstance instance) noexcept;
 
-					Instance(PFN_vkDebugReportCallbackEXT debugCallback, const std::vector<std::string>& requredExtensions = std::vector<std::string>()) noexcept;
+					Instance(PFN_vkDebugReportCallbackEXT debugCallback, const std::vector<std::string>& requiredExtensions = std::vector<std::string>()) noexcept;
 
 					Instance(const Instance&) = delete;
 

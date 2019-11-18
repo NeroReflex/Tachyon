@@ -6,8 +6,8 @@ namespace Tachyon {
 	namespace Core {
 		class Camera {
 		public:
-			constexpr static glm::vec3 UPVector = glm::vec3(0, 1, 0);
-			constexpr static glm::vec3 UPReversedVector = glm::vec3(0, -1, 0);
+			static const glm::vec3 UPVector;
+			static const glm::vec3 UPReversedVector;
 			
 			Camera(glm::vec3 lookfrom, glm::vec3 lookat, glm::float32 vfov, glm::float32 aspect, glm::vec3 vup = Camera::UPVector) noexcept;
 

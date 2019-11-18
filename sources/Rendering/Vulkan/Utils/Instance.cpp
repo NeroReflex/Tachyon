@@ -8,9 +8,14 @@ using namespace Tachyon::Rendering::Vulkan::Utils;
 Instance::Instance(VkInstance instance) noexcept
 	: mInstance(instance) {}
 
-Instance::Instance(PFN_vkDebugReportCallbackEXT debugReportCallbackFn, const std::vector<std::string>& requredExtensions) noexcept
-	: mEnabledExtensions(requredExtensions.begin(), requredExtensions.end())
+Instance::Instance(PFN_vkDebugReportCallbackEXT debugReportCallbackFn, const std::vector<std::string>& requiredExtensions) noexcept
+	: mEnabledExtensions()
 {
+
+	for (const std::string& extName: requiredExtensions) {
+		mEnabledExtensions.push_back(extName.c_str());
+	}
+
 	/*
 	By enabling validation layers, Vulkan will emit warnings if the API
 	is used incorrectly. We shall enable the layer VK_LAYER_LUNARG_standard_validation,
@@ -132,5 +137,5 @@ const VkInstance& Instance::getNativeHandle() const noexcept
 }
 
 std::shared_ptr<PhysicalDevice> Instance::selectPhysicalDevice() const noexcept {
-
+	
 }
