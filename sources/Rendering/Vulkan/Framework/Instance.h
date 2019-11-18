@@ -25,6 +25,8 @@ namespace Tachyon {
 
 					Device* openDevice() noexcept;
 
+					const VkSurfaceKHR& getSurface() const noexcept;
+
 					static std::vector<VkExtensionProperties> getAllSupportedExtensions() noexcept;
 
 				private:

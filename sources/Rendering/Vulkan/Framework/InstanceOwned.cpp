@@ -9,3 +9,6 @@ InstanceOwned::InstanceOwned(const Instance* instance) noexcept : mOwningInstanc
 
 InstanceOwned::~InstanceOwned() {}
 
+const Instance* InstanceOwned::getParentInstance() const noexcept {
+	return mOwningInstance;
+}

@@ -28,7 +28,7 @@ Instance::Instance(GLFWwindow* window) noexcept
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	
 	// When creating a device it is important to specify the VK_KHR_swapchain extension or the device cannot be used for rendering
-	enqueueDeviceExtension("VK_KHR_swapchain");
+	enqueueDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 	// Import all GLFW extensions to the safe buffer
 	for (uint32_t j = 0; j < glfwExtensionCount; ++j) enqueueInstanceExtension(glfwExtensions[j]);
@@ -164,12 +164,14 @@ Device* Instance::openDevice() noexcept {
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(bestPhysicalDevice, &queueFamilyCount, queueFamilies.data());
 
-	uint32_t selectedQueueFamilyIndex = 1;
+	bool queueFamilyHasBeenSelected = false;
+	uint32_t selectedQueueFamilyIndex = 0;
 	for (const auto& queueFamily : queueFamilies) {
 		if ((glfwGetPhysicalDevicePresentationSupport(mInstance, bestPhysicalDevice, selectedQueueFamilyIndex)) &&
 			(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
 			(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
 		) {
+			queueFamilyHasBeenSelected = true;
 			break; // found a suitable queue. Stop the search.
 		}
 
@@ -216,4 +218,8 @@ Device* Instance::openDevice() noexcept {
 	mObjectsCollection.emplace_back(managedDeviceHandle);
 
 	return managedDeviceHandle;
+}
+
+const VkSurfaceKHR& Instance::getSurface() const noexcept {
+	return mSurface;
 }

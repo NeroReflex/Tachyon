@@ -18,6 +18,8 @@ namespace Tachyon {
 
 					virtual ~InstanceOwned();
 
+					const Instance* getParentInstance() const noexcept;
+
 				private:
 					const Instance* mOwningInstance;
 				};

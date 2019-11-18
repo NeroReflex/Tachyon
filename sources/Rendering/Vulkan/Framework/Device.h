@@ -17,12 +17,22 @@ namespace Tachyon {
 
 					Device& operator=(Device&) = delete;
 
-					~Device();
+					~Device() override;
+
+					bool isExtensionAvailable(const std::string& extName) const noexcept;
 
 				private:
 					VkPhysicalDevice mPhysicalDevice;
 
 					VkDevice mDevice;
+
+					std::vector<VkExtensionProperties> mAvailableExtensions;
+
+					struct SwapChainSupportDetails {
+						VkSurfaceCapabilitiesKHR capabilities;
+						std::vector<VkSurfaceFormatKHR> formats;
+						std::vector<VkPresentModeKHR> presentModes;
+					} mSupportedSwapchain;
 
 					//std::vector<Queue> mQueueCollection;
 				};

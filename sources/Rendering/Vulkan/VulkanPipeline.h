@@ -32,6 +32,8 @@ namespace Tachyon {
 
 			private:
 				std::unique_ptr<Framework::Instance> mInstance;
+
+				Framework::Device* mDevice;
 			};
 		}
     }

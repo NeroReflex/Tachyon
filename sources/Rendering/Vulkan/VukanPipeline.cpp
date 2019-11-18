@@ -10,7 +10,9 @@ using namespace Tachyon::Rendering::Vulkan;
 #include "shaders/vulkan/raytrace_update.comp.spv.h" // raytrace_update_compVK, raytrace_update_compVK_size
 
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
-	: RenderingPipeline(window), mInstance(new Framework::Instance(getGLFWwindow())) {
+	: RenderingPipeline(window),
+	mInstance(new Framework::Instance(getGLFWwindow())),
+	mDevice(mInstance->openDevice()) {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
