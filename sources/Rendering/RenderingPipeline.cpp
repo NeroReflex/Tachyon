@@ -60,3 +60,7 @@ void RenderingPipeline::render(const Core::HDR& hdr, const Core::Camera& camera)
 }
 
 void RenderingPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {}
+
+GLFWwindow* RenderingPipeline::getGLFWwindow() noexcept {
+	return mWindow;
+}

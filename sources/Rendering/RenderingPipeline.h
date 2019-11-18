@@ -44,6 +44,8 @@ namespace Tachyon {
 
 			glm::uint32 getHeight() const noexcept;
 
+			GLFWwindow* getGLFWwindow() noexcept;
+
 			const struct RaytracerInfo {
 				const glm::uint32 expOfTwo_numberOfModels;
 				const glm::uint32 expOfTwo_numberOfGeometryCollectionOnBLAS;
