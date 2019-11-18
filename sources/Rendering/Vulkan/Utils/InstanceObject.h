@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Tachyon.h"
+#include "Instance.h"
 
 namespace Tachyon {
 	namespace Rendering {
