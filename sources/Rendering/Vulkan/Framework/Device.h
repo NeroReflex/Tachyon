@@ -37,7 +37,11 @@ namespace Tachyon {
 
 					Swapchain* createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector = Device::SwapchainSelector()) noexcept;
 
+					Swapchain* getSwapchain() const noexcept;
+
 					bool isExtensionAvailable(const std::string& extName) const noexcept;
+
+					const VkDevice& getNativeDeviceHandle() const noexcept;
 
 				private:
 					VkPhysicalDevice mPhysicalDevice;

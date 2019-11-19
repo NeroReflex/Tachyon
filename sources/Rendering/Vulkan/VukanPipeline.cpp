@@ -21,6 +21,8 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 		std::cout << "\t" << extension.extensionName << std::endl;
 	}
 #endif
+
+	mDevice->createSwapchain(getWidth(), getHeight());
 }
 
 VulkanPipeline::~VulkanPipeline() {

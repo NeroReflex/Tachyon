@@ -3,6 +3,8 @@
 #include "Rendering/RenderingPipeline.h"
 
 #include "Framework/Instance.h"
+#include "Framework/Device.h"
+#include "Framework/Swapchain.h"
 
 namespace Tachyon {
     namespace Rendering {

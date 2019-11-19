@@ -9,5 +9,7 @@ Swapchain::Swapchain(const Device* device, VkSwapchainKHR&& swapchain) noexcept
     : DeviceOwned(device),
     mSwapchain(swapchain) {}
 
-Swapchain::~Swapchain() {}
+Swapchain::~Swapchain() {
+	vkDestroySwapchainKHR(getParentDevice()->getNativeDeviceHandle(), mSwapchain, nullptr);
+}
 

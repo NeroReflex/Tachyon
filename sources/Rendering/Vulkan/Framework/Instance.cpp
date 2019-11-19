@@ -108,6 +108,11 @@ std::vector<VkExtensionProperties> Instance::getAllSupportedExtensions() noexcep
 	return extensions;
 }
 
+const VkInstance& Instance::getNativeInstanceHandle() const noexcept
+{
+	return mInstance;
+}
+
 Device* Instance::openDevice() noexcept {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);

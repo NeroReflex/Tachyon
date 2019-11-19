@@ -28,6 +28,8 @@ namespace Tachyon {
 					const VkSurfaceKHR& getSurface() const noexcept;
 
 					static std::vector<VkExtensionProperties> getAllSupportedExtensions() noexcept;
+					
+					const VkInstance& getNativeInstanceHandle() const noexcept;
 
 				private:
 					void enqueueInstanceExtension(const char* extName) noexcept;

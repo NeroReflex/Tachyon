@@ -94,33 +94,41 @@ bool Device::isExtensionAvailable(const std::string& extName) const noexcept {
 	return false;
 }
 
+const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHandle() const noexcept
+{
+	return mDevice;
+}
+
 Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
 	DBG_ASSERT( (!mSwapchain) );
 
+	VkExtent2D actualExtent = { width, height };
+
 	VkSwapchainCreateInfoKHR createInfo = selector(mSupportedSwapchain);
-
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.pNext = nullptr;
+	createInfo.flags = 0;
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
 	createInfo.surface = getParentInstance()->getSurface();
-
 	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.queueFamilyIndexCount = 0; // Optional
     createInfo.pQueueFamilyIndices = nullptr; // Optional
-
-	VkExtent2D actualExtent = {width, height};
 	actualExtent.width = std::max(mSupportedSwapchain.capabilities.minImageExtent.width, std::min(mSupportedSwapchain.capabilities.maxImageExtent.width, actualExtent.width));
     actualExtent.height = std::max(mSupportedSwapchain.capabilities.minImageExtent.height, std::min(mSupportedSwapchain.capabilities.maxImageExtent.height, actualExtent.height));
-	
 	createInfo.imageExtent = actualExtent;
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	
 	createInfo.clipped = VK_TRUE;
-
-
+	
 	VkSwapchainKHR swapchain;
 	VK_CHECK_RESULT(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &swapchain));
 
 	mSwapchain.reset(new Swapchain(this, std::move(swapchain)));
+	return mSwapchain.get();
+}
+
+Swapchain* Device::getSwapchain() const noexcept
+{
 	return mSwapchain.get();
 }
