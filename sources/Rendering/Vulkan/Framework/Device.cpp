@@ -5,6 +5,34 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
+VkPresentModeKHR Device::SwapchainSelector::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept {
+	for (const auto& availablePresentMode : availablePresentModes) {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return availablePresentMode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkSwapchainCreateInfoKHR Device::SwapchainSelector::operator()(const SwapChainSupportDetails& swapChainSupport) const noexcept {
+	VkSwapchainCreateInfoKHR createInfo;
+
+	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+
+	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+    	imageCount = swapChainSupport.capabilities.maxImageCount;
+	}
+
+
+	
+
+	return createInfo;
+}
+
 Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device) noexcept
 	: InstanceOwned(instance),
 	mPhysicalDevice(physicalDevice),
@@ -52,4 +80,22 @@ bool Device::isExtensionAvailable(const std::string& extName) const noexcept {
 	}
 
 	return false;
+}
+
+Swapchain* Device::createSwapchain(const SwapchainSelector& selector) noexcept {
+	DBG_ASSERT( (!mSwapchain) );
+
+	VkSwapchainCreateInfoKHR createInfo;
+
+	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.surface = getParentInstance()->getSurface();
+
+	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.queueFamilyIndexCount = 0; // Optional
+    createInfo.pQueueFamilyIndices = nullptr; // Optional
+
+
+	mSwapchain.reset(nullptr);
+
+	return mSwapchain.get();
 }

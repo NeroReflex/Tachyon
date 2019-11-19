@@ -11,7 +11,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					Swapchain(const Device* device) noexcept;
+					Swapchain(const Device* device, VkSwapchainKHR&& swapchain) noexcept;
 
 					Swapchain(Swapchain&) = delete;
 
@@ -20,7 +20,7 @@ namespace Tachyon {
 					~Swapchain() override;
 
 				private:
-
+					VkSwapchainKHR mSwapchain;
 					
 				};
 
