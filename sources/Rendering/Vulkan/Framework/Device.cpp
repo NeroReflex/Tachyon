@@ -1,4 +1,5 @@
 #include "Device.h"
+#include "Swapchain.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
@@ -15,20 +16,31 @@ VkPresentModeKHR Device::SwapchainSelector::chooseSwapPresentMode(const std::vec
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
+VkSurfaceFormatKHR Device::SwapchainSelector::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const noexcept {
+    for (const auto& availableFormat : availableFormats) {
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return availableFormat;
+        }
+    }
+
+    return availableFormats[0];
+}
+
 VkSwapchainCreateInfoKHR Device::SwapchainSelector::operator()(const SwapChainSupportDetails& swapChainSupport) const noexcept {
 	VkSwapchainCreateInfoKHR createInfo;
 
 	VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
     	imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
-
-	
+	createInfo.minImageCount = imageCount;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.presentMode = presentMode;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
 
 	return createInfo;
 }
@@ -82,10 +94,10 @@ bool Device::isExtensionAvailable(const std::string& extName) const noexcept {
 	return false;
 }
 
-Swapchain* Device::createSwapchain(const SwapchainSelector& selector) noexcept {
+Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
 	DBG_ASSERT( (!mSwapchain) );
 
-	VkSwapchainCreateInfoKHR createInfo;
+	VkSwapchainCreateInfoKHR createInfo = selector(mSupportedSwapchain);
 
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = getParentInstance()->getSurface();
@@ -94,8 +106,21 @@ Swapchain* Device::createSwapchain(const SwapchainSelector& selector) noexcept {
     createInfo.queueFamilyIndexCount = 0; // Optional
     createInfo.pQueueFamilyIndices = nullptr; // Optional
 
+	VkExtent2D actualExtent = {width, height};
+	actualExtent.width = std::max(mSupportedSwapchain.capabilities.minImageExtent.width, std::min(mSupportedSwapchain.capabilities.maxImageExtent.width, actualExtent.width));
+    actualExtent.height = std::max(mSupportedSwapchain.capabilities.minImageExtent.height, std::min(mSupportedSwapchain.capabilities.maxImageExtent.height, actualExtent.height));
+	
+	createInfo.imageExtent = actualExtent;
+	createInfo.imageArrayLayers = 1;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	
+	createInfo.clipped = VK_TRUE;
 
-	mSwapchain.reset(nullptr);
 
+	VkSwapchainKHR swapchain;
+	VK_CHECK_RESULT(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &swapchain));
+
+	mSwapchain.reset(new Swapchain(this, std::move(swapchain)));
 	return mSwapchain.get();
 }

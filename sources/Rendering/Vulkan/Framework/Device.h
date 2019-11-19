@@ -23,6 +23,7 @@ namespace Tachyon {
 						virtual VkSwapchainCreateInfoKHR operator()(const SwapChainSupportDetails&) const noexcept;
 					
 					private:
+						VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const noexcept;
 						VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept;
 					};
 
@@ -34,7 +35,7 @@ namespace Tachyon {
 
 					~Device() override;
 
-					Swapchain* createSwapchain(const SwapchainSelector& selector = Device::SwapchainSelector()) noexcept;
+					Swapchain* createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector = Device::SwapchainSelector()) noexcept;
 
 					bool isExtensionAvailable(const std::string& extName) const noexcept;
 
