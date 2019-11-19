@@ -27,7 +27,7 @@ namespace Tachyon {
 						VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept;
 					};
 
-					Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device) noexcept;
+					Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, uint32_t queueFamilyIndex) noexcept;
 
 					Device(Device&) = delete;
 
@@ -47,6 +47,8 @@ namespace Tachyon {
 					VkPhysicalDevice mPhysicalDevice;
 
 					VkDevice mDevice;
+
+					uint32_t mQueueFamilyIndex;
 
 					std::vector<VkExtensionProperties> mAvailableExtensions;
 

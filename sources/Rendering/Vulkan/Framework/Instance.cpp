@@ -58,6 +58,9 @@ Instance::Instance(GLFWwindow* window) noexcept
 }
 
 Instance::~Instance() {
+	for (auto& ownedObj : mObjectsCollection)
+		ownedObj.reset();
+
 	vkDestroyInstance(mInstance, nullptr);
 
 	for (uint32_t j = 0; j < mDeviceExtensionsCount; ++j) delete mDeviceExtensions[j];
@@ -218,7 +221,7 @@ Device* Instance::openDevice() noexcept {
 	VkDevice newDevice;
 	VK_CHECK_RESULT(vkCreateDevice(bestPhysicalDevice, &createInfo, nullptr, &newDevice));
 
-	Device* managedDeviceHandle = new Device(this, std::move(bestPhysicalDevice), std::move(newDevice));
+	Device* managedDeviceHandle = new Device(this, std::move(bestPhysicalDevice), std::move(newDevice), selectedQueueFamilyIndex);
 
 	mObjectsCollection.emplace_back(managedDeviceHandle);
 

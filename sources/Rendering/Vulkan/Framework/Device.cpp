@@ -45,10 +45,11 @@ VkSwapchainCreateInfoKHR Device::SwapchainSelector::operator()(const SwapChainSu
 	return createInfo;
 }
 
-Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device) noexcept
+Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, uint32_t queueFamilyIndex) noexcept
 	: InstanceOwned(instance),
 	mPhysicalDevice(physicalDevice),
-	mDevice(device) {
+	mDevice(device),
+	mQueueFamilyIndex(queueFamilyIndex) {
 	// Query avaliable extensions
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(mPhysicalDevice, nullptr, &extensionCount, nullptr);
@@ -81,6 +82,8 @@ Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDe
 }
 
 Device::~Device() {
+	mSwapchain.reset();
+
 	vkDestroyDevice(mDevice, nullptr);
 }
 
@@ -121,6 +124,10 @@ Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const Swapch
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.clipped = VK_TRUE;
 	
+	VkBool32 isSurfaceSupported = VK_FALSE;
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, mQueueFamilyIndex, getParentInstance()->getSurface(), &isSurfaceSupported));
+	DBG_ASSERT((isSurfaceSupported == true));
+
 	VkSwapchainKHR swapchain;
 	VK_CHECK_RESULT(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &swapchain));
 
