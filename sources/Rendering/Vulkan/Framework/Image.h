@@ -14,7 +14,7 @@ namespace Tachyon {
 					virtual public DeviceOwned{
 
 				public:
-					Image(const Device * device) noexcept;
+					Image(const Device* device, bool swapchainImage, VkImage&& image) noexcept;
 
 					Image(const Image&) = delete;
 
@@ -23,6 +23,11 @@ namespace Tachyon {
 					Image& operator=(const Image&) = delete;
 
 					~Image() final;
+
+				private:
+					VkImage mImage;
+
+					bool mIsSwapchainImage;
 				};
 			}
 		}

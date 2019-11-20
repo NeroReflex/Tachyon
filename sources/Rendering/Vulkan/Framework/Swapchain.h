@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceMemoryBuffer.h"
+#include "Image.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -22,7 +23,7 @@ namespace Tachyon {
 				private:
 					VkSwapchainKHR mSwapchain;
 					
-					std::vector<VkImage> mFrames;
+					std::vector<std::unique_ptr<Image>> mFramebuffers;
 
 					uint32_t mWidth;
 
