@@ -26,4 +26,3 @@ Swapchain::Swapchain(const Device* device, VkSwapchainKHR&& swapchain, uint32_t 
 Swapchain::~Swapchain() {
 	vkDestroySwapchainKHR(getParentDevice()->getNativeDeviceHandle(), mSwapchain, nullptr);
 }
-

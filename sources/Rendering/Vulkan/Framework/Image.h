@@ -24,6 +24,8 @@ namespace Tachyon {
 
 					~Image() final;
 
+					const VkImage& getNativeImageHandle() const noexcept;
+
 				private:
 					VkImage mImage;
 
