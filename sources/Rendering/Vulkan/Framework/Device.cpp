@@ -133,7 +133,7 @@ Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const Swapch
 	VkSwapchainKHR swapchain;
 	VK_CHECK_RESULT(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &swapchain));
 
-	mSwapchain.reset(new Swapchain(this, std::move(swapchain)));
+	mSwapchain.reset(new Swapchain(this, std::move(swapchain), actualExtent.width, actualExtent.height));
 	return mSwapchain.get();
 }
 
