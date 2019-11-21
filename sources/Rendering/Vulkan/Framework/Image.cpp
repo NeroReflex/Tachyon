@@ -9,10 +9,8 @@ using namespace Tachyon::Rendering::Vulkan::Framework;
 Image::Image(const Device* device, VkImage&& image) noexcept
 	: DeviceOwned(device),
 	ImageInterface(device, std::move(image)) {}
-
     
 Image::~Image() {}
-
 
 ImageView* Image::createImageView(ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits, ViewColorMapping swizzle, uint32_t subrangeBaseMipLevel, uint32_t subrangeLevelCount, uint32_t subrangeBaseArrayLayer, uint32_t subrangeLayerCount) noexcept {
 	VkImageViewCreateInfo createInfo = {};
@@ -81,5 +79,4 @@ ImageView* Image::createImageView(ViewType type, VkFormat format, VkImageAspectF
 	mImageViews.emplace(std::pair<uintptr_t, std::unique_ptr<ImageView>>(uintptr_t(created), created));
 
 	return created;
-
 }

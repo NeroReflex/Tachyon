@@ -34,7 +34,7 @@
 # IDE files
 /.vscode
 /.vs
-/build
+/build*
 /out
 /nsight
 

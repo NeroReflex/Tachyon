@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 
     need_comma = 0;
 
-    fprintf(f_output, "static const unsigned char %s[] = {", ident); // %i and file_size missing
+    fprintf(f_output, "alignas(alignof(uint32_t)) static const unsigned char %s[] = {", ident); // %i and file_size missing
     for (i = 0; i < file_size; ++i) {
         if (need_comma)
             fprintf(f_output, ", ");
