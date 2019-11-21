@@ -24,10 +24,10 @@ ShaderLayoutBinding& ShaderLayoutBinding::operator=(const ShaderLayoutBinding& s
 
 ShaderLayoutBinding::~ShaderLayoutBinding() {}
 
-void ShaderLayoutBinding::insert(BindingType bindingType, uint32_t bindingPoint, uint32_t count) noexcept {
+void ShaderLayoutBinding::insert(const BindingDescriptor& shaderBinding) noexcept {
 	VkDescriptorType type;
 
-	switch (bindingType) {
+	switch (shaderBinding.bindingType) {
 	case BindingType::Sampler:
 		type = VK_DESCRIPTOR_TYPE_SAMPLER;
 		break;
@@ -58,9 +58,9 @@ void ShaderLayoutBinding::insert(BindingType bindingType, uint32_t bindingPoint,
 	}
 
 	VkDescriptorSetLayoutBinding binding;
-	binding.binding = bindingPoint;
+	binding.binding = shaderBinding.bindingPoint;
 	binding.descriptorType = type;
-	binding.descriptorCount = count;
+	binding.descriptorCount = shaderBinding.count;
 	binding.pImmutableSamplers = nullptr;
 
 	mDescriptors.emplace_back(binding);

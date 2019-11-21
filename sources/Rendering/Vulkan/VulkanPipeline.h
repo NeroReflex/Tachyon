@@ -5,6 +5,7 @@
 #include "Framework/Instance.h"
 #include "Framework/Device.h"
 #include "Framework/Swapchain.h"
+#include "Framework/Shader.h"
 
 namespace Tachyon {
     namespace Rendering {
@@ -36,6 +37,8 @@ namespace Tachyon {
 				std::unique_ptr<Framework::Instance> mInstance;
 
 				Framework::Device* mDevice;
+
+				Framework::Shader mGeometryInsertShader;
 			};
 		}
     }

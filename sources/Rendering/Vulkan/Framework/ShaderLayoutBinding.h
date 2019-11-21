@@ -21,6 +21,15 @@ namespace Tachyon {
 						StorageBuffer,
 					};
 
+					struct BindingDescriptor {
+						BindingType bindingType;
+						uint32_t bindingPoint;
+						uint32_t count;
+
+						inline BindingDescriptor(BindingType bindingType, uint32_t bindingPoint, uint32_t count) noexcept
+							: bindingType(bindingType), bindingPoint(bindingPoint), count(count) {};
+					};
+
 					ShaderLayoutBinding() noexcept;
 
 					ShaderLayoutBinding(const ShaderLayoutBinding&) noexcept;
@@ -36,7 +45,7 @@ namespace Tachyon {
 					 *
 					 * @count the number of bindings accessed as an array or the number of bytes for a uniform buffer
 					 */
-					void insert(BindingType bindingType, uint32_t bindingPoint, uint32_t count) noexcept;
+					void insert(const BindingDescriptor& binding) noexcept;
 
 					std::vector<VkDescriptorSetLayoutBinding> getNativeLayoutHandles() const noexcept;
 

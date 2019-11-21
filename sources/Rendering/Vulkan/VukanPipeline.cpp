@@ -12,7 +12,13 @@ using namespace Tachyon::Rendering::Vulkan;
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
 	mInstance(new Framework::Instance(getGLFWwindow())),
-	mDevice(mInstance->openDevice()) {
+	mDevice(mInstance->openDevice()),
+	mGeometryInsertShader(
+		mDevice,
+		Framework::Shader::ShaderType::Compute,
+		{},
+		raytrace_insert_compVK,
+		raytrace_insert_compVK_size) {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;

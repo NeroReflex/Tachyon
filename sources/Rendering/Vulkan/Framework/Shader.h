@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceOwned.h"
+#include "ShaderLayoutBinding.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -11,6 +12,15 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
+					enum class ShaderType {
+						Vertex,
+						Geometry,
+						Fragment,
+						Compute,
+					};
+
+					Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, char* source, uint32_t size) noexcept;
+
 					Shader(const Shader&) = delete;
 
 					Shader(Shader&&) = delete;
@@ -21,13 +31,14 @@ namespace Tachyon {
 
 					const VkShaderModule& getNativeShaderModuleHandle() const noexcept;
 
-				protected:
-					Shader(const Device* device, char* source, uint32_t size) noexcept;
+					const std::vector<VkDescriptorSetLayoutBinding>& getNativeShaderBindings() const noexcept;
 
 				private:
+					ShaderType mShaderType;
+
 					VkShaderModule mShaderModule;
 
-					//VkShaderStage mPipeline;
+					std::vector<VkDescriptorSetLayoutBinding> mSpecializedBindings;
 				};
 			}
 		}
