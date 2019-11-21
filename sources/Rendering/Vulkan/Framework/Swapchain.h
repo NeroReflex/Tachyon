@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DeviceMemoryBuffer.h"
-#include "Image.h"
+#include "SwapchainImage.h"
 
 namespace Tachyon {
 	namespace Rendering {

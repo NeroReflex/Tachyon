@@ -19,7 +19,7 @@ Swapchain::Swapchain(const Device* device, VkSwapchainKHR&& swapchain, uint32_t 
 	vkGetSwapchainImagesKHR(getParentDevice()->getNativeDeviceHandle(), mSwapchain, &framebuffersCount, framebuffers.data());
 
 	for (size_t i = 0; i < framebuffers.size(); ++i)
-		mFramebuffers.emplace_back(new Image(getParentDevice(), true, std::move(framebuffers[i])));
+		mFramebuffers.emplace_back(new Image(getParentDevice(), std::move(framebuffers[i])));
 	
 }
 
