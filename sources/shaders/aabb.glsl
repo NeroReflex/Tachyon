@@ -92,12 +92,12 @@ AABB transformAABB(const in AABB b, const in mat4 transformMatrix) {
 	float maxX = v[0].x, maxY = v[0].y, maxZ = v[0].z, minX = v[0].x, minY = v[0].y, minZ = v[0].z;
 
 	for (uint i = 1; i < 8; ++i) {
-		maxX = (v[i].x > maxX) ? v[i].x : maxX;
-		maxY = (v[i].y > maxY) ? v[i].y : maxY;
-		maxZ = (v[i].z > maxZ) ? v[i].z : maxZ;
-		minX = (v[i].x < minX) ? v[i].x : minX;
-		minY = (v[i].y < minY) ? v[i].y : minY;
-		minZ = (v[i].z < minZ) ? v[i].z : minZ;
+		maxX = max(v[i].x, maxX);
+		maxY = max(v[i].y, maxY);
+		maxZ = max(v[i].z, maxZ);
+		minX = min(v[i].x, minX);
+		minY = min(v[i].y, minY);
+		minZ = min(v[i].z, minZ);
 	}
 
 	return AABB(vec4(minX, minY, minZ, 1), vec4(maxX - minX, maxY - minY, maxZ - minZ, 0));
