@@ -4,7 +4,6 @@ using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
-using namespace Tachyon::Rendering::Vulkan::Framework::Shaders;
 
 Shader::Shader(const Device* device, char* source, uint32_t size) noexcept
 	: DeviceOwned(device) {

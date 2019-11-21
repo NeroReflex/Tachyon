@@ -7,6 +7,8 @@ namespace Tachyon {
 		namespace Vulkan {
 			namespace Framework {
 				class Swapchain;
+				class Pipeline;
+				class Shader;
 
 				class Device :
 					virtual public InstanceOwned {
@@ -42,6 +44,12 @@ namespace Tachyon {
 					bool isExtensionAvailable(const std::string& extName) const noexcept;
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;
+
+					const Pipeline* createGraphicPipeline(
+						const Shader& vertexShader,
+
+						const Shader& fragmentShader
+					) const noexcept;
 
 				private:
 					VkPhysicalDevice mPhysicalDevice;

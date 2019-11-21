@@ -1,5 +1,6 @@
 #include "Device.h"
 #include "Swapchain.h"
+#include "Shader.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
@@ -100,6 +101,39 @@ bool Device::isExtensionAvailable(const std::string& extName) const noexcept {
 const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHandle() const noexcept
 {
 	return mDevice;
+}
+
+const Pipeline* Device::createGraphicPipeline(
+	const Shader& vertexShader,
+
+	const Shader& fragmentShader) const noexcept
+{
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStageInfo(2);
+	shaderStageInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStageInfo[0].pNext = nullptr;
+	shaderStageInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+	shaderStageInfo[0].module = vertexShader.getNativeShaderModuleHandle();
+	shaderStageInfo[0].pName = "main";
+	shaderStageInfo[0].pSpecializationInfo = nullptr;
+
+	shaderStageInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStageInfo[1].pNext = nullptr;
+	shaderStageInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	shaderStageInfo[1].module = fragmentShader.getNativeShaderModuleHandle();
+	shaderStageInfo[1].pName = "main";
+	shaderStageInfo[1].pSpecializationInfo = nullptr;
+
+	VkPipelineLayout pipelineLayout;
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0; // Optional
+	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+
+	return nullptr;
 }
 
 Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
