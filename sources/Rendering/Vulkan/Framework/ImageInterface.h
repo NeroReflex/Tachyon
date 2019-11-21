@@ -10,7 +10,7 @@ namespace Tachyon {
 				/**
 				 * Represents a buffer used to store an image or texture.
 				 */
-				class ImageInterface final :
+				class ImageInterface :
 					virtual public DeviceOwned {
 
 				public:

@@ -8,7 +8,7 @@ namespace Tachyon {
 			namespace Framework {
 
 				/**
-				 * Represents a buffer used to store an image or texture.
+				 * Represents an image on the swapchain.
 				 */
 				class SwapchainImage final :
 					virtual public ImageInterface {
