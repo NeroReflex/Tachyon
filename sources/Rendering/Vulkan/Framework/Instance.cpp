@@ -61,6 +61,8 @@ Instance::~Instance() {
 	for (auto& ownedObj : mObjectsCollection)
 		ownedObj.reset();
 
+	vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
+
 	vkDestroyInstance(mInstance, nullptr);
 
 	for (uint32_t j = 0; j < mDeviceExtensionsCount; ++j) delete mDeviceExtensions[j];

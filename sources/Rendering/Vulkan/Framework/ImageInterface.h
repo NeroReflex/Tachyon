@@ -6,6 +6,7 @@ namespace Tachyon {
 	namespace Rendering {
 		namespace Vulkan {
 			namespace Framework {
+				class ImageView;
 
 				/**
 				 * Represents a buffer used to store an image or texture.
@@ -14,7 +15,23 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					inline ImageInterface(const Device* device, VkImage&& image) noexcept : DeviceOwned(device), mImage(std::move(image)) {};
+					
+					enum class ViewType {
+						Image1D,
+						Image2D,
+						Image3D,
+						CubeMap,
+						Image1DArray,
+						Image2DArray,
+						CubeMapArray,
+					};
+
+					enum class ViewColorMapping {
+						rgba_rgba,
+					};
+
+					
+					ImageInterface(const Device* device, VkImage&& image) noexcept;
 
 					ImageInterface(const ImageInterface&) = delete;
 
@@ -22,14 +39,16 @@ namespace Tachyon {
 
 					ImageInterface& operator=(const ImageInterface&) = delete;
 
-					~ImageInterface() override = default;
+					~ImageInterface() override;
 
-					inline const VkImage& getNativeImageHandle() const noexcept {
-                        return mImage;
-                    };
+					const VkImage& getNativeImageHandle() const noexcept;
+
+					ImageView* createImageView(ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits = VK_IMAGE_ASPECT_COLOR_BIT, ViewColorMapping swizzle = ViewColorMapping::rgba_rgba, uint32_t subrangeBaseMipLevel = 0, uint32_t subrangeLevelCount = 1, uint32_t subrangeBaseArrayLayer = 0, uint32_t subrangeLayerCount = 1) noexcept;
 
 				private:
 					VkImage mImage;
+
+					std::unordered_map<uintptr_t, std::unique_ptr<ImageView>> mImageViews;
 				};
 			}
 		}

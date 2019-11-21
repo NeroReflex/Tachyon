@@ -22,6 +22,8 @@ namespace Tachyon {
 
 				private:
 					VkSwapchainKHR mSwapchain;
+
+
 					
 					std::vector<std::unique_ptr<SwapchainImage>> mFramebuffers;
 
