@@ -6,6 +6,7 @@ namespace Tachyon {
 	namespace Rendering {
 		namespace Vulkan {
 			namespace Framework {
+				class Swapchain;
 
 				/**
 				 * Represents an image on the swapchain.
@@ -14,7 +15,7 @@ namespace Tachyon {
 					virtual public ImageInterface {
 
 				public:
-					SwapchainImage(const Device* device, VkImage&& image) noexcept;
+					SwapchainImage(const Device* device, const Swapchain* swapchain, VkImage&& image) noexcept;
 
 					SwapchainImage(const SwapchainImage&) = delete;
 
@@ -24,6 +25,14 @@ namespace Tachyon {
 
 					~SwapchainImage() final;
 
+					const Swapchain* getParentSwapchain() const noexcept;
+
+					ImageView* getImageView() const noexcept;
+
+				private:
+					const Swapchain* mParentSwapchain;
+
+					std::unique_ptr<ImageView> mImageView;
 				};
 			}
 		}

@@ -43,12 +43,8 @@ namespace Tachyon {
 
 					const VkImage& getNativeImageHandle() const noexcept;
 
-					ImageView* createImageView(ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits = VK_IMAGE_ASPECT_COLOR_BIT, ViewColorMapping swizzle = ViewColorMapping::rgba_rgba, uint32_t subrangeBaseMipLevel = 0, uint32_t subrangeLevelCount = 1, uint32_t subrangeBaseArrayLayer = 0, uint32_t subrangeLayerCount = 1) noexcept;
-
 				private:
 					VkImage mImage;
-
-					std::unordered_map<uintptr_t, std::unique_ptr<ImageView>> mImageViews;
 				};
 			}
 		}

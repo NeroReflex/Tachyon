@@ -5,10 +5,11 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-Swapchain::Swapchain(const Device* device, VkSwapchainKHR&& swapchain, uint32_t width, uint32_t height) noexcept
+Swapchain::Swapchain(const Device* device, VkSwapchainKHR&& swapchain, VkFormat format, uint32_t width, uint32_t height) noexcept
     : DeviceOwned(device),
 	DeviceMemoryBuffer(device),
     mSwapchain(swapchain),
+	mFormat(format),
 	mWidth(width),
 	mHeight(height) {
 
@@ -19,10 +20,22 @@ Swapchain::Swapchain(const Device* device, VkSwapchainKHR&& swapchain, uint32_t 
 	vkGetSwapchainImagesKHR(getParentDevice()->getNativeDeviceHandle(), mSwapchain, &framebuffersCount, framebuffers.data());
 
 	for (size_t i = 0; i < framebuffers.size(); ++i)
-		mFramebuffers.emplace_back(new SwapchainImage(getParentDevice(), std::move(framebuffers[i])));
+		mFramebuffers.emplace_back(new SwapchainImage(getParentDevice(), this, std::move(framebuffers[i])));
 	
 }
 
 Swapchain::~Swapchain() {
 	vkDestroySwapchainKHR(getParentDevice()->getNativeDeviceHandle(), mSwapchain, nullptr);
+}
+
+const uint32_t& Swapchain::getWidth() const noexcept {
+	return mWidth;
+}
+
+const uint32_t& Swapchain::getHeight() const noexcept {
+	return mHeight;
+}
+
+const VkFormat& Swapchain::getFormat() const noexcept {
+	return mFormat;
 }

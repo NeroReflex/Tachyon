@@ -12,7 +12,7 @@ namespace Tachyon {
 					virtual public DeviceMemoryBuffer {
 
 				public:
-					Swapchain(const Device* device, VkSwapchainKHR&& swapchain, uint32_t width, uint32_t height) noexcept;
+					Swapchain(const Device* device, VkSwapchainKHR&& swapchain, VkFormat format, uint32_t width, uint32_t height) noexcept;
 
 					Swapchain(Swapchain&) = delete;
 
@@ -20,10 +20,16 @@ namespace Tachyon {
 
 					~Swapchain() override;
 
+					const uint32_t& getWidth() const noexcept;
+
+					const uint32_t& getHeight() const noexcept;
+
+					const VkFormat& getFormat() const noexcept;
+
 				private:
 					VkSwapchainKHR mSwapchain;
 
-
+					VkFormat mFormat;
 					
 					std::vector<std::unique_ptr<SwapchainImage>> mFramebuffers;
 
