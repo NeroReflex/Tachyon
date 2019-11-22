@@ -19,7 +19,7 @@ namespace Tachyon {
 						Compute,
 					};
 
-					Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
+					Shader() = delete;
 
 					Shader(const Shader&) = delete;
 
@@ -34,6 +34,9 @@ namespace Tachyon {
 					const std::vector<VkDescriptorSetLayoutBinding>& getNativeShaderBindings() const noexcept;
 
 					const ShaderType& getType() const noexcept;
+
+				protected:
+					Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
 				private:
 					ShaderType mShaderType;

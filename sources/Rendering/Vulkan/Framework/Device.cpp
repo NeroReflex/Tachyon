@@ -101,13 +101,16 @@ const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHa
 	return mDevice;
 }
 
-const Shader* Device::loadShader(Shader::ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept
+const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept
 {
-	return new Shader(this, type, bindings, source, size);
+	return new ComputeShader(this, bindings, source, size);
 }
 
-const Pipeline* Device::createGraphicPipeline(const std::vector<const Shader*>& shaders) const noexcept
+const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders) const noexcept
 {
+	DBG_ASSERT( (shaders.size() > 0) );
+	bool isComputePipeline = (shaders.size() == 1) && (shaders[0]->getType() == Shader::ShaderType::Compute);
+
 	std::vector<VkPipelineShaderStageCreateInfo> shadersStageInfo(shaders.size());
 	std::vector<VkDescriptorSetLayoutBinding> renderDescriptorSetLayoutBinding;
 	uint32_t i = 0;
@@ -144,15 +147,15 @@ const Pipeline* Device::createGraphicPipeline(const std::vector<const Shader*>& 
 		++i;
 	}
 
-	VkDescriptorSetLayoutCreateInfo* renderDescriptorSetLayoutCreateInfo = new VkDescriptorSetLayoutCreateInfo;
-	renderDescriptorSetLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	renderDescriptorSetLayoutCreateInfo->pNext = NULL;
-	renderDescriptorSetLayoutCreateInfo->flags = 0;
-	renderDescriptorSetLayoutCreateInfo->bindingCount = static_cast<uint32_t>(shadersStageInfo.size()); // only a single binding in this descriptor set layout. 
-	renderDescriptorSetLayoutCreateInfo->pBindings = renderDescriptorSetLayoutBinding.data();
+	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	descriptorSetLayoutCreateInfo.pNext = NULL;
+	descriptorSetLayoutCreateInfo.flags = 0;
+	descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(renderDescriptorSetLayoutBinding.size()); // only a single binding in this descriptor set layout. 
+	descriptorSetLayoutCreateInfo.pBindings = renderDescriptorSetLayoutBinding.data();
 
 	VkDescriptorSetLayout renderDescriptorSetLayout;
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, renderDescriptorSetLayoutCreateInfo, NULL, &renderDescriptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, &descriptorSetLayoutCreateInfo, NULL, &renderDescriptorSetLayout));
 	
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
@@ -163,6 +166,26 @@ const Pipeline* Device::createGraphicPipeline(const std::vector<const Shader*>& 
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr; // Optional
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+
+	VkPipeline nativePipeline;
+	if (isComputePipeline) {
+		VkComputePipelineCreateInfo computePipelineCreateInfo;
+		computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		computePipelineCreateInfo.pNext = nullptr;
+		computePipelineCreateInfo.flags = 0;
+
+#if defined(VULKAN_ENABLE_VALIDATION_LAYERS)
+		computePipelineCreateInfo.flags |= VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
+#endif
+		computePipelineCreateInfo.stage = shadersStageInfo[0];
+		computePipelineCreateInfo.layout = pipelineLayout;
+		VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, NULL, &nativePipeline));
+		
+	} else {
+		DBG_ASSERT(false);
+	}
+
+	//vkDestroyDescriptorSetLayout(mDevice, *flushDescriptorSetLayout, NULL);
 
 	return nullptr;
 }

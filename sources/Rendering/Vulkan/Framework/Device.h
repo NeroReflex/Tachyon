@@ -2,9 +2,10 @@
 
 #include "InstanceOwned.h"
 #include "Swapchain.h"
-#include "Shader.h"
 #include "ShaderLayoutBinding.h"
 #include "Pipeline.h"
+
+#include "ComputeShader.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -45,9 +46,9 @@ namespace Tachyon {
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;
 
-					const Shader* loadShader(Shader::ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept;
+					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept;
 
-					const Pipeline* createGraphicPipeline(const std::vector<const Shader*>& shaders) const noexcept;
+					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) const noexcept;
 
 				private:
 					VkPhysicalDevice mPhysicalDevice;

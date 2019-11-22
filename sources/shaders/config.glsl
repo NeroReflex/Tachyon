@@ -48,14 +48,6 @@
 	#define MODELMATRIX_MEMORY_MODEL coherent
 #endif
 
-// BUFFERs binding
-#define GEOMETRY_INSERT_BINDING 3
-
-// UNIFORMs binding
-#define CAMERA_BINDING 6
-#define HDR_BINDING 7
-#define GEOMETRY_INSERTT_ATTR_BINDING 8
-
 // TEXTUREs binding
 #define TLAS_BINDING 0
 #define BLAS_BINDING 1
@@ -63,5 +55,13 @@
 #define BLAS_ATTRIBUTES_BINDING 3
 #define OUTPUT_BINDING 4
 #define DEBUG_BINDING 5
+
+// UNIFORMs binding
+#define CAMERA_BINDING 6
+#define HDR_BINDING 7
+#define GEOMETRY_INSERTT_ATTR_BINDING 8
+
+// BUFFERs binding
+#define GEOMETRY_INSERT_BINDING 9
 
 #endif // CONFIG_GLSL

@@ -16,9 +16,15 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mDevice(mInstance->openDevice()),
 	mSwapchain(mDevice->createSwapchain(getWidth(), getHeight())),
 	mGeometryInsertShader(
-		mDevice->loadShader(
-			Framework::Shader::ShaderType::Compute,
+		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
+				// Core bindings
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+
+				// Insert-specific bindings
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_INSERT_BINDING,  1 ),
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1 )
 			}),
@@ -26,7 +32,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			raytrace_insert_compVK_size
 		)
 	),
-	mInsertPipeline(mDevice->createGraphicPipeline(std::vector<const Framework::Shader*>({ mGeometryInsertShader }))) {
+	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({ mGeometryInsertShader }))) {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
