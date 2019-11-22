@@ -1,6 +1,4 @@
 #include "Device.h"
-#include "Swapchain.h"
-#include "Shader.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
@@ -103,47 +101,68 @@ const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHa
 	return mDevice;
 }
 
-const Pipeline* Device::createGraphicPipeline(const std::vector<Shader>& shaders) const noexcept
+const Shader* Device::loadShader(Shader::ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept
 {
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStageInfo(shaders.size());
+	return new Shader(this, type, bindings, source, size);
+}
+
+const Pipeline* Device::createGraphicPipeline(const std::vector<const Shader*>& shaders) const noexcept
+{
+	std::vector<VkPipelineShaderStageCreateInfo> shadersStageInfo(shaders.size());
+	std::vector<VkDescriptorSetLayoutBinding> renderDescriptorSetLayoutBinding;
 	uint32_t i = 0;
 	for (const auto& shader : shaders) {
-		VkShaderStageFlagBits stage;
+		VkShaderStageFlagBits stageType;
 
-		switch (shader.getType()) {
+		switch (shader->getType()) {
 		case Shader::ShaderType::Vertex:
-			stage = VK_SHADER_STAGE_VERTEX_BIT;
+			stageType = VK_SHADER_STAGE_VERTEX_BIT;
 			break;
 		case Shader::ShaderType::Fragment:
-			stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+			stageType = VK_SHADER_STAGE_FRAGMENT_BIT;
 			break;
 		case Shader::ShaderType::Geometry:
-			stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+			stageType = VK_SHADER_STAGE_GEOMETRY_BIT;
 			break;
 		case Shader::ShaderType::Compute:
-			stage = VK_SHADER_STAGE_COMPUTE_BIT;
+			stageType = VK_SHADER_STAGE_COMPUTE_BIT;
 			break;
+		default:
+			DBG_ASSERT(false);
 		}
 
-		shaderStageInfo[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStageInfo[i].pNext = nullptr;
-		shaderStageInfo[i].stage = stage;
-		shaderStageInfo[i].module = shader.getNativeShaderModuleHandle();
-		shaderStageInfo[i].pName = "main";
-		shaderStageInfo[i].pSpecializationInfo = nullptr;
+		shadersStageInfo[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shadersStageInfo[i].pNext = nullptr;
+		shadersStageInfo[i].stage = stageType;
+		shadersStageInfo[i].module = shader->getNativeShaderModuleHandle();
+		shadersStageInfo[i].pName = "main";
+		shadersStageInfo[i].pSpecializationInfo = nullptr;
+
+		const auto& shaderBindings = shader->getNativeShaderBindings();
+		renderDescriptorSetLayoutBinding.insert(renderDescriptorSetLayoutBinding.cend(), shaderBindings.cbegin(), shaderBindings.cend());
 
 		++i;
 	}
+
+	VkDescriptorSetLayoutCreateInfo* renderDescriptorSetLayoutCreateInfo = new VkDescriptorSetLayoutCreateInfo;
+	renderDescriptorSetLayoutCreateInfo->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	renderDescriptorSetLayoutCreateInfo->pNext = NULL;
+	renderDescriptorSetLayoutCreateInfo->flags = 0;
+	renderDescriptorSetLayoutCreateInfo->bindingCount = static_cast<uint32_t>(shadersStageInfo.size()); // only a single binding in this descriptor set layout. 
+	renderDescriptorSetLayoutCreateInfo->pBindings = renderDescriptorSetLayoutBinding.data();
+
+	VkDescriptorSetLayout renderDescriptorSetLayout;
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, renderDescriptorSetLayoutCreateInfo, NULL, &renderDescriptorSetLayout));
 	
 	VkPipelineLayout pipelineLayout;
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutCreateInfo.setLayoutCount = 1;
+	pipelineLayoutCreateInfo.pSetLayouts = &renderDescriptorSetLayout;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = 0; // Optional
+	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr; // Optional
 
-	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 
 	return nullptr;
 }

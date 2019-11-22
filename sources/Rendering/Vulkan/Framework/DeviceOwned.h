@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Device.h"
+#include "Tachyon.h"
 
 namespace Tachyon {
 	namespace Rendering {
 		namespace Vulkan {
 			namespace Framework {
+				class Device;
 
 				class DeviceOwned {
 

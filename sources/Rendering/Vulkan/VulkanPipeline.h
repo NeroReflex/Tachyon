@@ -38,7 +38,11 @@ namespace Tachyon {
 
 				Framework::Device* mDevice;
 
-				Framework::Shader mGeometryInsertShader;
+				Framework::Swapchain* const mSwapchain;
+
+				const Framework::Shader* mGeometryInsertShader;
+
+				const Framework::Pipeline* const mInsertPipeline;
 			};
 		}
     }

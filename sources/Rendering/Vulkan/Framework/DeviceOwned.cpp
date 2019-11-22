@@ -1,4 +1,5 @@
 #include "DeviceOwned.h"
+#include "Device.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;

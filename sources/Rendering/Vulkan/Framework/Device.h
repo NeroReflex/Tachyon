@@ -1,15 +1,15 @@
 #pragma once
 
 #include "InstanceOwned.h"
+#include "Swapchain.h"
+#include "Shader.h"
+#include "ShaderLayoutBinding.h"
+#include "Pipeline.h"
 
 namespace Tachyon {
 	namespace Rendering {
 		namespace Vulkan {
 			namespace Framework {
-				class Swapchain;
-				class Pipeline;
-				class Shader;
-
 				class Device :
 					virtual public InstanceOwned {
 
@@ -45,7 +45,9 @@ namespace Tachyon {
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;
 
-					const Pipeline* createGraphicPipeline(const std::vector<Shader>& shaders) const noexcept;
+					const Shader* loadShader(Shader::ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept;
+
+					const Pipeline* createGraphicPipeline(const std::vector<const Shader*>& shaders) const noexcept;
 
 				private:
 					VkPhysicalDevice mPhysicalDevice;

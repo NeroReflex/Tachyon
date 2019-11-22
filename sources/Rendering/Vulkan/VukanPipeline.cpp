@@ -14,15 +14,19 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
 	mInstance(new Framework::Instance(getGLFWwindow())),
 	mDevice(mInstance->openDevice()),
+	mSwapchain(mDevice->createSwapchain(getWidth(), getHeight())),
 	mGeometryInsertShader(
-		mDevice,
-		Framework::Shader::ShaderType::Compute,
-		Framework::ShaderLayoutBinding({
-			Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_INSERT_BINDING,  1 ),
-			Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1 )
-		}),
-		reinterpret_cast<const char*>(raytrace_insert_compVK),
-		raytrace_insert_compVK_size) {
+		mDevice->loadShader(
+			Framework::Shader::ShaderType::Compute,
+			Framework::ShaderLayoutBinding({
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_INSERT_BINDING,  1 ),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1 )
+			}),
+			reinterpret_cast<const char*>(raytrace_insert_compVK),
+			raytrace_insert_compVK_size
+		)
+	),
+	mInsertPipeline(mDevice->createGraphicPipeline(std::vector<const Framework::Shader*>({ mGeometryInsertShader }))) {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
@@ -30,8 +34,6 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	for (const auto& extension : Framework::Instance::getAllSupportedExtensions())
 		std::cout << "\t" << extension.extensionName << std::endl;
 #endif
-
-	mDevice->createSwapchain(getWidth(), getHeight());
 }
 
 VulkanPipeline::~VulkanPipeline() {
