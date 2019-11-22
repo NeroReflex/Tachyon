@@ -35,6 +35,7 @@
 /.vscode
 /.vs
 /build*
+/.kdev4
 /out
 /nsight
 
