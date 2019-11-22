@@ -40,13 +40,13 @@ namespace Tachyon {
 
 				Framework::Swapchain* const mSwapchain;
 
-				const Framework::Shader* mInsertComputeShader;
-
 				const Framework::Pipeline* const mInsertPipeline;
 
-				const Framework::Shader* mFlushComputeShader;
-
 				const Framework::Pipeline* const mFlushPipeline;
+
+				const Framework::Pipeline* const mUpdatePipeline;
+
+				const Framework::Pipeline* const mRenderingPipeline;
 			};
 		}
     }

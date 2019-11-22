@@ -15,25 +15,24 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mInstance(new Framework::Instance(getGLFWwindow())),
 	mDevice(mInstance->openDevice()),
 	mSwapchain(mDevice->createSwapchain(getWidth(), getHeight())),
-	mInsertComputeShader(
+	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
+				// Insert-specific bindings
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_INSERT_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1),
+
 				// Core bindings
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
-
-				// Insert-specific bindings
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_INSERT_BINDING,  1 ),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1 )
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1)
 			}),
 			reinterpret_cast<const char*>(raytrace_insert_compVK),
 			raytrace_insert_compVK_size
 		)
-	),
-	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({ mInsertComputeShader }))),
-	mFlushComputeShader(
+	}))),
+	mFlushPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
 				// Core bindings
@@ -45,8 +44,46 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			reinterpret_cast<const char*>(raytrace_flush_compVK),
 			raytrace_flush_compVK_size
 		)
-	),
-	mFlushPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({ mFlushComputeShader }))) {
+	}))),
+	mUpdatePipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
+		mDevice->loadComputeShader(
+			Framework::ShaderLayoutBinding({
+				// Core bindings
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+			}),
+			reinterpret_cast<const char*>(raytrace_update_compVK),
+			raytrace_update_compVK_size
+		)
+	}))),
+	mRenderingPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
+		mDevice->loadComputeShader(
+			Framework::ShaderLayoutBinding({
+				// Debug binding
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, DEBUG_BINDING,  1),
+
+				// Render target binding
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, OUTPUT_BINDING,  1),
+
+				// HDR data binding
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, HDR_BINDING,  1),
+
+				// Camera data binding
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, CAMERA_BINDING,  1),
+
+				// Core bindings
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+			}),
+			reinterpret_cast<const char*>(raytrace_render_compVK),
+			raytrace_render_compVK_size
+		)
+	})))
+{
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
