@@ -11,7 +11,12 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					Pipeline(const Device* device, VkPipeline&& pipeline) noexcept;
+					enum class PipelineType {
+						Compute,
+						Graphics,
+					};
+
+					Pipeline(const Device* device, PipelineType type, VkPipeline&& pipeline) noexcept;
 
 					Pipeline(const Pipeline&) = delete;
 
@@ -24,6 +29,8 @@ namespace Tachyon {
 					const VkPipeline& getNativePipelineHandle() const noexcept;
 
 				private:
+					PipelineType mType;
+
 					VkPipeline mPipeline;
 				};
 			}

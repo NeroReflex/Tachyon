@@ -155,7 +155,7 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 	descriptorSetLayoutCreateInfo.pBindings = renderDescriptorSetLayoutBinding.data();
 
 	VkDescriptorSetLayout renderDescriptorSetLayout;
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, &descriptorSetLayoutCreateInfo, NULL, &renderDescriptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, &descriptorSetLayoutCreateInfo, nullptr, &renderDescriptorSetLayout));
 	
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
@@ -167,20 +167,21 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 
-	VkPipeline nativePipeline;
+	VkPipeline pipeline;
 	if (isComputePipeline) {
 		VkComputePipelineCreateInfo computePipelineCreateInfo;
 		computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 		computePipelineCreateInfo.pNext = nullptr;
 		computePipelineCreateInfo.flags = 0;
+		computePipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS)
 		computePipelineCreateInfo.flags |= VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
 #endif
 		computePipelineCreateInfo.stage = shadersStageInfo[0];
 		computePipelineCreateInfo.layout = pipelineLayout;
-		VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, NULL, &nativePipeline));
 		
+		VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline));
 	} else {
 		DBG_ASSERT(false);
 	}
