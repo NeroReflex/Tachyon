@@ -30,7 +30,7 @@ namespace Tachyon {
 							: bindingType(bindingType), bindingPoint(bindingPoint), count(count) {};
 					};
 
-					ShaderLayoutBinding() noexcept;
+					ShaderLayoutBinding(const std::initializer_list<BindingDescriptor>& descriptors = std::initializer_list<BindingDescriptor>()) noexcept;
 
 					ShaderLayoutBinding(const ShaderLayoutBinding&) noexcept;
 

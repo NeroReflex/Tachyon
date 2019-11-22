@@ -19,7 +19,7 @@ namespace Tachyon {
 						Compute,
 					};
 
-					Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, char* source, uint32_t size) noexcept;
+					Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
 					Shader(const Shader&) = delete;
 

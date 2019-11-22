@@ -5,8 +5,11 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-ShaderLayoutBinding::ShaderLayoutBinding() noexcept
-	: mDescriptors() {}
+ShaderLayoutBinding::ShaderLayoutBinding(const std::initializer_list<BindingDescriptor>& descriptors) noexcept
+	: mDescriptors() {
+	for (const auto& desc : descriptors)
+		insert(desc);
+}
 
 ShaderLayoutBinding::ShaderLayoutBinding(const ShaderLayoutBinding& src) noexcept
 	: mDescriptors(src.mDescriptors) {}

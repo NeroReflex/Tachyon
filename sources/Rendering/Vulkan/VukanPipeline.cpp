@@ -16,8 +16,8 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mGeometryInsertShader(
 		mDevice,
 		Framework::Shader::ShaderType::Compute,
-		{},
-		raytrace_insert_compVK,
+		Framework::ShaderLayoutBinding({}),
+		reinterpret_cast<const char*>(raytrace_insert_compVK),
 		raytrace_insert_compVK_size) {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
