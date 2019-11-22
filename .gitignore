@@ -38,6 +38,7 @@
 /.kdev4
 /out
 /nsight
+*.kdev4
 
 # Output image
 output.ppm
