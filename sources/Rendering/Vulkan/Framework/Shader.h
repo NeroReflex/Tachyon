@@ -33,6 +33,8 @@ namespace Tachyon {
 
 					const std::vector<VkDescriptorSetLayoutBinding>& getNativeShaderBindings() const noexcept;
 
+					const ShaderType& getType() const noexcept;
+
 				private:
 					ShaderType mShaderType;
 

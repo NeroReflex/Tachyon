@@ -103,26 +103,38 @@ const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHa
 	return mDevice;
 }
 
-const Pipeline* Device::createGraphicPipeline(
-	const Shader& vertexShader,
-
-	const Shader& fragmentShader) const noexcept
+const Pipeline* Device::createGraphicPipeline(const std::vector<Shader>& shaders) const noexcept
 {
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStageInfo(2);
-	shaderStageInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStageInfo[0].pNext = nullptr;
-	shaderStageInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-	shaderStageInfo[0].module = vertexShader.getNativeShaderModuleHandle();
-	shaderStageInfo[0].pName = "main";
-	shaderStageInfo[0].pSpecializationInfo = nullptr;
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStageInfo(shaders.size());
+	uint32_t i = 0;
+	for (const auto& shader : shaders) {
+		VkShaderStageFlagBits stage;
 
-	shaderStageInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStageInfo[1].pNext = nullptr;
-	shaderStageInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	shaderStageInfo[1].module = fragmentShader.getNativeShaderModuleHandle();
-	shaderStageInfo[1].pName = "main";
-	shaderStageInfo[1].pSpecializationInfo = nullptr;
+		switch (shader.getType()) {
+		case Shader::ShaderType::Vertex:
+			stage = VK_SHADER_STAGE_VERTEX_BIT;
+			break;
+		case Shader::ShaderType::Fragment:
+			stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+			break;
+		case Shader::ShaderType::Geometry:
+			stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+			break;
+		case Shader::ShaderType::Compute:
+			stage = VK_SHADER_STAGE_COMPUTE_BIT;
+			break;
+		}
 
+		shaderStageInfo[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStageInfo[i].pNext = nullptr;
+		shaderStageInfo[i].stage = stage;
+		shaderStageInfo[i].module = shader.getNativeShaderModuleHandle();
+		shaderStageInfo[i].pName = "main";
+		shaderStageInfo[i].pSpecializationInfo = nullptr;
+
+		++i;
+	}
+	
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

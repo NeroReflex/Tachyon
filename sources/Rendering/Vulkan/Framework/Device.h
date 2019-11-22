@@ -45,11 +45,7 @@ namespace Tachyon {
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;
 
-					const Pipeline* createGraphicPipeline(
-						const Shader& vertexShader,
-
-						const Shader& fragmentShader
-					) const noexcept;
+					const Pipeline* createGraphicPipeline(const std::vector<Shader>& shaders) const noexcept;
 
 				private:
 					VkPhysicalDevice mPhysicalDevice;

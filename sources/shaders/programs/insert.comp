@@ -14,7 +14,7 @@ struct InputGeometry {
 	vec4 centroid_radius;
 };
 
-vec3 getMortonPointFromInputGeometry(const /*in*/ InputGeometry inGeom) {
+vec3 getMortonPointFromInputGeometry(/*const*/ in InputGeometry inGeom) {
 	return inGeom.centroid_radius.xyz;
 }
 
@@ -22,7 +22,7 @@ struct InputGeometryCollection {
 	InputGeometry inputCollection[1 << expOfTwo_maxCollectionsForModel];
 };
 
-Geometry transformToGPURepresentation(const InputGeometry inGeometry) {
+Geometry transformToGPURepresentation(/*const*/ in InputGeometry inGeometry) {
 	Geometry outGeometry = Geometry(inGeometry.centroid_radius.xyz, inGeometry.centroid_radius.w);
 
 	return outGeometry;

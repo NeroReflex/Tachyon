@@ -53,3 +53,7 @@ const VkShaderModule& Shader::getNativeShaderModuleHandle() const noexcept {
 const std::vector<VkDescriptorSetLayoutBinding>& Shader::getNativeShaderBindings() const noexcept {
 	return mSpecializedBindings;
 }
+
+const Shader::ShaderType& Shader::getType() const noexcept {
+	return mShaderType;
+}

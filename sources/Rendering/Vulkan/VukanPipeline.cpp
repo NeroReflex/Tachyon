@@ -26,10 +26,9 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
-
-	for (const auto& extension : Framework::Instance::getAllSupportedExtensions()) {
+	
+	for (const auto& extension : Framework::Instance::getAllSupportedExtensions())
 		std::cout << "\t" << extension.extensionName << std::endl;
-	}
 #endif
 
 	mDevice->createSwapchain(getWidth(), getHeight());
