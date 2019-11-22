@@ -15,7 +15,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mInstance(new Framework::Instance(getGLFWwindow())),
 	mDevice(mInstance->openDevice()),
 	mSwapchain(mDevice->createSwapchain(getWidth(), getHeight())),
-	mGeometryInsertShader(
+	mInsertComputeShader(
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
 				// Core bindings
@@ -32,7 +32,21 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			raytrace_insert_compVK_size
 		)
 	),
-	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({ mGeometryInsertShader }))) {
+	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({ mInsertComputeShader }))),
+	mFlushComputeShader(
+		mDevice->loadComputeShader(
+			Framework::ShaderLayoutBinding({
+				// Core bindings
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+			}),
+			reinterpret_cast<const char*>(raytrace_flush_compVK),
+			raytrace_flush_compVK_size
+		)
+	),
+	mFlushPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({ mFlushComputeShader }))) {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
