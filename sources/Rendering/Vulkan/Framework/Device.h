@@ -46,11 +46,20 @@ namespace Tachyon {
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;
 
-					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept;
+					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
-					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) const noexcept;
+					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
 
 				private:
+					template <typename T>
+					T* registerNewOwnedObj(T* const ownedObj) noexcept {
+						uintptr_t ptr = uintptr_t(ownedObj);
+
+						mOwnedObjects.emplace(std::pair<uintptr_t, std::unique_ptr<DeviceOwned>>(ptr, ownedObj));
+
+						return ownedObj;
+					}
+
 					VkPhysicalDevice mPhysicalDevice;
 
 					VkDevice mDevice;
@@ -64,6 +73,8 @@ namespace Tachyon {
 					std::unique_ptr<Swapchain> mSwapchain;
 
 					//std::vector<Queue> mQueueCollection;
+
+					std::unordered_map<uintptr_t, std::unique_ptr<DeviceOwned>> mOwnedObjects;
 				};
 
 			}

@@ -1,4 +1,5 @@
 #include "Pipeline.h"
+#include "Device.h"
 
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
@@ -10,7 +11,9 @@ Pipeline::Pipeline(const Device* device, PipelineType type, VkPipeline&& pipelin
 	mType(type),
 	mPipeline(std::move(pipeline)) {}
 
-Pipeline::~Pipeline() {}
+Pipeline::~Pipeline() {
+	vkDestroyPipeline(getParentDevice()->getNativeDeviceHandle(), mPipeline, nullptr);
+}
 
 const VkPipeline& Pipeline::getNativePipelineHandle() const noexcept {
 	return mPipeline;

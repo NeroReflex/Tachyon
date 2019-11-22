@@ -8,7 +8,7 @@ namespace Tachyon {
 			namespace Framework {
 
 				class ComputeShader :
-					virtual public Shader {
+					public Shader {
 
 				public:
 					inline ComputeShader(const Device* device, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept

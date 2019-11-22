@@ -1,5 +1,7 @@
 #include "Device.h"
 
+#include "ComputePipeline.h"
+
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
@@ -83,6 +85,9 @@ Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDe
 Device::~Device() {
 	mSwapchain.reset();
 
+	for (auto& ownedObj : mOwnedObjects)
+		ownedObj.second.reset();
+
 	vkDestroyDevice(mDevice, nullptr);
 }
 
@@ -101,12 +106,12 @@ const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHa
 	return mDevice;
 }
 
-const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) const noexcept
+const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
 {
-	return new ComputeShader(this, bindings, source, size);
+	return registerNewOwnedObj(new ComputeShader(this, bindings, source, size));
 }
 
-const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders) const noexcept
+const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders) noexcept
 {
 	DBG_ASSERT( (shaders.size() > 0) );
 	bool isComputePipeline = (shaders.size() == 1) && (shaders[0]->getType() == Shader::ShaderType::Compute);
@@ -154,14 +159,14 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 	descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(renderDescriptorSetLayoutBinding.size()); // only a single binding in this descriptor set layout. 
 	descriptorSetLayoutCreateInfo.pBindings = renderDescriptorSetLayoutBinding.data();
 
-	VkDescriptorSetLayout renderDescriptorSetLayout;
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, &descriptorSetLayoutCreateInfo, nullptr, &renderDescriptorSetLayout));
+	VkDescriptorSetLayout descriptorSetLayout;
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mDevice, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout));
 	
 	VkPipelineLayout pipelineLayout;
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &renderDescriptorSetLayout;
+	pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -186,9 +191,10 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 		DBG_ASSERT(false);
 	}
 
-	//vkDestroyDescriptorSetLayout(mDevice, *flushDescriptorSetLayout, NULL);
+	vkDestroyDescriptorSetLayout(mDevice, descriptorSetLayout, NULL);
+	vkDestroyPipelineLayout(mDevice, pipelineLayout, nullptr);
 
-	return nullptr;
+	return registerNewOwnedObj(new ComputePipeline(this, std::move(pipeline)));
 }
 
 Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
