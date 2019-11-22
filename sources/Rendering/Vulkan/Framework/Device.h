@@ -4,6 +4,7 @@
 #include "Swapchain.h"
 #include "ShaderLayoutBinding.h"
 #include "Pipeline.h"
+#include "Image.h"
 
 #include "ComputeShader.h"
 
@@ -49,6 +50,8 @@ namespace Tachyon {
 					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
 					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
+
+					//const Image* createImage() const noexcept;
 
 				private:
 					template <typename T>

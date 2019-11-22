@@ -15,22 +15,10 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					
-					enum class ViewType {
-						Image1D,
-						Image2D,
-						Image3D,
-						CubeMap,
-						Image1DArray,
-						Image2DArray,
-						CubeMapArray,
-					};
-
 					enum class ViewColorMapping {
 						rgba_rgba,
 					};
 
-					
 					ImageInterface(const Device* device, VkImage&& image) noexcept;
 
 					ImageInterface(const ImageInterface&) = delete;

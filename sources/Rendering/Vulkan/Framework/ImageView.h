@@ -1,16 +1,26 @@
 #pragma once
 
-#include "ImageInterface.h"
+#include "Tachyon.h"
 
 namespace Tachyon {
 	namespace Rendering {
 		namespace Vulkan {
 			namespace Framework {
+				class ImageInterface;
 
 				class ImageView {
 
 				public:
-					
+					enum class ViewType {
+						Image1D,
+						Image2D,
+						Image3D,
+						CubeMap,
+						Image1DArray,
+						Image2DArray,
+						CubeMapArray,
+					};
+
 					ImageView(const ImageInterface* image, VkImageView&& imageView) noexcept;
 
 					ImageView(const ImageView&) = delete;

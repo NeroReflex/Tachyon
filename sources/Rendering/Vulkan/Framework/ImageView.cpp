@@ -1,4 +1,5 @@
 #include "ImageView.h"
+#include "ImageInterface.h"
 #include "Device.h"
 
 using namespace Tachyon;

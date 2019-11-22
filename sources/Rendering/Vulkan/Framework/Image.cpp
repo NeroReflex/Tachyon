@@ -13,7 +13,7 @@ Image::Image(const Device* device, VkImage&& image) noexcept
     
 Image::~Image() {}
 
-ImageView* Image::createImageView(ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits, ViewColorMapping swizzle, uint32_t subrangeBaseMipLevel, uint32_t subrangeLevelCount, uint32_t subrangeBaseArrayLayer, uint32_t subrangeLayerCount) noexcept {
+ImageView* Image::createImageView(ImageView::ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits, ViewColorMapping swizzle, uint32_t subrangeBaseMipLevel, uint32_t subrangeLevelCount, uint32_t subrangeBaseArrayLayer, uint32_t subrangeLayerCount) noexcept {
 	VkImageViewCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	createInfo.pNext = nullptr;
@@ -26,31 +26,31 @@ ImageView* Image::createImageView(ViewType type, VkFormat format, VkImageAspectF
 	createInfo.subresourceRange.layerCount = subrangeLayerCount;
 
 	switch (type) {
-	case ViewType::Image1D:
+	case ImageView::ViewType::Image1D:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
 		break;
 
-	case ViewType::Image2D:
+	case ImageView::ViewType::Image2D:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		break;
 
-	case ViewType::Image3D:
+	case ImageView::ViewType::Image3D:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
 		break;
 
-	case ViewType::CubeMap:
+	case ImageView::ViewType::CubeMap:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 		break;
 
-	case ViewType::Image1DArray:
+	case ImageView::ViewType::Image1DArray:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
 		break;
 
-	case ViewType::Image2DArray:
+	case ImageView::ViewType::Image2DArray:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		break;
 
-	case ViewType::CubeMapArray:
+	case ImageView::ViewType::CubeMapArray:
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
 		break;
 
