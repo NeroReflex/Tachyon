@@ -14,7 +14,7 @@ struct InputGeometry {
 	vec4 centroid_radius;
 };
 
-vec3 getMortonPointFromInputGeometry(const in InputGeometry inGeom) {
+vec3 getMortonPointFromInputGeometry(const /*in*/ InputGeometry inGeom) {
 	return inGeom.centroid_radius.xyz;
 }
 
@@ -33,7 +33,7 @@ layout(std140, binding = GEOMETRY_INSERTT_ATTR_BINDING) uniform geometryAttr {
 	uint targetBLAS;
 };
 
-layout(std430, binding = GEOMETRY_INSERT_BINDING) buffer insertionGeometry {
+layout(std140, binding = GEOMETRY_INSERT_BINDING) buffer insertionGeometry {
 	InputGeometryCollection geometryToInsert[]; // This is the collection of geometry to be organized on the BLAS
 };
 

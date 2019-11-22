@@ -4,6 +4,7 @@ using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 
+#include "shaders/config.glsl"
 #include "shaders/vulkan/raytrace_insert.comp.spv.h" // raytrace_insert_compVK, raytrace_insert_compVK_size
 #include "shaders/vulkan/raytrace_flush.comp.spv.h" // raytrace_flush_compVK, raytrace_flush_compVK_size
 #include "shaders/vulkan/raytrace_render.comp.spv.h" // raytrace_render_compVK, raytrace_render_compVK_size
@@ -16,7 +17,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mGeometryInsertShader(
 		mDevice,
 		Framework::Shader::ShaderType::Compute,
-		Framework::ShaderLayoutBinding({}),
+		Framework::ShaderLayoutBinding({
+			Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_INSERT_BINDING,  1 ),
+			Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1 )
+		}),
 		reinterpret_cast<const char*>(raytrace_insert_compVK),
 		raytrace_insert_compVK_size) {
 
