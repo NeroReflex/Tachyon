@@ -31,7 +31,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			reinterpret_cast<const char*>(raytrace_insert_compVK),
 			raytrace_insert_compVK_size
 		)
-	}))),
+		}))),
 	mFlushPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
@@ -44,7 +44,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			reinterpret_cast<const char*>(raytrace_flush_compVK),
 			raytrace_flush_compVK_size
 		)
-	}))),
+		}))),
 	mUpdatePipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
@@ -57,7 +57,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			reinterpret_cast<const char*>(raytrace_update_compVK),
 			raytrace_update_compVK_size
 		)
-	}))),
+		}))),
 	mRenderingPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
@@ -82,7 +82,17 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			reinterpret_cast<const char*>(raytrace_render_compVK),
 			raytrace_render_compVK_size
 		)
-	})))
+		}))),
+	mRaytracingTLAS(mDevice->createImage(Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width)),
+	mRaytracingBLASCollection(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
+	mRaytracingModelMatrix(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
+	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
+	mCoreMemoryPool(mDevice->requestMemoryPool({
+		mRaytracingTLAS,
+		mRaytracingBLASCollection,
+		mRaytracingModelMatrix,
+		mRaytracingGeometryCollection
+	}))
 {
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 

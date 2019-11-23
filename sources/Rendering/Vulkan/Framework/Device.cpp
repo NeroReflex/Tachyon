@@ -106,6 +106,11 @@ const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHa
 	return mDevice;
 }
 
+const VkPhysicalDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativePhysicalDeviceInstance() const noexcept
+{
+	return mPhysicalDevice;
+}
+
 const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
 {
 	return registerNewOwnedObj(new ComputeShader(this, bindings, source, size));
@@ -237,7 +242,7 @@ Swapchain* Device::getSwapchain() const noexcept
 	return mSwapchain.get();
 }
 
-const Image* Device::createImage(uint32_t width, uint32_t height, uint32_t depth, Image::ImageType type, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
+const Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
 	VkImageType imgType = VK_IMAGE_TYPE_3D;
 	switch (type) {
 	case Image::ImageType::Image1D:
@@ -281,4 +286,8 @@ const Image* Device::createImage(uint32_t width, uint32_t height, uint32_t depth
 	VK_CHECK_RESULT(vkCreateImage(mDevice, &imageCreateInfo, NULL, &image));
 
 	return registerNewOwnedObj(new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image)));
+}
+
+MemoryPool* Device::requestMemoryPool(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept {
+	return registerNewOwnedObj(new MemoryPool(this, resources));
 }

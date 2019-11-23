@@ -24,6 +24,8 @@ namespace Tachyon {
 
 					const uint32_t& getRequiredAlignment() const noexcept;
 
+					const uint32_t& getRequiredMemoryTypes() const noexcept;
+
 				protected:
 					void setMemoryRequirements(VkMemoryRequirements&& memReq) noexcept;
 

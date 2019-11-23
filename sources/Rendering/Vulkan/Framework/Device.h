@@ -5,6 +5,7 @@
 #include "ShaderLayoutBinding.h"
 #include "Pipeline.h"
 #include "Image.h"
+#include "MemoryPool.h"
 
 #include "ComputeShader.h"
 
@@ -47,11 +48,15 @@ namespace Tachyon {
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;
 
+					const VkPhysicalDevice& getNativePhysicalDeviceInstance() const noexcept;
+
 					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
 					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
 
-					const Image* createImage(uint32_t width, uint32_t height, uint32_t depth, Image::ImageType type, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
+					const Image* createImage(Image::ImageType type, uint32_t width, uint32_t height = 1, uint32_t depth = 1, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
+
+					MemoryPool* requestMemoryPool(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept;
 
 				private:
 					template <typename T>

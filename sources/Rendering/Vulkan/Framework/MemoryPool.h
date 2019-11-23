@@ -24,6 +24,8 @@ namespace Tachyon {
 					~MemoryPool() override;
 
 				private:
+					uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept;
+
 					VkDeviceMemory mDeviceMemory;
 				};
 			}

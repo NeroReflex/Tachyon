@@ -22,3 +22,7 @@ const uint32_t& SpaceRequiringResource::getRequiredAlignment() const noexcept {
 
 	return mMemoryRequirements.alignment;
 }
+
+const uint32_t& SpaceRequiringResource::getRequiredMemoryTypes() const noexcept {
+	return mMemoryRequirements.memoryTypeBits;
+}

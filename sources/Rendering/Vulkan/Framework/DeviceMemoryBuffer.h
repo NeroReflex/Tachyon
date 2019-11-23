@@ -20,7 +20,7 @@ namespace Tachyon {
 					DeviceMemoryBuffer(DeviceMemoryBuffer&&) = delete;
 
 					DeviceMemoryBuffer& operator=(const DeviceMemoryBuffer&) = delete;
-					
+
 					~DeviceMemoryBuffer() override;
 				};
 
