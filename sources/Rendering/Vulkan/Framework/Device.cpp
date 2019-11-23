@@ -266,8 +266,10 @@ const Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t
 
 	VkImageCreateInfo imageCreateInfo; // Using stack will lead to stack overflow
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageCreateInfo.pNext = NULL;
+	imageCreateInfo.pNext = nullptr;
 	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	imageCreateInfo.queueFamilyIndexCount = 1;
+	imageCreateInfo.pQueueFamilyIndices = &mQueueFamilyIndex;
 	imageCreateInfo.format = format;
 	imageCreateInfo.samples = samples;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -283,11 +285,51 @@ const Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t
 
 	// This is to create the ModelMatrix-Collection
 	VkImage image;
-	VK_CHECK_RESULT(vkCreateImage(mDevice, &imageCreateInfo, NULL, &image));
+	VK_CHECK_RESULT(vkCreateImage(mDevice, &imageCreateInfo, nullptr, &image));
 
 	return registerNewOwnedObj(new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image)));
 }
 
 MemoryPool* Device::requestMemoryPool(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept {
-	return registerNewOwnedObj(new MemoryPool(this, resources));
+
+	DBG_ASSERT((resources.size() > 0));
+	uint32_t memoryTypeBits = 0xFFFFFFFF;
+	size_t totalSize = 0;
+	for (const auto& allocRequiringResource : resources) {
+		totalSize += static_cast<VkDeviceSize>(allocRequiringResource->getRequiredAlignment()) + static_cast<VkDeviceSize>(allocRequiringResource->getRequiredSpace());
+		memoryTypeBits &= allocRequiringResource->getRequiredMemoryTypes();
+	}
+
+	DBG_ASSERT((memoryTypeBits != 0));
+
+	VkMemoryAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.pNext = nullptr;
+	allocateInfo.allocationSize = totalSize;
+	allocateInfo.memoryTypeIndex = findMemoryType(memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	// Allocate a big chunk of memory on the device
+	VkDeviceMemory memoryPool;
+	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &memoryPool));
+
+	//TODO: register resources on this memory!!!
+
+	return registerNewOwnedObj(new MemoryPool(this, totalSize, std::move(memoryPool)));
+}
+
+uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept {
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
+
+	/*
+	How does this search work?
+	See the documentation of VkPhysicalDeviceMemoryProperties for a detailed description.
+	*/
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+		if ((memoryTypeBits & (1 << i)) &&
+			((memoryProperties.memoryTypes[i].propertyFlags & properties) == properties))
+			return i;
+	}
+	return -1;
 }

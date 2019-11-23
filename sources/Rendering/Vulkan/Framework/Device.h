@@ -68,6 +68,8 @@ namespace Tachyon {
 						return ownedObj;
 					}
 
+					uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept;
+
 					VkPhysicalDevice mPhysicalDevice;
 
 					VkDevice mDevice;

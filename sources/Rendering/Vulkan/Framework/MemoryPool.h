@@ -13,7 +13,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					MemoryPool(const Device* device, const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept;
+					MemoryPool(const Device* device, VkDeviceSize totalSize, VkDeviceMemory&& memory) noexcept;
 
 					MemoryPool(const MemoryPool&) = delete;
 
@@ -24,7 +24,7 @@ namespace Tachyon {
 					~MemoryPool() override;
 
 				private:
-					uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept;
+					VkDeviceSize mTotalSize;
 
 					VkDeviceMemory mDeviceMemory;
 				};
