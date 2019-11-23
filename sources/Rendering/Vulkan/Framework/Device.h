@@ -51,7 +51,7 @@ namespace Tachyon {
 
 					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
 
-					//const Image* createImage() const noexcept;
+					const Image* createImage(uint32_t width, uint32_t height, uint32_t depth, Image::ImageType type, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
 
 				private:
 					template <typename T>

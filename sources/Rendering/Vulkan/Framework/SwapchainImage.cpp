@@ -18,7 +18,7 @@ SwapchainImage::SwapchainImage(const Device* device, const Swapchain* swapchain,
 	createInfo.image = getNativeImageHandle();
 	createInfo.pNext = nullptr;
 	createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	createInfo.format = getParentSwapchain()->getFormat();
+	createInfo.format = getFormat();
 	createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 	createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 	createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -43,4 +43,8 @@ const Swapchain* SwapchainImage::getParentSwapchain() const noexcept {
 
 ImageView* SwapchainImage::getImageView() const noexcept {
 	return mImageView.get();
+}
+
+const VkFormat& SwapchainImage::getFormat() const noexcept {
+	return getParentSwapchain()->getFormat();
 }

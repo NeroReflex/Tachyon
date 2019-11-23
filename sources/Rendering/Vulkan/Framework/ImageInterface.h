@@ -15,10 +15,6 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					enum class ViewColorMapping {
-						rgba_rgba,
-					};
-
 					ImageInterface(const Device* device, VkImage&& image) noexcept;
 
 					ImageInterface(const ImageInterface&) = delete;
@@ -30,6 +26,8 @@ namespace Tachyon {
 					~ImageInterface() override;
 
 					const VkImage& getNativeImageHandle() const noexcept;
+
+					virtual const VkFormat& getFormat() const noexcept = 0;
 
 				private:
 					VkImage mImage;

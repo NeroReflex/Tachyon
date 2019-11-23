@@ -7,13 +7,23 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-Image::Image(const Device* device, VkImage&& image) noexcept
+Image::Image(const Device* device, ImageType type, VkFormat format, VkExtent3D extent, VkSampleCountFlagBits samples, uint32_t mipLevels, VkImage&& image) noexcept
 	: DeviceOwned(device),
-	ImageInterface(device, std::move(image)) {}
+	ImageInterface(device, std::move(image)),
+	mType(type),
+	mFormat(format),
+	mMipLevels(mipLevels),
+	mExtent(extent),
+	mSamples(samples) {
+
+	VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), &memRequirements);
+	SpaceRequiringResource::setMemoryRequirements(std::move(memRequirements));
+}
     
 Image::~Image() {}
 
-ImageView* Image::createImageView(ImageView::ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits, ViewColorMapping swizzle, uint32_t subrangeBaseMipLevel, uint32_t subrangeLevelCount, uint32_t subrangeBaseArrayLayer, uint32_t subrangeLayerCount) noexcept {
+ImageView* Image::createImageView(ImageView::ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits, ImageView::ViewColorMapping swizzle, uint32_t subrangeBaseMipLevel, uint32_t subrangeLevelCount, uint32_t subrangeBaseArrayLayer, uint32_t subrangeLayerCount) noexcept {
 	VkImageViewCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	createInfo.pNext = nullptr;
@@ -60,7 +70,7 @@ ImageView* Image::createImageView(ImageView::ViewType type, VkFormat format, VkI
 	}
 
 	switch (swizzle) {
-	case ViewColorMapping::rgba_rgba:
+	case ImageView::ViewColorMapping::rgba_rgba:
 		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -80,4 +90,8 @@ ImageView* Image::createImageView(ImageView::ViewType type, VkFormat format, VkI
 	mImageViews.emplace(std::pair<uintptr_t, std::unique_ptr<ImageView>>(uintptr_t(created), created));
 
 	return created;
+}
+
+const VkFormat& Image::getFormat() const noexcept {
+	return mFormat;
 }

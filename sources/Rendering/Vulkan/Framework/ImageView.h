@@ -21,6 +21,10 @@ namespace Tachyon {
 						CubeMapArray,
 					};
 
+					enum class ViewColorMapping {
+						rgba_rgba,
+					};
+
 					ImageView(const ImageInterface* image, VkImageView&& imageView) noexcept;
 
 					ImageView(const ImageView&) = delete;

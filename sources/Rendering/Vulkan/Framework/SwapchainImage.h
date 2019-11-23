@@ -29,6 +29,8 @@ namespace Tachyon {
 
 					ImageView* getImageView() const noexcept;
 
+					const VkFormat& getFormat() const noexcept final;
+
 				private:
 					const Swapchain* mParentSwapchain;
 

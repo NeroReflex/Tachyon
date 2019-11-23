@@ -236,3 +236,49 @@ Swapchain* Device::getSwapchain() const noexcept
 {
 	return mSwapchain.get();
 }
+
+const Image* Device::createImage(uint32_t width, uint32_t height, uint32_t depth, Image::ImageType type, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
+	VkImageType imgType = VK_IMAGE_TYPE_3D;
+	switch (type) {
+	case Image::ImageType::Image1D:
+		imgType = VK_IMAGE_TYPE_1D;
+		height = 1;
+		depth = 1;
+		break;
+
+	case Image::ImageType::Image2D:
+		imgType = VK_IMAGE_TYPE_2D;
+		depth = 1;
+		break;
+
+	case Image::ImageType::Image3D:
+		imgType = VK_IMAGE_TYPE_3D;
+		break;
+
+	default:
+		DBG_ASSERT(false);
+	}
+
+	VkImageCreateInfo imageCreateInfo; // Using stack will lead to stack overflow
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.pNext = NULL;
+	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	imageCreateInfo.format = format;
+	imageCreateInfo.samples = samples;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	imageCreateInfo.mipLevels = mipLevels;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.imageType = imgType;
+	imageCreateInfo.extent.width = width;
+	imageCreateInfo.extent.height = height;
+	imageCreateInfo.extent.depth = depth;
+
+	// This is to create the ModelMatrix-Collection
+	VkImage image;
+	VK_CHECK_RESULT(vkCreateImage(mDevice, &imageCreateInfo, NULL, &image));
+
+	return registerNewOwnedObj(new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image)));
+}
