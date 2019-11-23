@@ -101,18 +101,15 @@ bool Device::isExtensionAvailable(const std::string& extName) const noexcept {
 	return false;
 }
 
-const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHandle() const noexcept
-{
+const VkDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativeDeviceHandle() const noexcept {
 	return mDevice;
 }
 
-const VkPhysicalDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativePhysicalDeviceInstance() const noexcept
-{
+const VkPhysicalDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNativePhysicalDeviceInstance() const noexcept {
 	return mPhysicalDevice;
 }
 
-const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
-{
+const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept {
 	return registerNewOwnedObj(new ComputeShader(this, bindings, source, size));
 }
 
@@ -237,8 +234,7 @@ Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const Swapch
 	return mSwapchain.get();
 }
 
-Swapchain* Device::getSwapchain() const noexcept
-{
+Swapchain* Device::getSwapchain() const noexcept {
 	return mSwapchain.get();
 }
 
@@ -291,7 +287,6 @@ const Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t
 }
 
 MemoryPool* Device::requestMemoryPool(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept {
-
 	DBG_ASSERT((resources.size() > 0));
 	uint32_t memoryTypeBits = 0xFFFFFFFF;
 	size_t totalSize = 0;
@@ -319,7 +314,6 @@ MemoryPool* Device::requestMemoryPool(const std::initializer_list<const SpaceReq
 
 uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept {
 	VkPhysicalDeviceMemoryProperties memoryProperties;
-
 	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
 
 	/*
