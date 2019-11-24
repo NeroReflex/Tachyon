@@ -11,18 +11,18 @@ void SpaceRequiringResource::setMemoryRequirements(VkMemoryRequirements&& memReq
 	std::swap(memReq, mMemoryRequirements);
 }
 
-const uint32_t& SpaceRequiringResource::getRequiredSpace() const noexcept {
+ uint32_t SpaceRequiringResource::getRequiredSpace() const noexcept {
 	DBG_ASSERT(mMemoryRequirementsSet);
 
 	return mMemoryRequirements.size;
 }
 
-const uint32_t& SpaceRequiringResource::getRequiredAlignment() const noexcept {
+uint32_t SpaceRequiringResource::getRequiredAlignment() const noexcept {
 	DBG_ASSERT(mMemoryRequirementsSet);
 
 	return mMemoryRequirements.alignment;
 }
 
-const uint32_t& SpaceRequiringResource::getRequiredMemoryTypes() const noexcept {
+uint32_t SpaceRequiringResource::getRequiredMemoryTypes() const noexcept {
 	return mMemoryRequirements.memoryTypeBits;
 }

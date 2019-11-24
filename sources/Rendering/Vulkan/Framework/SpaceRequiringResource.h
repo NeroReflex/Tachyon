@@ -20,11 +20,11 @@ namespace Tachyon {
 
 					virtual ~SpaceRequiringResource() = default;
 
-					const uint32_t& getRequiredSpace() const noexcept;
+					uint32_t getRequiredSpace() const noexcept;
 
-					const uint32_t& getRequiredAlignment() const noexcept;
+					uint32_t getRequiredAlignment() const noexcept;
 
-					const uint32_t& getRequiredMemoryTypes() const noexcept;
+					uint32_t getRequiredMemoryTypes() const noexcept;
 
 				protected:
 					void setMemoryRequirements(VkMemoryRequirements&& memReq) noexcept;

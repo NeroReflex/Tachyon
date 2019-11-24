@@ -13,6 +13,7 @@
 // STL containers
 #include <initializer_list>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <array>
 #include <list>

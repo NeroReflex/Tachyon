@@ -12,8 +12,8 @@ namespace Tachyon {
 
 		public:
 
-			constexpr static glm::float32 defaultGamma = 2.2;
-			constexpr static glm::float32 defaultExposure = 0.1;
+			static const glm::float32 defaultGamma;
+			static const glm::float32 defaultExposure;
 
 			HDR(glm::float32 gamma = HDR::defaultGamma, glm::float32 exposure = HDR::defaultExposure) noexcept;
 		};

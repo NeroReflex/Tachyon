@@ -48,6 +48,8 @@ std::string get_opengl_compute_info() {
 }
 #endif
 
+#include "Memory/Allocator.hpp"
+
 int main(int argc, char** argv) {
 	// Initialize GLFW
 	if (glfwInit() == 0) {

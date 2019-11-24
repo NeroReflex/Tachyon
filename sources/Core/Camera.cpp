@@ -17,7 +17,7 @@ Camera::Camera(glm::vec3 lookfrom, glm::vec3 lookat, glm::float32 vfov, glm::flo
 void Camera::update() noexcept {
 	glm::vec3 u, v, w;
 	const glm::float32 theta = mFoV * glm::pi<glm::float32>() / 180;
-	const glm::float32 half_height = glm::tan(theta / 2.0);
+	const glm::float32 half_height = static_cast<glm::float32>(glm::tan(theta / static_cast<glm::float32>(2.0)));
 	const glm::float32 half_width = mAspectRatio * half_height;
 	w = glm::normalize(mOrigin - mLookingDir);
 	u = glm::normalize(glm::cross(mUPVector, w));
