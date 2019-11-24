@@ -17,6 +17,8 @@ namespace Tachyon {
 			};
 
 		public:
+			static size_t getNumberOfPagesUsedToManagePages(size_t numberOfPagesToManage) noexcept;
+
 			/**
 			 * Construct a pool memory manager for pagesCount atomic memory pages.
 			 *
@@ -39,7 +41,7 @@ namespace Tachyon {
 			size_t getMaxAllocationSize() const noexcept;
 
 			size_t getPagesCount() const noexcept;
-
+			
 		private:
 			struct blockIdentifier {
 				size_t pageId;
@@ -51,7 +53,7 @@ namespace Tachyon {
 
 			void* addrFromBlockIdentifier(const blockIdentifier&) const noexcept;
 
-			const blockIdentifier blockIdentifierFromAddr(const void* const addr) const noexcept;
+			blockIdentifier blockIdentifierFromAddr(const void* const addr) const noexcept;
 
 			const blockIdentifier freeSearch(uint32_t freeBlocks, const void* const hint = NULL) const noexcept;
 

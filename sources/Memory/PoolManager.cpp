@@ -14,8 +14,9 @@ PoolManager::PoolManager(size_t pagesCount, void* const basePtr, uint32_t* const
 		DBG_ASSERT(((uintptr_t(basePtr) % atomicMemoryBlockSize) == 0));
 
 		if (reset) {
+			const auto managementReserverCount = getNumberOfPagesUsedToManagePages(pagesCount);
 			for (size_t i = 0; i < mPagesCount; ++i)
-				mMemoryMap[i] = (i < (mPagesCount / numberOfBlocksInPage)) ? static_cast<uint32_t>(0x00000000) : static_cast<uint32_t>(0xFFFFFFFF);
+				mMemoryMap[i] = (i < managementReserverCount) ? static_cast<uint32_t>(0x00000000) : static_cast<uint32_t>(0xFFFFFFFF);
 		}
 }
 
@@ -28,7 +29,7 @@ void* PoolManager::addrFromBlockIdentifier(const PoolManager::blockIdentifier& b
 	return reinterpret_cast<void*>(uintptr_t(mBasePtr) + ((uintptr_t((blk.pageId * shiftLimit) + blk.blockId)) * atomicMemoryBlockSize));
 }
 
-const PoolManager::blockIdentifier PoolManager::blockIdentifierFromAddr(void* addr) const noexcept {
+PoolManager::blockIdentifier PoolManager::blockIdentifierFromAddr(const void* addr) const noexcept {
 	uintptr_t offset = uintptr_t(addr) - uintptr_t(mBasePtr);
 	uintptr_t blockSequentialNumber = offset / atomicMemoryBlockSize;
 
@@ -153,4 +154,8 @@ size_t PoolManager::getMaxAllocationSize() const noexcept {
 
 size_t PoolManager::getPagesCount() const noexcept {
 	return mPagesCount;
+}
+
+size_t PoolManager::getNumberOfPagesUsedToManagePages(size_t numberOfPagesToManage) noexcept {
+	return (numberOfPagesToManage / numberOfBlocksInPage) + ((numberOfPagesToManage % numberOfBlocksInPage) > 0) ? 1 : 0;
 }

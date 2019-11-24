@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceOwned.h"
+#include "Memory/PoolManager.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -11,9 +12,9 @@ namespace Tachyon {
 
 				class MemoryPool :
 					virtual public DeviceOwned {
-
+				
 				public:
-					MemoryPool(const Device* device, VkDeviceSize totalSize, VkDeviceMemory&& memory) noexcept;
+					MemoryPool(const Device* device, VkMemoryPropertyFlagBits props, uint32_t memoryTypeBits, VkDeviceSize pagesCount, VkDeviceMemory&& memory) noexcept;
 
 					MemoryPool(const MemoryPool&) = delete;
 
@@ -23,10 +24,18 @@ namespace Tachyon {
 
 					~MemoryPool() override;
 
+					const VkMemoryPropertyFlagBits& getMemoryProperties() const noexcept;
+
 				private:
-					VkDeviceSize mTotalSize;
+					VkMemoryPropertyFlagBits mProperties;
+
+					uint32_t mMemoryTypeBits;
 
 					VkDeviceMemory mDeviceMemory;
+
+					uint32_t* const mFixedPageTracker;
+
+					Memory::PoolManager mPoolManager;
 				};
 			}
 		}

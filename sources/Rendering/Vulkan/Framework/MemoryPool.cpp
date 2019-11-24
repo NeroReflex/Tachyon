@@ -7,12 +7,20 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-MemoryPool::MemoryPool(const Device* device, VkDeviceSize totalSize, VkDeviceMemory&& memory) noexcept
+MemoryPool::MemoryPool(const Device* device, VkMemoryPropertyFlagBits props, uint32_t memoryTypeBits, VkDeviceSize pagesCount, VkDeviceMemory&& memory) noexcept
 	: DeviceOwned(device),
+	mProperties(std::move(props)),
+	mMemoryTypeBits(memoryTypeBits),
 	mDeviceMemory(std::move(memory)),
-	mTotalSize(totalSize) {}
+	mFixedPageTracker(new uint32_t[Memory::PoolManager::getNumberOfPagesUsedToManagePages(pagesCount)]),
+	mPoolManager(pagesCount, NULL, mFixedPageTracker, true) {}
 
 MemoryPool::~MemoryPool() {
+	delete[] mFixedPageTracker;
+
 	vkFreeMemory(getParentDevice()->getNativeDeviceHandle(), mDeviceMemory, nullptr);
 }
 
+const VkMemoryPropertyFlagBits& MemoryPool::getMemoryProperties() const noexcept {
+	return mProperties;
+}

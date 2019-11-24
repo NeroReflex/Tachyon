@@ -56,7 +56,7 @@ namespace Tachyon {
 
 					const Image* createImage(Image::ImageType type, uint32_t width, uint32_t height = 1, uint32_t depth = 1, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
 
-					MemoryPool* requestMemoryPool(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept;
+					void allocateResources(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept;
 
 				private:
 					template <typename T>
@@ -84,7 +84,12 @@ namespace Tachyon {
 
 					//std::vector<Queue> mQueueCollection;
 
+					std::unordered_map<VkMemoryPropertyFlagBits, std::list<std::unique_ptr<MemoryPool>>> mMemoryPools;
+
 					std::unordered_map<uintptr_t, std::unique_ptr<DeviceOwned>> mOwnedObjects;
+
+					MemoryPool* registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceSize pagesCount, uint32_t memoryTypeBits) noexcept;
+
 				};
 
 			}
