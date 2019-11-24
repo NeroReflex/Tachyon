@@ -141,7 +141,7 @@ namespace Tachyon {
 
 		template<class T>
 		inline typename Allocator<T>::pointer Allocator<T>::allocate(typename Allocator<T>::size_type n, const void* hint) noexcept {
-			auto allocResult = mManager.malloc(n, alignof(T));
+			auto allocResult = mManager.malloc(n, alignof(T), hint);
 
 			DBG_ASSERT(allocResult.success);
 

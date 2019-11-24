@@ -32,7 +32,7 @@ namespace Tachyon {
 
 			~PoolManager();
 
-			AllocResult malloc(size_t bytes, size_t bytesAlign = 1) noexcept;
+			AllocResult malloc(size_t bytes, size_t bytesAlign = 1, const void* const hint = NULL) noexcept;
 
 			void free(void* memory, size_t bytes, size_t bytesAlign = 1) noexcept;
 
@@ -51,9 +51,9 @@ namespace Tachyon {
 
 			void* addrFromBlockIdentifier(const blockIdentifier&) const noexcept;
 
-			const blockIdentifier blockIdentifierFromAddr(void* addr) const noexcept;
+			const blockIdentifier blockIdentifierFromAddr(const void* const addr) const noexcept;
 
-			const blockIdentifier freeSearch(uint32_t freeBlocks) const noexcept;
+			const blockIdentifier freeSearch(uint32_t freeBlocks, const void* const hint = NULL) const noexcept;
 
 		private:
 			void* const mBasePtr;

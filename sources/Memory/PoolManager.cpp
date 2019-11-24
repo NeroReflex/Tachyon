@@ -38,7 +38,7 @@ const PoolManager::blockIdentifier PoolManager::blockIdentifierFromAddr(void* ad
 	return blockIdentifier(pageNumber, blockNumber);
 }
 
-PoolManager::AllocResult PoolManager::malloc(size_t bytes, size_t bytesAlign) noexcept {
+PoolManager::AllocResult PoolManager::malloc(size_t bytes, size_t bytesAlign, const void* const hint) noexcept {
 	DBG_ASSERT(bytesAlign < atomicMemoryBlockSize);
 
 	size_t baseAlignment = atomicMemoryBlockSize;
@@ -46,7 +46,7 @@ PoolManager::AllocResult PoolManager::malloc(size_t bytes, size_t bytesAlign) no
 
 	size_t requiredMemoryBlocks = countRequiredMemoryBlock(bytes) + ((memoryRequiredForAlignmentInBytes > 0) ? countRequiredMemoryBlock(memoryRequiredForAlignmentInBytes) : 0);
 
-	const auto freeSearchResult = freeSearch(requiredMemoryBlocks);
+	const auto freeSearchResult = freeSearch(requiredMemoryBlocks, hint);
 	bool success = freeSearchResult.pageId < mPagesCount;
 
 	if (!success)
@@ -97,24 +97,36 @@ void PoolManager::free(void* memory, size_t bytes, size_t bytesAlign) noexcept {
 	}
 }
 
-const PoolManager::blockIdentifier PoolManager::freeSearch(uint32_t freeBlocks) const noexcept {
+const PoolManager::blockIdentifier PoolManager::freeSearch(uint32_t freeBlocks, const void* const hint) const noexcept {
 	size_t resultIt = mPagesCount;
 	uint32_t resultBlock = shiftLimit;
 
+	size_t pageOffset = 0;
+	uint32_t blockOffsetOnPage = 0; // this can be pre-loaded
+
+	// TODO: ok che inizio a cercare da hint, ma poi non torno piu' indietro!
+	if (hint >= mBasePtr) {
+		const auto startingOffset = blockIdentifierFromAddr(hint);
+		size_t pageOffset = startingOffset.pageId;
+		uint32_t blockOffsetOnPage = startingOffset.blockId;
+	}
+
 	size_t maxConsecutiveFreeBlocksFound = 0;
-	for (size_t it = 0; (it < mPagesCount) && (maxConsecutiveFreeBlocksFound < freeBlocks); ++it) {
+	for (pageOffset; (pageOffset < mPagesCount) && (maxConsecutiveFreeBlocksFound < freeBlocks); ++pageOffset) {
 		const uint32_t one = 0x00000001;
-		for (uint32_t i = 0; (i < PoolManager::shiftLimit) && (maxConsecutiveFreeBlocksFound < freeBlocks); ++i) {
-			if ((mMemoryMap[it] & (one << i)) == 0) {
+		for (blockOffsetOnPage; (blockOffsetOnPage < PoolManager::shiftLimit) && (maxConsecutiveFreeBlocksFound < freeBlocks); ++blockOffsetOnPage) {
+			if ((mMemoryMap[pageOffset] & (one << blockOffsetOnPage)) == 0) {
 				if (maxConsecutiveFreeBlocksFound == 0) {
-					resultIt = it;
-					resultBlock = i;
+					resultIt = pageOffset;
+					resultBlock = blockOffsetOnPage;
 				}
 				++maxConsecutiveFreeBlocksFound;
 			} else {
 				maxConsecutiveFreeBlocksFound = 0;
 			}
 		}
+
+		blockOffsetOnPage = 0;
 	}
 
 	return blockIdentifier(((maxConsecutiveFreeBlocksFound < freeBlocks) ? mPagesCount : resultIt), resultBlock);
@@ -139,7 +151,6 @@ size_t PoolManager::getMaxAllocationSize() const noexcept {
 	return maxConsecutiveFreeBlocksFound * atomicMemoryBlockSize;
 }
 
-size_t PoolManager::getPagesCount() const noexcept
-{
+size_t PoolManager::getPagesCount() const noexcept {
 	return mPagesCount;
 }

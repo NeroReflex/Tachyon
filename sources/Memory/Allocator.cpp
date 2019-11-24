@@ -14,7 +14,7 @@ Allocator<void>::~Allocator() {
 }
 
 Allocator<void>::pointer Allocator<void>::allocate(Allocator<void>::size_type n, const void* hint) noexcept {
-	auto allocResult = mManager.malloc(n, 1);
+	auto allocResult = mManager.malloc(n, 1, hint);
 
 	DBG_ASSERT(allocResult.success);
 
