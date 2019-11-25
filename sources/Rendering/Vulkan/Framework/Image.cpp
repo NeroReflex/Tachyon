@@ -20,9 +20,13 @@ Image::Image(const Device* device, ImageType type, VkFormat format, VkExtent3D e
 	vkGetImageMemoryRequirements(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), &memRequirements);
 	SpaceRequiringResource::setMemoryRequirements(std::move(memRequirements));
 }
-    
+
 Image::~Image() {
 	vkDestroyImage(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), nullptr);
+}
+
+void Image::malloc(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset ) const noexcept {
+	VK_CHECK_RESULT(vkBindImageMemory(device->getNativeDeviceHandle(), getNativeImageHandle(), memoryPool, offset));
 }
 
 ImageView* Image::createImageView(ImageView::ViewType type, VkFormat format, VkImageAspectFlagBits subrangeAspectBits, ImageView::ViewColorMapping swizzle, uint32_t subrangeBaseMipLevel, uint32_t subrangeLevelCount, uint32_t subrangeBaseArrayLayer, uint32_t subrangeLayerCount) noexcept {

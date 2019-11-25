@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceOwned.h"
+#include "SpaceRequiringResource.h"
 #include "Memory/PoolManager.h"
 
 namespace Tachyon {
@@ -21,10 +22,14 @@ namespace Tachyon {
 					MemoryPool(MemoryPool&&) = delete;
 
 					MemoryPool& operator=(const MemoryPool&) = delete;
+					
+					VkDeviceSize malloc(const SpaceRequiringResource& resource, VkDeviceSize hint = 0);
 
 					~MemoryPool() override;
 
 					const VkMemoryPropertyFlagBits& getMemoryProperties() const noexcept;
+					
+					const VkDeviceMemory& getNativeDeviceMemoryHandle() const noexcept;
 
 				private:
 					VkMemoryPropertyFlagBits mProperties;

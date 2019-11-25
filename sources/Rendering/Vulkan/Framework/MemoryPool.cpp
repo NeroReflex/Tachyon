@@ -24,3 +24,16 @@ MemoryPool::~MemoryPool() {
 const VkMemoryPropertyFlagBits& MemoryPool::getMemoryProperties() const noexcept {
 	return mProperties;
 }
+
+const VkDeviceMemory& MemoryPool::getNativeDeviceMemoryHandle() const noexcept {
+	return mDeviceMemory;
+}
+
+VkDeviceSize MemoryPool::malloc(const SpaceRequiringResource& resource, VkDeviceSize hint) noexcept {
+	const auto result = mPoolManager.malloc(resource.getRequiredSpace(), resource.getRequiredAlignment(), (void*)(uintptr_t(hint)));
+	DBG_ASSERT(result.success);
+	return uintptr_t(result.result);
+}
+
+
+

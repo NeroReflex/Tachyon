@@ -4,15 +4,14 @@
 
 namespace Tachyon {
 	namespace Memory {
+		static const uint32_t atomicMemoryBlockSize = 0x800;
 
-		constexpr static uint32_t atomicMemoryBlockSize = 0x800;
-
-		constexpr static uint32_t numberOfBlocksInPage = 32;
+		static const  uint32_t numberOfBlocksInPage = 32;
 
 		// The number 32 is not to be modified as PoolManager uses an uint32_t to keep track of what blocks are used inside a page
-		constexpr static uint32_t atomicMemoryPageSize = numberOfBlocksInPage * atomicMemoryBlockSize;
+		static const uint32_t atomicMemoryPageSize = numberOfBlocksInPage * atomicMemoryBlockSize;
 
-		constexpr size_t countRequiredMemoryBlock(size_t bytes) {
+		inline  size_t countRequiredMemoryBlock(size_t bytes) {
 			size_t minBlockNumber = bytes / atomicMemoryBlockSize;
 
 			return ((bytes % atomicMemoryBlockSize) == 0) ? minBlockNumber : minBlockNumber + 1;

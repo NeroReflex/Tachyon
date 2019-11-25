@@ -6,7 +6,7 @@ namespace Tachyon {
 	namespace Memory {
 
 		class PoolManager {
-			constexpr static uint32_t shiftLimit = 32;
+			constexpr static const uint32_t shiftLimit = 32;
 
 			struct AllocResult {
 				void* result;

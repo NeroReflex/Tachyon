@@ -240,7 +240,7 @@ Swapchain* Device::getSwapchain() const noexcept {
 	return mSwapchain.get();
 }
 
-const Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
+Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
 	VkImageType imgType = VK_IMAGE_TYPE_3D;
 	switch (type) {
 	case Image::ImageType::Image1D:
@@ -288,7 +288,7 @@ const Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t
 	return registerNewOwnedObj(new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image)));
 }
 
-void Device::allocateResources(const std::initializer_list<const SpaceRequiringResource*>& resources) noexcept {
+void Device::allocateResources(const std::initializer_list<SpaceRequiringResource*>& resources) noexcept {
 	DBG_ASSERT((resources.size() > 0));
 	uint32_t memoryTypeBits = 0xFFFFFFFF;
 	size_t totalSize = 0;
@@ -301,7 +301,12 @@ void Device::allocateResources(const std::initializer_list<const SpaceRequiringR
 
 	auto createdPool = registerMemoryPool(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (totalSize / Memory::atomicMemoryPageSize) + 1, memoryTypeBits);
 
-	//TODO: provide allocation
+	VkDeviceSize lastAlloc = 0;
+	for (auto& allocRequiringResource : resources) {
+		lastAlloc = createdPool->malloc(*allocRequiringResource, lastAlloc);
+		allocRequiringResource->bindMemory(this, createdPool->getNativeDeviceMemoryHandle(), lastAlloc);
+	}
+	
 }
 
 MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceSize pagesCount, uint32_t memoryTypeBits) noexcept {
