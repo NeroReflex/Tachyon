@@ -27,19 +27,13 @@ namespace Tachyon {
 
 					uint32_t getRequiredMemoryTypes() const noexcept;
 					
-					void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset ) noexcept;
-
-					void unbindMemory() noexcept;
+					virtual void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) noexcept = 0;
 					
 				protected:
-					virtual void malloc(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset ) const noexcept = 0;
-					
 					void setMemoryRequirements(VkMemoryRequirements&& memReq) noexcept;
 
 				private:
-					bool mAllocated;
-					
-					bool mMemoryRequirementsSet = false;
+					bool mMemoryRequirementsSet;
 
 					VkMemoryRequirements mMemoryRequirements;
 				};

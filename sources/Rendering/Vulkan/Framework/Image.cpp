@@ -25,7 +25,7 @@ Image::~Image() {
 	vkDestroyImage(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), nullptr);
 }
 
-void Image::malloc(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset ) const noexcept {
+void Image::bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) noexcept {
 	VK_CHECK_RESULT(vkBindImageMemory(device->getNativeDeviceHandle(), getNativeImageHandle(), memoryPool, offset));
 }
 

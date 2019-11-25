@@ -37,8 +37,7 @@ namespace Tachyon {
 
 					const VkFormat& getFormat() const noexcept override;
 
-				protected:
-					void malloc(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset ) const noexcept final;
+					void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) noexcept final;
 					
 				private:
 					ImageType mType;

@@ -23,7 +23,7 @@ namespace Tachyon {
 
 					MemoryPool& operator=(const MemoryPool&) = delete;
 					
-					VkDeviceSize malloc(const SpaceRequiringResource& resource, VkDeviceSize hint = 0);
+					VkDeviceSize malloc(const SpaceRequiringResource& resource, VkDeviceSize hint = 0) noexcept;
 
 					~MemoryPool() override;
 
