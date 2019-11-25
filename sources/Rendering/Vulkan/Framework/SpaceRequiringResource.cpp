@@ -1,4 +1,5 @@
 #include "SpaceRequiringResource.h"
+#include "MemoryPool.h"
 #include "Device.h"
 
 using namespace Tachyon;
@@ -7,28 +8,21 @@ using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
 SpaceRequiringResource::SpaceRequiringResource() noexcept
-	: mMemoryRequirementsSet(false) {}
+	: mMemoryRequirements(nullptr), mUsedMemoryPool(nullptr), mStartingOffset(0) {}
 
-void SpaceRequiringResource::setMemoryRequirements(VkMemoryRequirements&& memReq) noexcept {
-	mMemoryRequirementsSet = true;
-
-	std::swap(memReq, mMemoryRequirements);
+SpaceRequiringResource::~SpaceRequiringResource() {
+	if (mUsedMemoryPool) mUsedMemoryPool->free(mStartingOffset, *this);
 }
 
-SpaceRequiringResource::~SpaceRequiringResource() {}
+const VkMemoryRequirements& SpaceRequiringResource::getMemoryRequirements() const noexcept
+{
+	if (!mMemoryRequirements) mMemoryRequirements.swap(queryMemoryRequirements());
 
- uint32_t SpaceRequiringResource::getRequiredSpace() const noexcept {
-	DBG_ASSERT(mMemoryRequirementsSet);
-
-	return mMemoryRequirements.size;
+	return *(mMemoryRequirements.get());
 }
 
-uint32_t SpaceRequiringResource::getRequiredAlignment() const noexcept {
-	DBG_ASSERT(mMemoryRequirementsSet);
-
-	return mMemoryRequirements.alignment;
-}
-
-uint32_t SpaceRequiringResource::getRequiredMemoryTypes() const noexcept {
-	return mMemoryRequirements.memoryTypeBits;
+void SpaceRequiringResource::execBinding(const Device* const device, MemoryPool* memoryPool, VkDeviceSize offset) noexcept {
+	mUsedMemoryPool = memoryPool;
+	mStartingOffset = offset;
+	bindMemory(device, memoryPool->getNativeDeviceMemoryHandle(), mStartingOffset);
 }

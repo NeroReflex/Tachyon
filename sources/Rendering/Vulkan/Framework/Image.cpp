@@ -14,18 +14,20 @@ Image::Image(const Device* device, ImageType type, VkFormat format, VkExtent3D e
 	mFormat(format),
 	mMipLevels(mipLevels),
 	mExtent(extent),
-	mSamples(samples) {
-
-	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), &memRequirements);
-	SpaceRequiringResource::setMemoryRequirements(std::move(memRequirements));
-}
+	mSamples(samples) {}
 
 Image::~Image() {
 	vkDestroyImage(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), nullptr);
 }
 
-void Image::bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) noexcept {
+std::unique_ptr<VkMemoryRequirements> Image::queryMemoryRequirements() const noexcept {
+	VkMemoryRequirements* memRequirements = new VkMemoryRequirements();
+	vkGetImageMemoryRequirements(getParentDevice()->getNativeDeviceHandle(), getNativeImageHandle(), memRequirements);
+
+	return std::move(std::unique_ptr<VkMemoryRequirements>(memRequirements));
+}
+
+void Image::bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) const noexcept {
 	VK_CHECK_RESULT(vkBindImageMemory(device->getNativeDeviceHandle(), getNativeImageHandle(), memoryPool, offset));
 }
 

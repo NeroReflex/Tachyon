@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Tachyon.h"
+#include "DeviceOwned.h"
 
 namespace Tachyon {
 	namespace Rendering {
 		namespace Vulkan {
 			namespace Framework {
 				class Device;
+				class MemoryPool;
 
 				class SpaceRequiringResource {
 
@@ -21,21 +22,21 @@ namespace Tachyon {
 
 					virtual ~SpaceRequiringResource();
 
-					uint32_t getRequiredSpace() const noexcept;
-
-					uint32_t getRequiredAlignment() const noexcept;
-
-					uint32_t getRequiredMemoryTypes() const noexcept;
+					const VkMemoryRequirements& getMemoryRequirements() const noexcept;
 					
-					virtual void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) noexcept = 0;
+					void execBinding(const Device* const device, MemoryPool* memoryPool, VkDeviceSize offset) noexcept;
 					
 				protected:
-					void setMemoryRequirements(VkMemoryRequirements&& memReq) noexcept;
+					virtual std::unique_ptr<VkMemoryRequirements> queryMemoryRequirements() const noexcept = 0;
+
+					virtual void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) const noexcept = 0;
 
 				private:
-					bool mMemoryRequirementsSet;
+					mutable std::unique_ptr<VkMemoryRequirements> mMemoryRequirements;
 
-					VkMemoryRequirements mMemoryRequirements;
+					MemoryPool* mUsedMemoryPool;
+
+					VkDeviceSize mStartingOffset;
 				};
 					
 					

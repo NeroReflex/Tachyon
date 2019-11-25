@@ -25,6 +25,8 @@ namespace Tachyon {
 					
 					VkDeviceSize malloc(const SpaceRequiringResource& resource, VkDeviceSize hint = 0) noexcept;
 
+					void free(VkDeviceSize ptr, const SpaceRequiringResource& resource) noexcept;
+
 					~MemoryPool() override;
 
 					const VkMemoryPropertyFlagBits& getMemoryProperties() const noexcept;

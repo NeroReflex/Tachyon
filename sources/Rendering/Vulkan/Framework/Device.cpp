@@ -85,7 +85,8 @@ Device::~Device() {
 	mSwapchain.reset();
 
 	// Remove each object
-	for (auto& ownedObj : mOwnedObjects) ownedObj.second.reset();
+	mOwnedObjects.clear();
+	//for (auto& ownedObj : mOwnedObjects) ownedObj.second.reset();
 
 	// Remove all memory pools AFTER each object has been removed
 	mMemoryPools.clear();
@@ -293,18 +294,19 @@ void Device::allocateResources(const std::initializer_list<SpaceRequiringResourc
 	uint32_t memoryTypeBits = 0xFFFFFFFF;
 	size_t totalSize = 0;
 	for (const auto& allocRequiringResource : resources) {
-		totalSize += static_cast<VkDeviceSize>(allocRequiringResource->getRequiredAlignment()) + static_cast<VkDeviceSize>(allocRequiringResource->getRequiredSpace());
-		memoryTypeBits &= allocRequiringResource->getRequiredMemoryTypes();
+		const auto requiredMemory = allocRequiringResource->getMemoryRequirements();
+		totalSize += static_cast<VkDeviceSize>(requiredMemory.alignment) + static_cast<VkDeviceSize>(requiredMemory.size);
+		memoryTypeBits &= requiredMemory.memoryTypeBits;
 	}
 
 	DBG_ASSERT((memoryTypeBits != 0));
 
-	auto createdPool = registerMemoryPool(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (totalSize / Memory::atomicMemoryPageSize) + 1, memoryTypeBits);
+	MemoryPool* createdPool = registerMemoryPool(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (totalSize / Memory::atomicMemoryPageSize) + 1, memoryTypeBits);
 
 	VkDeviceSize lastAlloc = 0;
 	for (auto& allocRequiringResource : resources) {
 		lastAlloc = createdPool->malloc(*allocRequiringResource, lastAlloc);
-		allocRequiringResource->bindMemory(this, createdPool->getNativeDeviceMemoryHandle(), lastAlloc);
+		allocRequiringResource->execBinding(this, createdPool, lastAlloc);
 	}
 	
 }

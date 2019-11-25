@@ -37,7 +37,10 @@ namespace Tachyon {
 
 					const VkFormat& getFormat() const noexcept override;
 
-					void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) noexcept final;
+				protected:
+					std::unique_ptr<VkMemoryRequirements> queryMemoryRequirements() const noexcept final;
+
+					void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) const noexcept final;
 					
 				private:
 					ImageType mType;

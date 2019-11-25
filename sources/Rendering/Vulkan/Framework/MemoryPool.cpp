@@ -30,9 +30,17 @@ const VkDeviceMemory& MemoryPool::getNativeDeviceMemoryHandle() const noexcept {
 }
 
 VkDeviceSize MemoryPool::malloc(const SpaceRequiringResource& resource, VkDeviceSize hint) noexcept {
-	const auto result = mPoolManager.malloc(resource.getRequiredSpace(), resource.getRequiredAlignment(), (void*)(uintptr_t(hint)));
+	const auto requirements = resource.getMemoryRequirements();
+
+	const auto result = mPoolManager.malloc(requirements.size, requirements.alignment, (void*)(uintptr_t(hint)));
 	DBG_ASSERT(result.success);
 	return uintptr_t(result.result);
+}
+
+void MemoryPool::free(VkDeviceSize ptr, const SpaceRequiringResource& resource) noexcept
+{
+	const auto requirements = resource.getMemoryRequirements();
+	mPoolManager.free((void*)(uintptr_t(ptr)), requirements.size, requirements.alignment);
 }
 
 
