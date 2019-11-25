@@ -289,7 +289,7 @@ Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t heigh
 	return registerNewOwnedObj(new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image)));
 }
 
-void Device::allocateResources(const std::initializer_list<SpaceRequiringResource*>& resources) noexcept {
+void Device::allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept {
 	DBG_ASSERT((resources.size() > 0));
 	uint32_t memoryTypeBits = 0xFFFFFFFF;
 	size_t totalSize = 0;
@@ -301,7 +301,7 @@ void Device::allocateResources(const std::initializer_list<SpaceRequiringResourc
 
 	DBG_ASSERT((memoryTypeBits != 0));
 
-	MemoryPool* createdPool = registerMemoryPool(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (totalSize / Memory::atomicMemoryPageSize) + 1, memoryTypeBits);
+	MemoryPool* createdPool = registerMemoryPool(props, (totalSize / Memory::atomicMemoryPageSize) + 1, memoryTypeBits);
 
 	VkDeviceSize lastAlloc = 0;
 	for (auto& allocRequiringResource : resources) {

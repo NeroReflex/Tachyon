@@ -88,13 +88,16 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingModelMatrix(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
 	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth))
 {
-
-	mDevice->allocateResources({
-		mRaytracingTLAS,
-		mRaytracingBLASCollection,
-		mRaytracingModelMatrix,
-		mRaytracingGeometryCollection
-	});
+	// Allocate memory for core buffers on the GPU exclusive memory.
+	mDevice->allocateResources(
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		{
+			mRaytracingTLAS,
+			mRaytracingBLASCollection,
+			mRaytracingModelMatrix,
+			mRaytracingGeometryCollection
+		}
+	);
 
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;

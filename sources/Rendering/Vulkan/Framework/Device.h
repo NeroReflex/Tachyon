@@ -56,7 +56,7 @@ namespace Tachyon {
 
 					Image* createImage(Image::ImageType type, uint32_t width, uint32_t height = 1, uint32_t depth = 1, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
 
-					void allocateResources(const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
+					void allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
 
 				private:
 					template <typename T>
