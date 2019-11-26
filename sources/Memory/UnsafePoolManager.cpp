@@ -3,12 +3,27 @@
 using namespace Tachyon;
 using namespace Tachyon::Memory;
 
-UnsafePoolManager::UnsafePoolManager(UnsafePoolManager::managementType blockCount, void* const basePtr, managementType* managementStructure) noexcept 
+UnsafePoolManager::UnsafePoolManager(std::size_t blockCount, void* const basePtr, managementType* managementStructure) noexcept
 	: mBasePtr(basePtr),
-	mMemoryMap(managementStructure),
+	mMemoryMap((managementStructure != nullptr) ? managementStructure : reinterpret_cast<managementType*>(basePtr)),
 	mBlockCount(blockCount) {
-	DBG_ASSERT(((uintptr_t(mBasePtr) % atomicMemoryBlockSize) == 0));
 	
+	DBG_ASSERT((mBlockCount > 512));
+
+	// The management structure is carved from the memory pool
+	if (reinterpret_cast<void*>(mMemoryMap) == mBasePtr) {
+		const auto reservedSpace = sizeof(UnsafePoolManager::managementType) * mBlockCount;
+		size_t reservedPageCount = (reservedSpace / atomicMemoryBlockSize) + (((reservedSpace % atomicMemoryBlockSize) == 0) ? 0 : 1);
+
+		DBG_ASSERT((mBlockCount > reservedPageCount));
+
+		mBlockCount -= reservedPageCount;
+		mBasePtr = reinterpret_cast<void*>(reinterpret_cast<char*>(mBasePtr) + (reservedPageCount * atomicMemoryBlockSize));
+	}
+
+
+	DBG_ASSERT(((uintptr_t(mBasePtr) % atomicMemoryBlockSize) == 0));
+
 	// Initialize memory as free blocks
 	for (index_t i = 0; i < mBlockCount; ++i) mMemoryMap[i] = 0;
 }
@@ -27,6 +42,8 @@ UnsafePoolManager::UnsafePoolManager(const UnsafePoolManager& src) noexcept
 	mMemoryMap(src.mMemoryMap),
 	mBlockCount(src.mBlockCount) {}
 	
+UnsafePoolManager::~UnsafePoolManager() {}
+
 UnsafePoolManager& UnsafePoolManager::operator=(const UnsafePoolManager& src) noexcept {
 	if (this != &src) {
 		mBasePtr = src.mBasePtr;
@@ -35,6 +52,10 @@ UnsafePoolManager& UnsafePoolManager::operator=(const UnsafePoolManager& src) no
 	}
 	
 	return *this;
+}
+
+bool UnsafePoolManager::operator==(const UnsafePoolManager& cmp) const noexcept {
+	return this->mBasePtr == &(cmp.mBasePtr);
 }
 
 UnsafePoolManager::AllocResult UnsafePoolManager::malloc(size_t bytesSize, size_t bytesAlign) noexcept {

@@ -6,7 +6,13 @@ elseif(USE_OPENGL)
 	file(GLOB_RECURSE OPENGL_SOURCES Rendering/OpenGL/*.cpp)
 endif()
 
-add_executable(Tachyon main.cpp Memory/PoolManager.cpp Memory/UnsafePoolManager.cpp Memory/Allocator.cpp Core/Camera.cpp Core/Triangle.cpp Core/HDR.cpp Rendering/RenderingPipeline.cpp Rendering/GeometryPrimitive.cpp ${OPENGL_SOURCES} ${VULKAN_SOURCES})
+add_executable(Tachyon 
+	main.cpp
+	Memory/PoolManager.cpp Memory/UnsafePoolManager.cpp
+	Core/Camera.cpp Core/Triangle.cpp Core/HDR.cpp
+	Rendering/RenderingPipeline.cpp Rendering/GeometryPrimitive.cpp
+	${OPENGL_SOURCES}
+	${VULKAN_SOURCES})
 
 #set_property(TARGET Tachyon PROPERTY CXX_STANDARD 11)
 

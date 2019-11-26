@@ -48,9 +48,15 @@ std::string get_opengl_compute_info() {
 }
 #endif
 
-#include "Memory/Allocator.hpp"
+#include "Memory/UnsafeAllocator.hpp"
 
 int main(int argc, char** argv) {
+	void* memoryBuffer = calloc(1024, Tachyon::Memory::atomicMemoryBlockSize);
+	Tachyon::Memory::UnsafePoolManager pool(1023, Tachyon::Memory::blockAlign(memoryBuffer));
+
+	Tachyon::Memory::UnsafeAllocator<int> alloc(pool);
+	std::vector<int, Tachyon::Memory::UnsafeAllocator<int>> testVec(700, alloc);
+
 	// Initialize GLFW
 	if (glfwInit() == 0) {
 		std::cout << "Error: cannot initialize GLFW" << std::endl;

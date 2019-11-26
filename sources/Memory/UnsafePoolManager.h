@@ -18,6 +18,10 @@ namespace Tachyon {
 			};
 
 		public:
+			inline static std::size_t getManagementReservedSpace(std::size_t blockCount) noexcept {
+				return sizeof(std::size_t) * blockCount;
+			}
+
 			UnsafePoolManager() = delete;
 			
 			/**
@@ -26,7 +30,7 @@ namespace Tachyon {
 			 * @param pagesCount the number of pages to be managed
 			 * @param basePtr the base pointer to be managed. MUST be aligned to atomicMemoryBlockSize
 			 */
-			UnsafePoolManager(managementType blockCount, void* const basePtr, managementType* managementStructure ) noexcept;
+			UnsafePoolManager(std::size_t blockCount, void* const basePtr, managementType* managementStructure = nullptr) noexcept;
 
 			UnsafePoolManager(const UnsafePoolManager&) noexcept;
 
@@ -35,6 +39,8 @@ namespace Tachyon {
 			UnsafePoolManager& operator=(const UnsafePoolManager&) noexcept;
 
 			~UnsafePoolManager();
+
+			bool operator==(const UnsafePoolManager&) const noexcept;
 
 			AllocResult malloc(size_t bytes, size_t bytesAlign = 1) noexcept;
 
@@ -60,7 +66,7 @@ namespace Tachyon {
 
 			managementType* mMemoryMap;
 
-			managementType mBlockCount;
+			std::size_t mBlockCount;
 		};
 	}
 }
