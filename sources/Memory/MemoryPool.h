@@ -4,7 +4,10 @@
 
 namespace Tachyon {
 	namespace Memory {
-		static const uint32_t atomicMemoryBlockSize = 0x800;
+		static const uint32_t expOfTwo_atomicMemoryBlockSize = 11;
+		
+		// DO NOT manually adit this, EVER!
+		static const uint32_t atomicMemoryBlockSize = uint32_t(1) << expOfTwo_atomicMemoryBlockSize;
 
 		static const  uint32_t numberOfBlocksInPage = 32;
 

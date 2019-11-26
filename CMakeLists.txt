@@ -60,6 +60,7 @@ LINK_DIRECTORIES( ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
 LINK_DIRECTORIES( ${ARCHIVE_OUTPUT_DIRECTORY} )
 set(PROJECTS_CONFIGURATION_FILES ${CMAKE_BINARY_DIR}/config)
 
+message("Using compiler: ${CMAKE_CXX_COMPILER_ID}")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # Disable C++ exceptions.
   string(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -69,6 +70,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # Disable RTTI.
   string(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
+  
+  # Enable C++20
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  /std:c++latest")
 else(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # Enable strict prototype warnings for C code in clang and gcc.
   if(NOT CMAKE_C_FLAGS MATCHES "-Wstrict-prototypes")
@@ -82,6 +86,9 @@ else(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # Disable RTTI.
   string(REGEX REPLACE "-frtti" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+  
+  # Enable C++20
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -std=c++2a")
 endif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 # Include the main project sources

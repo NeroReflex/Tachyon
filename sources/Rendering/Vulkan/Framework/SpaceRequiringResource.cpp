@@ -16,8 +16,11 @@ SpaceRequiringResource::~SpaceRequiringResource() {
 
 const VkMemoryRequirements& SpaceRequiringResource::getMemoryRequirements() const noexcept
 {
-	if (!mMemoryRequirements) mMemoryRequirements.swap(queryMemoryRequirements());
-
+	if (!mMemoryRequirements) {
+		auto result = queryMemoryRequirements().release();
+		mMemoryRequirements.reset(result);
+	}
+	
 	return *(mMemoryRequirements.get());
 }
 
