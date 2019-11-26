@@ -27,7 +27,9 @@ namespace Tachyon {
 			typedef size_t size_type;
 			typedef T value_type;
 			
-			UnsafeAllocator(const UnsafePoolManager& mManager) noexcept;
+			UnsafeAllocator(const UnsafePoolManager& memManager) noexcept;
+
+			UnsafeAllocator(UnsafePoolManager&& memManager) noexcept;
 
 			template <class U>
 			UnsafeAllocator(const UnsafeAllocator<U>& src) noexcept
@@ -52,13 +54,17 @@ namespace Tachyon {
 		}
 
 		template <class T>
-		inline UnsafeAllocator<T>::UnsafeAllocator(const UnsafePoolManager& memoryManager) noexcept
-			: mManager(memoryManager) {}
+		inline UnsafeAllocator<T>::UnsafeAllocator(const UnsafePoolManager& memManager) noexcept
+			: mManager(memManager) {}
+
+		template <typename T>
+		UnsafeAllocator<T>::UnsafeAllocator(UnsafePoolManager&& memManager) noexcept
+			: mManager(std::move(memManager)) {}
 
 		template <typename T>
 		inline UnsafeAllocator<T>::UnsafeAllocator(const UnsafeAllocator<T>& src) noexcept
-			:mManager(src.mManager) {}
-
+			: mManager(src.mManager) {}
+		
 		template <class T>
 		inline UnsafeAllocator<T>::~UnsafeAllocator() {}
 

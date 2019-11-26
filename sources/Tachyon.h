@@ -79,3 +79,5 @@ typedef glm::float32 NumericType;
 constexpr size_t roundupToMultipleOfVec4(size_t in) {
 	return (in / sizeof(glm::vec4)) + sizeof(glm::vec4);
 }
+
+#define global_heap_block_count 1024 * 1024 * 2

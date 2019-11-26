@@ -6,8 +6,42 @@ namespace Tachyon {
 	namespace Memory {
 
 		class UnsafePoolManager {
+			class blockTracker {
+				bool allocated;
+				uint32_t contiguous;
+
+			public:
+				inline blockTracker() noexcept : allocated(false), contiguous(0) {}
+
+				inline blockTracker(const blockTracker& src) noexcept : allocated(src.allocated), contiguous(src.contiguous) {}
+
+				inline blockTracker& operator=(const blockTracker& src) noexcept {
+					allocated = src.allocated;
+					contiguous = src.contiguous;
+
+					return *this;
+				}
+
+				inline void alloc(const uint32_t& following) noexcept {
+					allocated = true;
+				}
+
+				inline void free() noexcept {
+					allocated = false;
+					contiguous = 0;
+				}
+
+				inline bool isFree() noexcept {
+					return !allocated;
+				}
+
+				inline uint32_t followingOccupied() noexcept {
+					return contiguous;
+				}
+			};
+
 			typedef uint64_t index_t;
-			typedef uint8_t managementType;
+			typedef blockTracker managementType;
 			
 			struct AllocResult {
 				void* result;
@@ -49,8 +83,8 @@ namespace Tachyon {
 		private:
 			inline size_t queryRequiredBlockCount(index_t bytesSize, index_t bytesAlign) {
 				return ((bytesAlign != 1) ? 1 : 0) + (bytesSize / atomicMemoryBlockSize) + (((bytesSize % atomicMemoryBlockSize) == 0) ? 0 : 1);
-				//                                                                     ^
-				//                                                      alignment round-up	
+				//                        ^
+				//               alignment round-up	
 			}
 			
 			inline void* addressFromIndex(index_t idx) const noexcept {

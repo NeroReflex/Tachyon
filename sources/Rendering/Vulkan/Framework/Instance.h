@@ -12,7 +12,6 @@ namespace Tachyon {
 				class Instance {
 
 				public:
-
 					static const float defaultQueuePriority;
 
 					Instance(GLFWwindow* window) noexcept;
@@ -36,6 +35,9 @@ namespace Tachyon {
 
 					void enqueueDeviceExtension(const char* extName) noexcept;
 					
+					// TODO: implement the usage of this thing!
+					VkAllocationCallbacks mCustomAllocator;
+
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 					std::vector<const char*> mValidationLayers;
 #endif
