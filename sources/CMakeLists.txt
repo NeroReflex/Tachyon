@@ -8,7 +8,7 @@ endif()
 
 add_executable(Tachyon 
 	main.cpp
-	Memory/PoolManager.cpp Memory/UnsafePoolManager.cpp
+	Memory/UnsafePoolManager.cpp
 	Core/Camera.cpp Core/Triangle.cpp Core/HDR.cpp
 	Rendering/RenderingPipeline.cpp Rendering/GeometryPrimitive.cpp
 	${OPENGL_SOURCES}

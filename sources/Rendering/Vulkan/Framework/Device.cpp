@@ -228,7 +228,7 @@ Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const Swapch
 	
 	VkBool32 isSurfaceSupported = VK_FALSE;
 	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, mQueueFamilyIndex, getParentInstance()->getSurface(), &isSurfaceSupported));
-	DBG_ASSERT((isSurfaceSupported == true));
+	DBG_ASSERT((isSurfaceSupported == VK_TRUE));
 
 	VkSwapchainKHR swapchain;
 	VK_CHECK_RESULT(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &swapchain));
@@ -301,7 +301,7 @@ void Device::allocateResources(VkMemoryPropertyFlagBits props, const std::initia
 
 	DBG_ASSERT((memoryTypeBits != 0));
 
-	MemoryPool* createdPool = registerMemoryPool(props, (totalSize / Memory::atomicMemoryPageSize) + 1, memoryTypeBits);
+	MemoryPool* createdPool = registerMemoryPool(props, (totalSize / Memory::atomicMemoryBlockSize) + 1, memoryTypeBits);
 
 	VkDeviceSize lastAlloc = 0;
 	for (auto& allocRequiringResource : resources) {
@@ -315,7 +315,7 @@ MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceS
 	VkMemoryAllocateInfo allocateInfo = {};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocateInfo.pNext = nullptr;
-	allocateInfo.allocationSize = pagesCount * Memory::atomicMemoryPageSize;
+	allocateInfo.allocationSize = pagesCount * Memory::atomicMemoryBlockSize;
 	allocateInfo.memoryTypeIndex = findMemoryType(memoryTypeBits, props);
 
 	// Allocate a big chunk of memory on the device

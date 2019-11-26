@@ -11,9 +11,6 @@ namespace Tachyon {
 
 		static const  uint32_t numberOfBlocksInPage = 32;
 
-		// The number 32 is not to be modified as PoolManager uses an uint32_t to keep track of what blocks are used inside a page
-		static const uint32_t atomicMemoryPageSize = numberOfBlocksInPage * atomicMemoryBlockSize;
-
 		inline  size_t countRequiredMemoryBlock(size_t bytes) {
 			size_t minBlockNumber = bytes / atomicMemoryBlockSize;
 

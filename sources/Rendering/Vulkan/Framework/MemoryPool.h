@@ -2,7 +2,7 @@
 
 #include "DeviceOwned.h"
 #include "SpaceRequiringResource.h"
-#include "Memory/PoolManager.h"
+#include "Memory/UnsafePoolManager.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -40,9 +40,9 @@ namespace Tachyon {
 
 					VkDeviceMemory mDeviceMemory;
 
-					uint32_t* const mFixedPageTracker;
+					void* const mFixedPageTracker;
 
-					Memory::PoolManager mPoolManager;
+					Memory::UnsafePoolManager mPoolManager;
 				};
 			}
 		}

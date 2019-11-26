@@ -12,11 +12,11 @@ MemoryPool::MemoryPool(const Device* device, VkMemoryPropertyFlagBits props, uin
 	mProperties(std::move(props)),
 	mMemoryTypeBits(memoryTypeBits),
 	mDeviceMemory(std::move(memory)),
-	mFixedPageTracker(new uint32_t[Memory::PoolManager::getNumberOfPagesUsedToManagePages(pagesCount)]),
-	mPoolManager(pagesCount, NULL, mFixedPageTracker, true) {}
+	mFixedPageTracker(::malloc(Memory::UnsafePoolManager::getManagementReservedSpace(pagesCount))),
+	mPoolManager(pagesCount, NULL, mFixedPageTracker) {}
 
 MemoryPool::~MemoryPool() {
-	delete[] mFixedPageTracker;
+	::free(mFixedPageTracker);
 
 	vkFreeMemory(getParentDevice()->getNativeDeviceHandle(), mDeviceMemory, nullptr);
 }
@@ -32,7 +32,7 @@ const VkDeviceMemory& MemoryPool::getNativeDeviceMemoryHandle() const noexcept {
 VkDeviceSize MemoryPool::malloc(const SpaceRequiringResource& resource, VkDeviceSize hint) noexcept {
 	const auto requirements = resource.getMemoryRequirements();
 
-	const auto result = mPoolManager.malloc(requirements.size, requirements.alignment, (void*)(uintptr_t(hint)));
+	const auto result = mPoolManager.malloc(requirements.size, requirements.alignment);
 	DBG_ASSERT(result.success);
 	return uintptr_t(result.result);
 }

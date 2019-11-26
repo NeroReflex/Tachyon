@@ -3,16 +3,16 @@
 using namespace Tachyon;
 using namespace Tachyon::Memory;
 
-UnsafePoolManager::UnsafePoolManager(std::size_t blockCount, void* const basePtr, managementType* managementStructure) noexcept
+UnsafePoolManager::UnsafePoolManager(std::size_t blockCount, void* const basePtr, void* const managementStructure) noexcept
 	: mBasePtr(basePtr),
-	mMemoryMap((managementStructure != nullptr) ? managementStructure : reinterpret_cast<managementType*>(basePtr)),
-	mBlockCount(blockCount) {
+	mMemoryMap(reinterpret_cast<managementType*>((managementStructure != nullptr) ? managementStructure : basePtr)),
+	mBlockCount(std::move(blockCount)) {
 	
-	DBG_ASSERT((mBlockCount > 512));
+	DBG_ASSERT((mBlockCount >= 1));
 
 	// The management structure is carved from the memory pool
 	if (reinterpret_cast<void*>(mMemoryMap) == mBasePtr) {
-		const auto reservedSpace = sizeof(UnsafePoolManager::managementType) * mBlockCount;
+		const auto reservedSpace = getManagementReservedSpace(mBlockCount);
 		size_t reservedPageCount = (reservedSpace / atomicMemoryBlockSize) + (((reservedSpace % atomicMemoryBlockSize) == 0) ? 0 : 1);
 
 		DBG_ASSERT((mBlockCount > reservedPageCount));

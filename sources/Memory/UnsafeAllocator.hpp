@@ -27,10 +27,6 @@ namespace Tachyon {
 			typedef size_t size_type;
 			typedef T value_type;
 			
-			/*template <class... Args>
-			UnsafeAllocator(Args&&... args) noexcept
-				: mManager(std::forward<Args>(args)...) {}*/
-
 			UnsafeAllocator(const UnsafePoolManager& mManager) noexcept;
 
 			template <class U>
