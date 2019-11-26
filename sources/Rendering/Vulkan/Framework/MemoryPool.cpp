@@ -43,5 +43,7 @@ void MemoryPool::free(VkDeviceSize ptr, const SpaceRequiringResource& resource) 
 	mPoolManager.free((void*)(uintptr_t(ptr)), requirements.size, requirements.alignment);
 }
 
-
+VkDeviceSize MemoryPool::getAtomicMemoryBlockCount(const VkDeviceSize& size, const VkDeviceSize& alignment, const VkDeviceSize& prev) noexcept {
+	return prev + 1 + ((alignment / Memory::atomicMemoryBlockSize) + (((alignment % Memory::atomicMemoryBlockSize) == 0) ? 0 : 1)) + ((size / Memory::atomicMemoryBlockSize) + (((size % Memory::atomicMemoryBlockSize) == 0) ? 0 : 1));
+}
 

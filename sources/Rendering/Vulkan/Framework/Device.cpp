@@ -292,16 +292,16 @@ Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t heigh
 void Device::allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept {
 	DBG_ASSERT((resources.size() > 0));
 	uint32_t memoryTypeBits = 0xFFFFFFFF;
-	size_t totalSize = 0;
+	VkDeviceSize minimumBlockCount = 0;
 	for (const auto& allocRequiringResource : resources) {
 		const auto requiredMemory = allocRequiringResource->getMemoryRequirements();
-		totalSize += static_cast<VkDeviceSize>(requiredMemory.alignment) + static_cast<VkDeviceSize>(requiredMemory.size);
+		minimumBlockCount += MemoryPool::getAtomicMemoryBlockCount(static_cast<VkDeviceSize>(requiredMemory.size), static_cast<VkDeviceSize>(requiredMemory.alignment), minimumBlockCount);
 		memoryTypeBits &= requiredMemory.memoryTypeBits;
 	}
 
 	DBG_ASSERT((memoryTypeBits != 0));
 
-	MemoryPool* createdPool = registerMemoryPool(props, (totalSize / Memory::atomicMemoryBlockSize) + 1, memoryTypeBits);
+	MemoryPool* createdPool = registerMemoryPool(props, minimumBlockCount + 32, memoryTypeBits);
 
 	VkDeviceSize lastAlloc = 0;
 	for (auto& allocRequiringResource : resources) {
@@ -311,18 +311,18 @@ void Device::allocateResources(VkMemoryPropertyFlagBits props, const std::initia
 	
 }
 
-MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceSize pagesCount, uint32_t memoryTypeBits) noexcept {
+MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceSize blockCount, uint32_t memoryTypeBits) noexcept {
 	VkMemoryAllocateInfo allocateInfo = {};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocateInfo.pNext = nullptr;
-	allocateInfo.allocationSize = pagesCount * Memory::atomicMemoryBlockSize;
+	allocateInfo.allocationSize = blockCount * Memory::atomicMemoryBlockSize;
 	allocateInfo.memoryTypeIndex = findMemoryType(memoryTypeBits, props);
 
 	// Allocate a big chunk of memory on the device
 	VkDeviceMemory memoryPool;
 	VK_CHECK_RESULT(vkAllocateMemory(mDevice, &allocateInfo, NULL, &memoryPool));
 
-	MemoryPool* createdPool = new MemoryPool(this, props, memoryTypeBits, pagesCount, std::move(memoryPool));
+	MemoryPool* createdPool = new MemoryPool(this, props, memoryTypeBits, blockCount, std::move(memoryPool));
 
 	mMemoryPools[props].push_back(std::move(std::unique_ptr<MemoryPool>(createdPool)));
 

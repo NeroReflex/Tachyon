@@ -33,6 +33,20 @@ namespace Tachyon {
 					
 					const VkDeviceMemory& getNativeDeviceMemoryHandle() const noexcept;
 
+					/**
+					 * This function is used to calculate the minimum number of atomic memory blocks required to safely store
+					 * an object with the given size and alignment.
+					 *
+					 * Note: if you need to allocate on the same buffer more than one object just use the third parameter with previous results.
+					 * Warning: if you have more than one resource to allocate you MUST NOT sum all size and alignments!
+					 *
+					 * @param size the buffer size (in bytes)
+					 * @param alignment the alignment (in bytes)
+					 * @param prev the result of a previous invocation
+					 * @ return the minimum number of atomic memory blocks to be used for the allocation of the given set of resources.
+					 */
+					static VkDeviceSize getAtomicMemoryBlockCount(const VkDeviceSize& size, const VkDeviceSize& alignment, const VkDeviceSize& prev = 0) noexcept;
+
 				private:
 					VkMemoryPropertyFlagBits mProperties;
 
