@@ -57,7 +57,7 @@ UnsafePoolManager::AllocResult UnsafePoolManager::malloc(size_t bytesSize, size_
 			for (index_t m = 0; m < requiredBlocks; ++m) mMemoryMap[i + m] = 1;
 			
 			void* allocatedBase = addressFromIndex(i);
-			std::size_t available = atomicMemoryBlockSize * requiredBlocks;
+			std::size_t available = atomicMemoryBlockSize * (requiredBlocks + 1);
 			void* aligned = std::align(bytesAlign, bytesSize, allocatedBase, available);
 			return UnsafePoolManager::AllocResult(true, aligned);
 		}
