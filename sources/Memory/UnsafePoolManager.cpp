@@ -82,6 +82,9 @@ UnsafePoolManager::AllocResult UnsafePoolManager::malloc(size_t bytesSize, size_
 			void* allocatedBase = addressFromIndex(i);
 			std::size_t available = atomicMemoryBlockSize * (requiredBlocks + 1);
 			void* aligned = std::align(bytesAlign, bytesSize, allocatedBase, available);
+
+			DBG_ASSERT( ((uintptr_t(aligned) % bytesAlign) == 0) ); // Check alignment
+
 			return UnsafePoolManager::AllocResult(true, aligned);
 		}
 		
@@ -94,7 +97,7 @@ UnsafePoolManager::AllocResult UnsafePoolManager::malloc(size_t bytesSize, size_
 void UnsafePoolManager::free(void* memory, size_t bytesSize, size_t bytesAlign) noexcept {
 	index_t requiredBlocks = queryRequiredBlockCount(bytesSize, bytesAlign);
 	
-	index_t i = index_t(memory);
+	index_t i = indexFromAddress(memory);
 	
 	for (index_t m = 0; m < requiredBlocks; ++m) mMemoryMap[i + m] = 0;
 }
