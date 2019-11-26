@@ -49,9 +49,11 @@ UnsafePoolManager::AllocResult UnsafePoolManager::malloc(size_t bytesSize, size_
 	do {
 		index_t consecutiveFreeBlocks = 0;
 		
-		do { // Search for requiredBlocks consecutive free blocks
-			consecutiveFreeBlocks = (mMemoryMap[i + consecutiveFreeBlocks] == 0) ? consecutiveFreeBlocks+1 : 0;
-		} while ((consecutiveFreeBlocks < requiredBlocks) && (consecutiveFreeBlocks > 0));
+		if ((i + requiredBlocks) < mBlockCount) {
+			do { // Search for requiredBlocks consecutive free blocks
+				consecutiveFreeBlocks = (mMemoryMap[i + consecutiveFreeBlocks] == 0) ? consecutiveFreeBlocks+1 : 0;
+			} while ((consecutiveFreeBlocks < requiredBlocks) && (consecutiveFreeBlocks > 0));
+		}
 		
 		if (consecutiveFreeBlocks == requiredBlocks) { // Mark memory as used
 			for (index_t m = 0; m < requiredBlocks; ++m) mMemoryMap[i + m] = 1;
