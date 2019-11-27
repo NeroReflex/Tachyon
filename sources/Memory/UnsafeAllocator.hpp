@@ -18,6 +18,7 @@ namespace Tachyon {
 			template <class T1, class T2>
 			friend bool operator==(const UnsafeAllocator<T1>&, const UnsafeAllocator<T2>&) noexcept;
 
+			template <class U>
 			friend class UnsafeAllocator;
 
 			UnsafePoolManager mManager;
@@ -69,7 +70,7 @@ namespace Tachyon {
 		inline UnsafeAllocator<T>::~UnsafeAllocator() {}
 
 		template<class T>
-		inline typename T* UnsafeAllocator<T>::allocate(typename UnsafeAllocator<T>::size_type n) noexcept {
+		inline T* UnsafeAllocator<T>::allocate(typename UnsafeAllocator<T>::size_type n) noexcept {
 			auto allocResult = mManager.malloc(n, alignof(T));
 
 			DBG_ASSERT(allocResult.success);
@@ -78,7 +79,7 @@ namespace Tachyon {
 		}
 
 		template<class T>
-		inline void UnsafeAllocator<T>::deallocate(typename T* p, typename UnsafeAllocator<T>::size_type n) noexcept {
+		inline void UnsafeAllocator<T>::deallocate(T* p, typename UnsafeAllocator<T>::size_type n) noexcept {
 			mManager.free(p, n, alignof(T));
 		}
 
