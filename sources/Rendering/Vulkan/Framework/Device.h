@@ -5,6 +5,7 @@
 #include "ShaderLayoutBinding.h"
 #include "Pipeline.h"
 #include "Image.h"
+#include "CommandPool.h"
 #include "MemoryPool.h"
 
 #include "ComputeShader.h"
@@ -44,6 +45,8 @@ namespace Tachyon {
 
 					Swapchain* getSwapchain() const noexcept;
 
+					CommandPool* createCommandPool() noexcept;
+					
 					bool isExtensionAvailable(const std::string& extName) const noexcept;
 
 					const VkDevice& getNativeDeviceHandle() const noexcept;

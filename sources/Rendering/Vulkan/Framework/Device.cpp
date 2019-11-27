@@ -329,6 +329,20 @@ MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceS
 	return createdPool;
 }
 
+CommandPool* Device::createCommandPool() noexcept {
+	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.flags = 0;
+    // the queue family of this command pool. All command buffers allocated from this command pool,
+	// must be submitted to queues of this family ONLY. 
+	commandPoolCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
+	
+	VkCommandPool cmdPool;
+	VK_CHECK_RESULT(vkCreateCommandPool(mDevice, &commandPoolCreateInfo, nullptr, &cmdPool));
+	
+	return registerNewOwnedObj(new CommandPool(this, std::move(cmdPool)));
+}
+
 uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept {
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
