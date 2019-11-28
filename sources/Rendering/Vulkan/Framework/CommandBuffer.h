@@ -19,6 +19,8 @@ namespace Tachyon {
 
 					~CommandBuffer();
 
+					void registerCommands(std::function<void(const VkCommandBuffer & commandBuffer)> fn) noexcept;
+
 				private:
 					VkCommandBuffer mCommandBuffer;
 

@@ -15,10 +15,6 @@ CommandPool::~CommandPool() {
 	vkDestroyCommandPool(getParentDevice()->getNativeDeviceHandle(), mCommandPool, nullptr);
 }
 
-void CommandPool::registerCommands(std::function<void()> fn) noexcept {
-	
-}
-
 const VkCommandPool& CommandPool::getNativeCommandPoolHandle() const noexcept {
 	return mCommandPool;
 }

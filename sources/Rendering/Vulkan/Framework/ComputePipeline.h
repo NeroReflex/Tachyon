@@ -11,9 +11,9 @@ namespace Tachyon {
 					public Pipeline {
 
 				public:
-					inline ComputePipeline(const Device* device, VkPipeline&& pipeline) noexcept
+					inline ComputePipeline(const Device* device, VkPipelineLayout&& pipelineLayout, VkPipeline&& pipeline) noexcept
 						: DeviceOwned(device),
-						Pipeline(device, Pipeline::PipelineType::Compute, std::move(pipeline)) {};
+						Pipeline(device, Pipeline::PipelineType::Compute, std::move(pipelineLayout), std::move(pipeline)) {};
 
 					ComputePipeline(const ComputePipeline&) = delete;
 

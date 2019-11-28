@@ -177,6 +177,8 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(mDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 
+	Pipeline* result = nullptr;
+
 	VkPipeline pipeline;
 	if (isComputePipeline) {
 		VkComputePipelineCreateInfo computePipelineCreateInfo;
@@ -192,14 +194,17 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 		computePipelineCreateInfo.layout = pipelineLayout;
 		
 		VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline));
+
+		result = new ComputePipeline(this, std::move(pipelineLayout), std::move(pipeline));
 	} else {
 		DBG_ASSERT(false);
 	}
 
 	vkDestroyDescriptorSetLayout(mDevice, descriptorSetLayout, NULL);
-	vkDestroyPipelineLayout(mDevice, pipelineLayout, nullptr);
 
-	return registerNewOwnedObj(new ComputePipeline(this, std::move(pipeline)));
+	DBG_ASSERT(result);
+
+	return registerNewOwnedObj(result);
 }
 
 Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {

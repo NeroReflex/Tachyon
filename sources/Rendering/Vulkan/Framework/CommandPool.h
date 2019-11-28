@@ -20,8 +20,6 @@ namespace Tachyon {
 						
 						CommandPool& operator=(const CommandPool&)  = delete;
 						
-						void registerCommands(std::function<void()> fn) noexcept;
-						
 						~CommandPool() override;
 
 						const VkCommandPool& getNativeCommandPoolHandle() const noexcept;
