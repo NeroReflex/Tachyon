@@ -7,6 +7,7 @@
 #include "Image.h"
 #include "CommandPool.h"
 #include "MemoryPool.h"
+#include "DescriptorPool.h"
 
 #include "ComputeShader.h"
 
@@ -54,6 +55,8 @@ namespace Tachyon {
 					const VkPhysicalDevice& getNativePhysicalDeviceInstance() const noexcept;
 
 					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
+
+					DescriptorPool* createDescriptorPool() noexcept;
 
 					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
 

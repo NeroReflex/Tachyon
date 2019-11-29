@@ -361,3 +361,15 @@ uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags p
 	}
 	return -1;
 }
+
+DescriptorPool* Device::createDescriptorPool() noexcept {
+	VkDescriptorPoolCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	createInfo.pNext = nullptr;
+	//createInfo.poolSizeCount = 4;
+
+	VkDescriptorPool descriptorPool;
+	vkCreateDescriptorPool(mDevice, &createInfo, nullptr, &descriptorPool);
+
+	return registerNewOwnedObj(new DescriptorPool(this, std::move(descriptorPool)));
+}
