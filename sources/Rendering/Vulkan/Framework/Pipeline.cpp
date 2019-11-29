@@ -6,12 +6,13 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-Pipeline::Pipeline(const Device* device, PipelineType type, VkPipelineLayout&& pipelineLayout, VkDescriptorSetLayout&& descriptorSetLayout, VkPipeline&& pipeline) noexcept
+Pipeline::Pipeline(const Device* device, PipelineType type, std::vector<VkDescriptorPoolSize>&& descriptorPoolSize, VkPipelineLayout&& pipelineLayout, VkDescriptorSetLayout&& descriptorSetLayout, VkPipeline&& pipeline) noexcept
 	: DeviceOwned(device),
 	mType(type),
 	mPipeline(std::move(pipeline)),
 	mPipelineLayout(std::move(pipelineLayout)),
-	mDescriptorSetLayout(descriptorSetLayout) {}
+	mDescriptorSetLayout(descriptorSetLayout),
+	mDescriptorPoolSize(std::move(descriptorPoolSize)) {}
 
 Pipeline::~Pipeline() {
 	vkDestroyDescriptorSetLayout(getParentDevice()->getNativeDeviceHandle(), mDescriptorSetLayout, NULL);

@@ -123,10 +123,12 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 
 	std::vector<VkPipelineShaderStageCreateInfo> shadersStageInfo(shaders.size());
 	std::vector<VkDescriptorSetLayoutBinding> renderDescriptorSetLayoutBinding;
+	std::vector<VkDescriptorPoolSize> descriptorPoolSize;
 	uint32_t i = 0;
 	for (const auto& shader : shaders) {
+		descriptorPoolSize = ShaderLayoutBinding::join(descriptorPoolSize, shader->getNativeDescriptorPoolSizeHandles());
+		
 		VkShaderStageFlagBits stageType;
-
 		switch (shader->getType()) {
 		case Shader::ShaderType::Vertex:
 			stageType = VK_SHADER_STAGE_VERTEX_BIT;
@@ -195,7 +197,7 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 		
 		VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline));
 
-		result = new ComputePipeline(this, std::move(pipelineLayout), std::move(descriptorSetLayout), std::move(pipeline));
+		result = new ComputePipeline(this, std::move(descriptorPoolSize), std::move(pipelineLayout), std::move(descriptorSetLayout), std::move(pipeline));
 	} else {
 		DBG_ASSERT(false);
 	}

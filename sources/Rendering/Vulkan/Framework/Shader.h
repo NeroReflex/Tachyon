@@ -33,6 +33,8 @@ namespace Tachyon {
 
 					const std::vector<VkDescriptorSetLayoutBinding>& getNativeShaderBindings() const noexcept;
 
+					std::vector<VkDescriptorPoolSize> getNativeDescriptorPoolSizeHandles() const noexcept;
+
 					const ShaderType& getType() const noexcept;
 
 				protected:
@@ -44,6 +46,8 @@ namespace Tachyon {
 					VkShaderModule mShaderModule;
 
 					std::vector<VkDescriptorSetLayoutBinding> mSpecializedBindings;
+
+					std::vector<VkDescriptorPoolSize> mDescriptorPoolSize;
 				};
 			}
 		}

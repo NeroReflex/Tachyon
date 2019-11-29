@@ -67,8 +67,52 @@ void ShaderLayoutBinding::insert(const BindingDescriptor& shaderBinding) noexcep
 	binding.pImmutableSamplers = nullptr;
 
 	mDescriptors.emplace_back(binding);
+
+	auto it = mDescriptorPoolSize.find(type);
+	if (it == mDescriptorPoolSize.end()) {
+		mDescriptorPoolSize.emplace(std::pair<VkDescriptorType, uint32_t>(type, 1));
+	} else {
+		*(it)++;
+	}
 }
 
 std::vector<VkDescriptorSetLayoutBinding> ShaderLayoutBinding::getNativeLayoutHandles() const noexcept {
 	return mDescriptors;
+}
+
+std::vector<VkDescriptorPoolSize> ShaderLayoutBinding::join(const std::vector<VkDescriptorPoolSize>& src1, const std::vector<VkDescriptorPoolSize>& src2) noexcept {
+	std::vector<VkDescriptorPoolSize> result(src1);
+
+	for (uint32_t i = 0; i < src2.size(); ++i) {
+		bool done = false;
+		for (uint32_t j = 0; (j < result.size()) && (!done); ++j) {
+			if (result[j].type == src2[i].type) {
+				result[j].descriptorCount;
+				done = true;
+			}
+		}
+
+		if (!done) {
+			VkDescriptorPoolSize el;
+			el.type = src2[i].type;
+			el.descriptorCount = 1;
+			result.push_back(el);
+		}
+	}
+
+	return result;
+}
+
+std::vector<VkDescriptorPoolSize> ShaderLayoutBinding::getNativeDescriptorPoolSizeHandles() const noexcept {
+	std::vector<VkDescriptorPoolSize> result;
+
+	for (const auto& poolSize : mDescriptorPoolSize) {
+		VkDescriptorPoolSize el;
+		el.type = poolSize.first;
+		el.descriptorCount = poolSize.second;
+		
+		result.push_back(el);
+	}
+
+	return result;
 }

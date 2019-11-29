@@ -9,7 +9,8 @@ using namespace Tachyon::Rendering::Vulkan::Framework;
 Shader::Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
 	: DeviceOwned(device),
 	mShaderType(type),
-	mSpecializedBindings(std::move(bindings.getNativeLayoutHandles())) {
+	mSpecializedBindings(std::move(bindings.getNativeLayoutHandles())),
+	mDescriptorPoolSize(std::move(bindings.getNativeDescriptorPoolSizeHandles())) {
 
 	VkShaderModuleCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -57,4 +58,8 @@ const std::vector<VkDescriptorSetLayoutBinding>& Shader::getNativeShaderBindings
 
 const Shader::ShaderType& Shader::getType() const noexcept {
 	return mShaderType;
+}
+
+std::vector<VkDescriptorPoolSize> Shader::getNativeDescriptorPoolSizeHandles() const noexcept {
+	return mDescriptorPoolSize;
 }
