@@ -1,5 +1,7 @@
 #include "VulkanPipeline.h"
 
+#include "Framework/CommandBuffer.h"
+
 using namespace Tachyon;
 using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
@@ -86,7 +88,9 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingTLAS(mDevice->createImage(Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width)),
 	mRaytracingBLASCollection(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
 	mRaytracingModelMatrix(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
-	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth))
+	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
+	mRaytracerCommandPool(mDevice->createCommandPool()),
+	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer())
 {
 	// Allocate memory for core buffers on the GPU exclusive memory.
 	mDevice->allocateResources(
@@ -116,7 +120,10 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 }
 
 void VulkanPipeline::onReset() noexcept {
-
+	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineHandle());
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mFlushPipeline->getNativeDescriptorSetLayout()), 0, NULL);
+	});
 }
 
 void VulkanPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {

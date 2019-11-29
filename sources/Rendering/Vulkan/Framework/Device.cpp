@@ -195,12 +195,10 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 		
 		VK_CHECK_RESULT(vkCreateComputePipelines(mDevice, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline));
 
-		result = new ComputePipeline(this, std::move(pipelineLayout), std::move(pipeline));
+		result = new ComputePipeline(this, std::move(pipelineLayout), std::move(descriptorSetLayout), std::move(pipeline));
 	} else {
 		DBG_ASSERT(false);
 	}
-
-	vkDestroyDescriptorSetLayout(mDevice, descriptorSetLayout, NULL);
 
 	DBG_ASSERT(result);
 

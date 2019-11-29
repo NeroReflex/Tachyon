@@ -55,6 +55,10 @@ namespace Tachyon {
 				Framework::Image* const mRaytracingModelMatrix;
 
 				Framework::Image* const mRaytracingGeometryCollection;
+
+				Framework::CommandPool* const mRaytracerCommandPool;
+
+				Framework::CommandBuffer* const mRaytracerFlushCommandBuffer;
 			};
 		}
     }
