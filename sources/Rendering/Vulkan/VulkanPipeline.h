@@ -40,8 +40,6 @@ namespace Tachyon {
 
 				Framework::Swapchain* const mSwapchain;
 
-				const Framework::ShaderLayoutBinding mInsertPipelineShaderLayoutBindings;
-
 				const Framework::Pipeline* const mInsertPipeline;
 
 				const Framework::Pipeline* const mFlushPipeline;

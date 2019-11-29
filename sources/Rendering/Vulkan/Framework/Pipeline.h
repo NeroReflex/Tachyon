@@ -16,7 +16,7 @@ namespace Tachyon {
 						Graphics,
 					};
 
-					Pipeline(const Device* device, PipelineType type, std::vector<VkDescriptorPoolSize>&& descriptorPoolSize, VkPipelineLayout&& pipelineLayout, VkDescriptorSetLayout&& descriptorSetLayout, VkPipeline&& pipeline) noexcept;
+					Pipeline(const Device* device, PipelineType type, VkPipelineLayout&& pipelineLayout, VkDescriptorSetLayout&& descriptorSetLayout, VkPipeline&& pipeline) noexcept;
 
 					Pipeline(const Pipeline&) = delete;
 
@@ -40,8 +40,6 @@ namespace Tachyon {
 					VkPipelineLayout mPipelineLayout;
 
 					VkDescriptorSetLayout mDescriptorSetLayout;
-
-					std::vector<VkDescriptorPoolSize> mDescriptorPoolSize;
 				};
 			}
 		}

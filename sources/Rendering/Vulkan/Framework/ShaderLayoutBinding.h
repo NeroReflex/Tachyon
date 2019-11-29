@@ -51,14 +51,8 @@ namespace Tachyon {
 
 					std::vector<VkDescriptorSetLayoutBinding> getNativeLayoutHandles() const noexcept;
 
-					std::vector<VkDescriptorPoolSize> getNativeDescriptorPoolSizeHandles() const noexcept;
-
-					static std::vector<VkDescriptorPoolSize> join(const std::vector<VkDescriptorPoolSize>& src1, const std::vector<VkDescriptorPoolSize>& src2) noexcept;
-
 				private:
 					std::vector<VkDescriptorSetLayoutBinding> mDescriptors;
-
-					std::unordered_map<VkDescriptorType, uint32_t> mDescriptorPoolSize;
 				};
 			}
 		}
