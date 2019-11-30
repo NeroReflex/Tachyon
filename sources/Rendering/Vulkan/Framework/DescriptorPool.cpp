@@ -17,3 +17,16 @@ DescriptorPool::~DescriptorPool() {
 const VkDescriptorPool& DescriptorPool::getNativeDescriptorPoolHandle() const noexcept {
 	return mDescriptorPool;
 }
+
+DescriptorSet* DescriptorPool::allocateDescriptorSet(const Pipeline* pipeline) noexcept {
+	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
+	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocateInfo.descriptorPool = mDescriptorPool;
+	descriptorSetAllocateInfo.descriptorSetCount = 1;
+	descriptorSetAllocateInfo.pSetLayouts = &(pipeline->getNativeDescriptorSetLayout());
+
+	VkDescriptorSet descriptorSet;
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(getParentDevice()->getNativeDeviceHandle(), &descriptorSetAllocateInfo, &descriptorSet));
+
+	return new DescriptorSet(this, std::move(descriptorSet));
+}

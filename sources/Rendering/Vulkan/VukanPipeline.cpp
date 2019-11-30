@@ -91,8 +91,8 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
 	mRaytracerDescriptorPool(mDevice->createDescriptorPool({
 		std::make_tuple<Framework::ShaderLayoutBinding::BindingType, uint32_t>(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, 3),
-		std::make_tuple<Framework::ShaderLayoutBinding::BindingType, uint32_t>(Framework::ShaderLayoutBinding::BindingType::StorageImage, 6),
-	})),
+		std::make_tuple<Framework::ShaderLayoutBinding::BindingType, uint32_t>(Framework::ShaderLayoutBinding::BindingType::StorageImage, 18),
+	}, 4)),
 	mRaytracerCommandPool(mDevice->createCommandPool()),
 	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer())
 {

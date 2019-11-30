@@ -2,6 +2,8 @@
 
 #include "DeviceOwned.h"
 #include "ShaderLayoutBinding.h"
+#include "DescriptorSet.h"
+#include "Pipeline.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -9,6 +11,8 @@ namespace Tachyon {
 			namespace Framework {
 				class DescriptorPool :
 					virtual public DeviceOwned {
+
+					friend class DescriptorSet;
 
 				public:
 					DescriptorPool(const Device* const device, VkDescriptorPool&& descriptorPool) noexcept;
@@ -23,8 +27,12 @@ namespace Tachyon {
 
 					const VkDescriptorPool& getNativeDescriptorPoolHandle() const noexcept;
 
+					DescriptorSet* allocateDescriptorSet(const Pipeline* pipeline) noexcept;
+
 				private:
 					VkDescriptorPool mDescriptorPool;
+
+					std::unordered_map<uintptr_t, std::unique_ptr<DescriptorSet>> mAllocatedDescriptorSets;
 				};
 			}
 		}

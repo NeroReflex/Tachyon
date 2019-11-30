@@ -362,9 +362,10 @@ uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags p
 	return -1;
 }
 
-DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<ShaderLayoutBinding::BindingType, uint32_t>>& descriptorPoolSize) noexcept {
+DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<ShaderLayoutBinding::BindingType, uint32_t>>& descriptorPoolSize, uint32_t maxSets) noexcept {
+	DBG_ASSERT((maxSets > 0));
+	
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizeNativeCollection(descriptorPoolSize.size());
-
 	for (uint32_t k = 0; k < descriptorPoolSize.size(); ++k) {
 		VkDescriptorType nativeType;
 		switch (std::get<0>(descriptorPoolSize[k])) {
@@ -397,12 +398,15 @@ DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<Shader
 		}
 
 		descriptorPoolSizeNativeCollection[k].type = nativeType;
+
+		DBG_ASSERT((std::get<1>(descriptorPoolSize[k]) > 0));
 		descriptorPoolSizeNativeCollection[k].descriptorCount = std::get<1>(descriptorPoolSize[k]);
 	}
 
 	VkDescriptorPoolCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.pNext = nullptr;
+	createInfo.maxSets = maxSets;
 	createInfo.poolSizeCount = descriptorPoolSizeNativeCollection.size();
 	createInfo.pPoolSizes = descriptorPoolSizeNativeCollection.data();
 
