@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DeviceOwned.h"
+#include "ShaderLayoutBinding.h"
 
 namespace Tachyon {
 	namespace Rendering {

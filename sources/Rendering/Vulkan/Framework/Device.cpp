@@ -362,14 +362,52 @@ uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags p
 	return -1;
 }
 
-DescriptorPool* Device::createDescriptorPool() noexcept {
+DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<ShaderLayoutBinding::BindingType, uint32_t>>& descriptorPoolSize) noexcept {
+	std::vector<VkDescriptorPoolSize> descriptorPoolSizeNativeCollection(descriptorPoolSize.size());
+
+	for (uint32_t k = 0; k < descriptorPoolSize.size(); ++k) {
+		VkDescriptorType nativeType;
+		switch (std::get<0>(descriptorPoolSize[k])) {
+		case ShaderLayoutBinding::BindingType::Sampler:
+			nativeType = VK_DESCRIPTOR_TYPE_SAMPLER;
+			break;
+		case ShaderLayoutBinding::BindingType::CombinedImageSampler:
+			nativeType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			break;
+		case ShaderLayoutBinding::BindingType::SampledImage:
+			nativeType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			break;
+		case ShaderLayoutBinding::BindingType::StorageImage:
+			nativeType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			break;
+		case ShaderLayoutBinding::BindingType::UniformTexelBuffer:
+			nativeType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+			break;
+		case ShaderLayoutBinding::BindingType::UniformTexelStorage:
+			nativeType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+			break;
+		case ShaderLayoutBinding::BindingType::StorageBuffer:
+			nativeType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			break;
+		case ShaderLayoutBinding::BindingType::UniformBuffer:
+			nativeType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			break;
+		default:
+			DBG_ASSERT(false);
+		}
+
+		descriptorPoolSizeNativeCollection[k].type = nativeType;
+		descriptorPoolSizeNativeCollection[k].descriptorCount = std::get<1>(descriptorPoolSize[k]);
+	}
+
 	VkDescriptorPoolCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.pNext = nullptr;
-	//createInfo.poolSizeCount = 4;
+	createInfo.poolSizeCount = descriptorPoolSizeNativeCollection.size();
+	createInfo.pPoolSizes = descriptorPoolSizeNativeCollection.data();
 
 	VkDescriptorPool descriptorPool;
-	vkCreateDescriptorPool(mDevice, &createInfo, nullptr, &descriptorPool);
+	VK_CHECK_RESULT(vkCreateDescriptorPool(mDevice, &createInfo, nullptr, &descriptorPool));
 
 	return registerNewOwnedObj(new DescriptorPool(this, std::move(descriptorPool)));
 }

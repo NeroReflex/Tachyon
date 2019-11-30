@@ -56,7 +56,7 @@ namespace Tachyon {
 
 					const ComputeShader* loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
-					DescriptorPool* createDescriptorPool() noexcept;
+					DescriptorPool* createDescriptorPool(const std::vector<std::tuple<ShaderLayoutBinding::BindingType, uint32_t>>& descriptorPoolSize) noexcept;
 
 					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
 
