@@ -129,6 +129,24 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 }
 
 void VulkanPipeline::onReset() noexcept {
+	// Specify the buffer to bind to the descriptor.
+	VkDescriptorBufferInfo descriptorBufferInfo = {};
+	descriptorBufferInfo.buffer = buffer;
+	descriptorBufferInfo.offset = 0;
+	descriptorBufferInfo.range = bufferSize;
+
+	VkWriteDescriptorSet writeDescriptorSet = {};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.pNext = nullptr;
+	writeDescriptorSet.dstSet = mRaytracerFlushDescriptorSet->getNativeDescriptorSetHandle();
+	writeDescriptorSet.dstBinding = 0; // write to the first, and only binding.
+	writeDescriptorSet.descriptorCount = 1; // update a single descriptor.
+	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
+
+	// perform the update of the descriptor set.
+	vkUpdateDescriptorSets(mDevice->getNativeDeviceHandle(), 1, &writeDescriptorSet, 0, NULL);
+
 	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineHandle());
 		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mFlushPipeline->getNativeDescriptorSetLayout()), 0, NULL);

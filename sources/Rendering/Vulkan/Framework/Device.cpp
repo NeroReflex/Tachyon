@@ -407,7 +407,7 @@ DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<Shader
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.pNext = nullptr;
 	createInfo.maxSets = maxSets;
-	createInfo.poolSizeCount = descriptorPoolSizeNativeCollection.size();
+	createInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizeNativeCollection.size());
 	createInfo.pPoolSizes = descriptorPoolSizeNativeCollection.data();
 
 	VkDescriptorPool descriptorPool;
