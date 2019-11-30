@@ -11,6 +11,12 @@ DescriptorPool::DescriptorPool(const Device* const device, VkDescriptorPool&& de
 	mDescriptorPool(std::move(descriptorPool)) {}
 
 DescriptorPool::~DescriptorPool() {
+	while (!mAllocatedDescriptorSets.empty()) {
+		auto allocatedDescritorSet = mAllocatedDescriptorSets.begin();
+		allocatedDescritorSet->second.reset(nullptr);
+	}
+	mAllocatedDescriptorSets.clear();
+
 	vkDestroyDescriptorPool(getParentDevice()->getNativeDeviceHandle(), mDescriptorPool, nullptr);
 }
 

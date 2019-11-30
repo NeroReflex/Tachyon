@@ -15,9 +15,9 @@ DescriptorSet::DescriptorSet(DescriptorPool* const pool, VkDescriptorSet&& descr
 
 DescriptorSet::~DescriptorSet() {
 	const auto selfIt = getParentDescriptorPool()->mAllocatedDescriptorSets.find(uintptr_t(this));
-	DBG_ASSERT((selfIt != getParentDescriptorPool()->mAllocatedDescriptorSets.cend()));
-
-	getParentDescriptorPool()->mAllocatedDescriptorSets.erase(selfIt);
+	if (selfIt != getParentDescriptorPool()->mAllocatedDescriptorSets.cend()) {
+		getParentDescriptorPool()->mAllocatedDescriptorSets.erase(selfIt);
+	}
 
 	vkFreeDescriptorSets(getParentDescriptorPool()->getParentDevice()->getNativeDeviceHandle(), getParentDescriptorPool()->getNativeDescriptorPoolHandle(), 1, &mDescriptorSet);
 }

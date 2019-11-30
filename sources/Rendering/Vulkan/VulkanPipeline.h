@@ -58,6 +58,14 @@ namespace Tachyon {
 
 				Framework::DescriptorPool* mRaytracerDescriptorPool;
 
+				Framework::DescriptorSet* mRaytracerInsertDescriptorSet;
+
+				Framework::DescriptorSet* mRaytracerFlushDescriptorSet;
+
+				Framework::DescriptorSet* mRaytracerUpdateDescriptorSet;
+
+				Framework::DescriptorSet* mRaytracerRenderingDescriptorSet;
+
 				Framework::CommandPool* const mRaytracerCommandPool;
 
 				Framework::CommandBuffer* const mRaytracerFlushCommandBuffer;

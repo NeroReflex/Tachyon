@@ -90,9 +90,14 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingModelMatrix(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
 	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
 	mRaytracerDescriptorPool(mDevice->createDescriptorPool({
-		std::make_tuple<Framework::ShaderLayoutBinding::BindingType, uint32_t>(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, 3),
-		std::make_tuple<Framework::ShaderLayoutBinding::BindingType, uint32_t>(Framework::ShaderLayoutBinding::BindingType::StorageImage, 18),
+		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, uint32_t(1)),
+		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, uint32_t(3)),
+		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageImage, uint32_t(18)),
 	}, 4)),
+	mRaytracerInsertDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mInsertPipeline)),
+	mRaytracerFlushDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mFlushPipeline)),
+	mRaytracerUpdateDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mUpdatePipeline)),
+	mRaytracerRenderingDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mRenderingPipeline)),
 	mRaytracerCommandPool(mDevice->createCommandPool()),
 	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer())
 {
