@@ -142,7 +142,9 @@ void VulkanPipeline::onReset() noexcept {
 
 	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineHandle());
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mFlushPipeline->getNativeDescriptorSetLayout()), 0, NULL);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mRaytracerFlushDescriptorSet->getNativeDescriptorSetHandle()), 0, NULL);
+
+		vkCmdDispatch(commandBuffer, (uint32_t)ceil(static_cast<float>(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) / float(FLUSH_WORKGROUP_X)), 1, 1);
 	});
 }
 

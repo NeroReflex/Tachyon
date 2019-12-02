@@ -38,3 +38,14 @@ void CommandBuffer::registerCommands(std::function<void(const VkCommandBuffer& c
 
 	VK_CHECK_RESULT(vkEndCommandBuffer(mCommandBuffer)); // end recording commands.
 }
+
+void CommandBuffer::submit(Fence* fence) noexcept
+{
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.pNext = nullptr;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &mCommandBuffer;
+
+	//VK_CHECK_RESULT(vkQueueSubmit());
+}

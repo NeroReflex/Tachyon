@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommandPool.h"
+#include "Fence.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -20,6 +21,8 @@ namespace Tachyon {
 					~CommandBuffer();
 
 					void registerCommands(std::function<void(const VkCommandBuffer & commandBuffer)> fn) noexcept;
+
+					void submit(Fence* fence) noexcept;
 
 				private:
 					VkCommandBuffer mCommandBuffer;

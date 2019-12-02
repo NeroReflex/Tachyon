@@ -48,6 +48,8 @@
 	#define MODELMATRIX_MEMORY_MODEL coherent
 #endif
 
+#define FLUSH_WORKGROUP_X 1024
+
 // TEXTUREs binding
 #define CORE_BINDING 0
 #define TLAS_BINDING CORE_BINDING+0
