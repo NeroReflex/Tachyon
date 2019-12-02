@@ -26,7 +26,9 @@ namespace Tachyon {
 
 					const VkDescriptorSet& getNativeDescriptorSetHandle() const noexcept;
 
-					void bindBuffer() const noexcept;
+					void bindStorageBuffers(uint32_t firstLayoutId/*, const std::initializer_list<>& buffers*/) const noexcept;
+
+					void bindUniformBuffers(uint32_t firstLayoutId/*, const std::initializer_list<>& buffers*/) const noexcept;
 
 					/**
 					 * Update a set of contiguous image bindings starting from the given binding point.
@@ -34,7 +36,7 @@ namespace Tachyon {
 					 * @param firstLayoutId the number of the fisrst layout
 					 * @param images images to bind from the first binding point onward
 					 */
-					void bindImages(uint32_t firstLayoutId, std::initializer_list<const ImageInterface*> images) const noexcept;
+					void bindImages(uint32_t firstLayoutId, std::initializer_list<std::tuple<VkImageLayout, const ImageView*>> images) const noexcept;
 
 				private:
 					DescriptorPool* const mParentDescriptorPool;

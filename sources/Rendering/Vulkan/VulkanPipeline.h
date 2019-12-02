@@ -49,12 +49,16 @@ namespace Tachyon {
 				const Framework::Pipeline* const mRenderingPipeline;
 
 				Framework::Image* const mRaytracingTLAS;
+				Framework::ImageView* mRaytracingTLASImageView;
 
 				Framework::Image* const mRaytracingBLASCollection;
+				Framework::ImageView* mRaytracingBLASCollectionImageView;
 
 				Framework::Image* const mRaytracingModelMatrix;
+				Framework::ImageView* mRaytracingModelMatrixImageView;
 
 				Framework::Image* const mRaytracingGeometryCollection;
+				Framework::ImageView* mRaytracingGeometryCollectionImageView;
 
 				Framework::DescriptorPool* mRaytracerDescriptorPool;
 

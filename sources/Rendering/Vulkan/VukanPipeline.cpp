@@ -85,7 +85,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			raytrace_render_compVK_size
 		)
 		}))),
-	mRaytracingTLAS(mDevice->createImage(Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width)),
+	mRaytracingTLAS(mDevice->createImage(Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT)),
 	mRaytracingBLASCollection(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
 	mRaytracingModelMatrix(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
 	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
@@ -112,6 +112,12 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 		}
 	);
 
+	// ImageView(s) are to be created after memory allocation
+	mRaytracingTLASImageView = mRaytracingTLAS->createImageView(Framework::ImageView::ViewType::Image1D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	mRaytracingBLASCollectionImageView = mRaytracingBLASCollection->createImageView(Framework::ImageView::ViewType::Image2D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	mRaytracingModelMatrixImageView = mRaytracingModelMatrix->createImageView(Framework::ImageView::ViewType::Image2D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	mRaytracingGeometryCollectionImageView = mRaytracingGeometryCollection->createImageView(Framework::ImageView::ViewType::Image3D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
 	
@@ -129,23 +135,10 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 }
 
 void VulkanPipeline::onReset() noexcept {
-	// Specify the buffer to bind to the descriptor.
-	VkDescriptorBufferInfo descriptorBufferInfo = {};
-	descriptorBufferInfo.buffer = buffer;
-	descriptorBufferInfo.offset = 0;
-	descriptorBufferInfo.range = bufferSize;
-
-	VkWriteDescriptorSet writeDescriptorSet = {};
-	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSet.pNext = nullptr;
-	writeDescriptorSet.dstSet = mRaytracerFlushDescriptorSet->getNativeDescriptorSetHandle();
-	writeDescriptorSet.dstBinding = 0; // write to the first, and only binding.
-	writeDescriptorSet.descriptorCount = 1; // update a single descriptor.
-	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
-
 	// perform the update of the descriptor set.
-	vkUpdateDescriptorSets(mDevice->getNativeDeviceHandle(), 1, &writeDescriptorSet, 0, NULL);
+	mRaytracerFlushDescriptorSet->bindImages(0, {
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView)
+	});
 
 	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mFlushPipeline->getNativePipelineHandle());
