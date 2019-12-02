@@ -136,7 +136,7 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 
 void VulkanPipeline::onReset() noexcept {
 	// perform the update of the descriptor set.
-	mRaytracerFlushDescriptorSet->bindImages(0, {
+	mRaytracerFlushDescriptorSet->bindImages(CORE_BINDING, {
 		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView)
 	});
 
