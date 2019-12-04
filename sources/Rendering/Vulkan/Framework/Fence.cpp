@@ -12,3 +12,7 @@ Fence::Fence(const Device* const device, VkFence&& fence) noexcept
 Fence::~Fence() {
 	vkDestroyFence(getParentDevice()->getNativeDeviceHandle(), mFence, nullptr);
 }
+
+const VkFence& Fence::getNativeFanceHandle() const noexcept {
+	return mFence;
+}

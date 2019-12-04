@@ -21,6 +21,8 @@ namespace Tachyon {
 
 					~Fence() override;
 
+					const VkFence& getNativeFanceHandle() const noexcept;
+
 				private:
 					VkFence mFence;
 				};

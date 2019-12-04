@@ -2,6 +2,7 @@
 
 #include "CommandPool.h"
 #include "Fence.h"
+#include "Queue.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -22,7 +23,7 @@ namespace Tachyon {
 
 					void registerCommands(std::function<void(const VkCommandBuffer & commandBuffer)> fn) noexcept;
 
-					void submit(Fence* fence) noexcept;
+					void submit(const Queue* const queue, const Fence* const fence) noexcept;
 
 				private:
 					VkCommandBuffer mCommandBuffer;

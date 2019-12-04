@@ -39,7 +39,7 @@ void CommandBuffer::registerCommands(std::function<void(const VkCommandBuffer& c
 	VK_CHECK_RESULT(vkEndCommandBuffer(mCommandBuffer)); // end recording commands.
 }
 
-void CommandBuffer::submit(Fence* fence) noexcept
+void CommandBuffer::submit(const Queue* const queue, const Fence* const fence) noexcept
 {
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -47,5 +47,5 @@ void CommandBuffer::submit(Fence* fence) noexcept
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &mCommandBuffer;
 
-	//VK_CHECK_RESULT(vkQueueSubmit());
+	VK_CHECK_RESULT(vkQueueSubmit(queue->getNativeQueueHandle(), 1, &submitInfo, fence->getNativeFanceHandle()));
 }
