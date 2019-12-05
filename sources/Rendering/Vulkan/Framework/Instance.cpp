@@ -118,7 +118,33 @@ const VkInstance& Instance::getNativeInstanceHandle() const noexcept
 	return mInstance;
 }
 
-Device* Instance::openDevice() noexcept {
+bool Instance::corresponds(const std::vector<QueueFamily::QueueFamilySupportedOperationType>& operations, VkQueueFamilyProperties queueFamily, VkPhysicalDevice device, uint32_t familyIndex) const noexcept {
+	bool featureRequested = true;
+	bool featureFound = false;
+	
+	auto opIt = std::find(operations.cbegin(), operations.cend(), QueueFamily::QueueFamilySupportedOperationType::Transfer);
+	featureRequested = (opIt != operations.cend());
+	featureFound = queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT;
+	if (featureFound != featureRequested) return false;
+	
+	opIt = std::find(operations.cbegin(), operations.cend(), QueueFamily::QueueFamilySupportedOperationType::Compute);
+	featureRequested = (opIt != operations.cend());
+	featureFound = queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT;
+	if (featureFound != featureRequested) return false;
+	
+	opIt = std::find(operations.cbegin(), operations.cend(), QueueFamily::QueueFamilySupportedOperationType::Graphics);
+	featureRequested = (opIt != operations.cend());
+	featureFound = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+	if (featureFound != featureRequested) return false;
+	
+	opIt = std::find(operations.cbegin(), operations.cend(), QueueFamily::QueueFamilySupportedOperationType::Present);
+	featureRequested = (opIt != operations.cend());
+	if ((featureRequested) && (!glfwGetPhysicalDevicePresentationSupport(mInstance, device, familyIndex))) return false;
+	
+	return true;
+}
+
+Device* Instance::openDevice(std::vector<QueueFamily::QueueFamilySupportedOperationType> queueDescriptors) noexcept {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
@@ -174,22 +200,27 @@ Device* Instance::openDevice() noexcept {
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(bestPhysicalDevice, &queueFamilyCount, queueFamilies.data());
 
-	bool queueFamilyHasBeenSelected = false;
-	uint32_t selectedQueueFamilyIndex = 0;
-	for (const auto& queueFamily : queueFamilies) {
-		if ((glfwGetPhysicalDevicePresentationSupport(mInstance, bestPhysicalDevice, selectedQueueFamilyIndex)) &&
-			(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
-			(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-		) {
-			queueFamilyHasBeenSelected = true;
-			break; // found a suitable queue. Stop the search.
+	const auto requestedDescriptors = queueDescriptors;
+	std::vector<uint32_t> selectedQueues;
+	
+	while (!queueDescriptors.empty()) {
+		const auto currentDescriptorIt = queueDescriptors.cbegin();
+		
+		uint32_t familyIndex = 0;
+		for (const auto& queueFamily : queueFamilies) {
+			if (corresponds(*currentDescriptorIt, queueFamily, bestPhysicalDevice, familyIndex)) {
+				selectedQueues.push_back(familyIndex);
+				break; // found a suitable queue. Stop the search.
+			}
+			
+			familyIndex++;
 		}
-
-		selectedQueueFamilyIndex++;
+		
+		queueDescriptors.erase(currentDescriptorIt);
 	}
 
-	DBG_ASSERT((selectedQueueFamilyIndex < queueFamilyCount));
-
+	DBG_ASSERT(requestedDescriptors.size() == selectedQueues.size());
+	
 	VkDeviceQueueCreateInfo queueCreateInfo = {};
 	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueCreateInfo.queueFamilyIndex = selectedQueueFamilyIndex;

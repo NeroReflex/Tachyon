@@ -17,6 +17,7 @@ namespace Tachyon {
 					enum QueueFamilySupportedOperationType {
 						Compute,
 						Graphics,
+						Transfer,
 						Present
 					};
 

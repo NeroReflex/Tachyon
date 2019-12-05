@@ -15,7 +15,7 @@ using namespace Tachyon::Rendering::Vulkan;
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
 	mInstance(new Framework::Instance(getGLFWwindow())),
-	mDevice(mInstance->openDevice()),
+	mDevice(mInstance->openDevice({})),
 	mSwapchain(mDevice->createSwapchain(getWidth(), getHeight())),
 	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
