@@ -11,7 +11,7 @@ namespace Tachyon {
 					public Shader {
 
 				public:
-					inline ComputeShader(const Device* device, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
+					inline ComputeShader(Device* device, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
 						: DeviceOwned(device), Shader(device, Shader::ShaderType::Compute, bindings, source, size) {};
 
 					ComputeShader() = delete;

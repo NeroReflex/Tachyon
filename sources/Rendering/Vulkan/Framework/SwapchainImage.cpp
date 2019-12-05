@@ -8,7 +8,7 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-SwapchainImage::SwapchainImage(const Device* device, const Swapchain* swapchain, VkImage&& image) noexcept
+SwapchainImage::SwapchainImage(Device* device, const Swapchain* swapchain, VkImage&& image) noexcept
 	: DeviceOwned(device),
 	ImageInterface(device, std::move(image)),
 	mParentSwapchain(swapchain) {

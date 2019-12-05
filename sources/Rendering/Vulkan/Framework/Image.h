@@ -23,7 +23,7 @@ namespace Tachyon {
 						Image3D
 					};
 
-					Image(const Device* device, ImageType type, VkFormat format, VkExtent3D extent, VkSampleCountFlagBits samples, uint32_t mipLevels, VkImage&& image) noexcept;
+					Image(Device* device, ImageType type, VkFormat format, VkExtent3D extent, VkSampleCountFlagBits samples, uint32_t mipLevels, VkImage&& image) noexcept;
 
 					Image(const Image&) = delete;
 

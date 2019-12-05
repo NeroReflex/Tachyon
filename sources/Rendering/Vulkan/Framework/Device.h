@@ -18,6 +18,8 @@ namespace Tachyon {
 				class Device :
 					virtual public InstanceOwned {
 
+					friend class DeviceOwned;
+					
 				public:
 					struct SwapChainSupportDetails {
 						VkSurfaceCapabilitiesKHR capabilities;
@@ -65,15 +67,6 @@ namespace Tachyon {
 					void allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
 
 				private:
-					template <typename T>
-					T* registerNewOwnedObj(T* const ownedObj) noexcept {
-						uintptr_t ptr = uintptr_t(ownedObj);
-
-						mOwnedObjects.emplace(std::pair<uintptr_t, std::unique_ptr<DeviceOwned>>(ptr, ownedObj));
-
-						return ownedObj;
-					}
-
 					uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept;
 
 					VkPhysicalDevice mPhysicalDevice;
@@ -90,7 +83,7 @@ namespace Tachyon {
 
 					//std::vector<Queue> mQueueCollection;
 
-					std::unordered_map<VkMemoryPropertyFlagBits, std::list<std::unique_ptr<MemoryPool>>> mMemoryPools;
+					std::unordered_map<VkMemoryPropertyFlagBits, std::list<MemoryPool*>> mMemoryPools;
 
 					std::unordered_map<uintptr_t, std::unique_ptr<DeviceOwned>> mOwnedObjects;
 

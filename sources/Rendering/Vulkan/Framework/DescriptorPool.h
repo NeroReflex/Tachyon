@@ -15,7 +15,7 @@ namespace Tachyon {
 					friend class DescriptorSet;
 
 				public:
-					DescriptorPool(const Device* const device, VkDescriptorPool&& descriptorPool) noexcept;
+					DescriptorPool(Device* const device, VkDescriptorPool&& descriptorPool) noexcept;
 
 					DescriptorPool(const DescriptorPool&) = delete;
 

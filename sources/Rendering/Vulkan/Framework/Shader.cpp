@@ -6,7 +6,7 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-Shader::Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
+Shader::Shader(Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept
 	: DeviceOwned(device),
 	mShaderType(type),
 	mSpecializedBindings(std::move(bindings.getNativeLayoutHandles())) {

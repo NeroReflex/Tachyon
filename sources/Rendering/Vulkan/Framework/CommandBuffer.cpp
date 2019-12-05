@@ -6,7 +6,7 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-CommandBuffer::CommandBuffer(const CommandPool* const parentCommandPool, VkCommandBuffer&& commandBuffer) noexcept
+CommandBuffer::CommandBuffer(CommandPool* const parentCommandPool, VkCommandBuffer&& commandBuffer) noexcept
 	: mParentCommandPool(parentCommandPool),
 	mCommandBuffer(commandBuffer) {}
 

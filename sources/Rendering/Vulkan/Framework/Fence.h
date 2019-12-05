@@ -11,7 +11,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					Fence(const Device* const device, VkFence&& fence) noexcept;
+					Fence(Device* const device, VkFence&& fence) noexcept;
 
 					Fence(const Fence&) = delete;
 

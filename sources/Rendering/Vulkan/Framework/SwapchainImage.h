@@ -15,7 +15,7 @@ namespace Tachyon {
 					virtual public ImageInterface {
 
 				public:
-					SwapchainImage(const Device* device, const Swapchain* swapchain, VkImage&& image) noexcept;
+					SwapchainImage(Device* device, const Swapchain* swapchain, VkImage&& image) noexcept;
 
 					SwapchainImage(const SwapchainImage&) = delete;
 

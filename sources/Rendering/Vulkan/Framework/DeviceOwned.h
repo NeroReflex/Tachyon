@@ -11,7 +11,7 @@ namespace Tachyon {
 				class DeviceOwned {
 
 				public:
-					DeviceOwned(const Device* device) noexcept;
+					DeviceOwned(Device* device) noexcept;
 
 					DeviceOwned(DeviceOwned&) = delete;
 
@@ -19,10 +19,10 @@ namespace Tachyon {
 
 					virtual ~DeviceOwned();
 
-					const Device* getParentDevice() const noexcept;
+					Device* getParentDevice() const noexcept;
 
 				private:
-					const Device* mOwningDevice;
+					Device* mOwningDevice;
 				};
 
 			}

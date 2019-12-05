@@ -6,10 +6,12 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-DeviceOwned::DeviceOwned(const Device* device) noexcept : mOwningDevice(device) {}
+DeviceOwned::DeviceOwned(Device* device) noexcept : mOwningDevice(device) {
+	getParentDevice()->mOwnedObjects.emplace(std::pair<uintptr_t, std::unique_ptr<DeviceOwned>>(uintptr_t(this), this));
+}
 
 DeviceOwned::~DeviceOwned() {}
 
-const Device* DeviceOwned::getParentDevice() const noexcept {
+Device* DeviceOwned::getParentDevice() const noexcept {
 	return mOwningDevice;
 }

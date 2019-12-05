@@ -16,7 +16,7 @@ namespace Tachyon {
 						Graphics,
 					};
 
-					Pipeline(const Device* device, PipelineType type, VkPipelineLayout&& pipelineLayout, VkDescriptorSetLayout&& descriptorSetLayout, VkPipeline&& pipeline) noexcept;
+					Pipeline(Device* device, PipelineType type, VkPipelineLayout&& pipelineLayout, VkDescriptorSetLayout&& descriptorSetLayout, VkPipeline&& pipeline) noexcept;
 
 					Pipeline(const Pipeline&) = delete;
 

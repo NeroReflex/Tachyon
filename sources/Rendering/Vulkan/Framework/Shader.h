@@ -36,7 +36,7 @@ namespace Tachyon {
 					const ShaderType& getType() const noexcept;
 
 				protected:
-					Shader(const Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
+					Shader(Device* device, ShaderType type, const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept;
 
 				private:
 					ShaderType mShaderType;

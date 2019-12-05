@@ -11,7 +11,7 @@ namespace Tachyon {
 				class CommandBuffer {
 
 				public:
-					CommandBuffer(const CommandPool* const parentCommandPool, VkCommandBuffer&& commandBuffer) noexcept;
+					CommandBuffer(CommandPool* const parentCommandPool, VkCommandBuffer&& commandBuffer) noexcept;
 
 					CommandBuffer(const CommandBuffer&) = delete;
 

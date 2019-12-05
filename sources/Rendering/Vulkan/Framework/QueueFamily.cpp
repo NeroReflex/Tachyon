@@ -6,7 +6,7 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-QueueFamily::QueueFamily(const Device* const device, std::vector<QueueFamilySupportedOperationType> supportedOperationTypes, uint32_t familyIndex) noexcept
+QueueFamily::QueueFamily(Device* const device, std::vector<QueueFamilySupportedOperationType> supportedOperationTypes, uint32_t familyIndex) noexcept
 	: DeviceOwned(device), mSupportedOperationTypes(std::move(supportedOperationTypes)), mFamilyIndex(std::move(familyIndex)) {}
 
 QueueFamily::~QueueFamily() {

@@ -7,7 +7,7 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-CommandPool::CommandPool(const Device* const device, VkCommandPool&& commandPool) noexcept 
+CommandPool::CommandPool(Device* const device, VkCommandPool&& commandPool) noexcept 
 	: DeviceOwned(device),
 	mCommandPool(std::move(commandPool)) {}
 

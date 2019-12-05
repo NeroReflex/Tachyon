@@ -7,7 +7,7 @@ using namespace Tachyon::Rendering;
 using namespace Tachyon::Rendering::Vulkan;
 using namespace Tachyon::Rendering::Vulkan::Framework;
 
-Image::Image(const Device* device, ImageType type, VkFormat format, VkExtent3D extent, VkSampleCountFlagBits samples, uint32_t mipLevels, VkImage&& image) noexcept
+Image::Image(Device* device, ImageType type, VkFormat format, VkExtent3D extent, VkSampleCountFlagBits samples, uint32_t mipLevels, VkImage&& image) noexcept
 	: DeviceOwned(device),
 	ImageInterface(device, std::move(image)),
 	mType(type),

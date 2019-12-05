@@ -12,7 +12,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 					
 					public:
-						CommandPool(const Device* const, VkCommandPool&& commandPool) noexcept;
+						CommandPool(Device* const, VkCommandPool&& commandPool) noexcept;
 						
 						CommandPool(const CommandPool&) = delete;
 						

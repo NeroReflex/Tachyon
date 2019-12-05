@@ -15,7 +15,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 				
 				public:
-					MemoryPool(const Device* device, VkMemoryPropertyFlagBits props, uint32_t memoryTypeBits, VkDeviceSize pagesCount, VkDeviceMemory&& memory) noexcept;
+					MemoryPool(Device* device, VkMemoryPropertyFlagBits props, uint32_t memoryTypeBits, VkDeviceSize pagesCount, VkDeviceMemory&& memory) noexcept;
 
 					MemoryPool(const MemoryPool&) = delete;
 

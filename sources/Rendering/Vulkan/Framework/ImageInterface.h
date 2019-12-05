@@ -15,7 +15,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					ImageInterface(const Device* device, VkImage&& image) noexcept;
+					ImageInterface(Device* device, VkImage&& image) noexcept;
 
 					ImageInterface(const ImageInterface&) = delete;
 

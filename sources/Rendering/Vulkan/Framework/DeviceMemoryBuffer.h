@@ -13,7 +13,7 @@ namespace Tachyon {
 					virtual public DeviceOwned {
 
 				public:
-					DeviceMemoryBuffer(const Device* device) noexcept;
+					DeviceMemoryBuffer(Device* device) noexcept;
 
 					DeviceMemoryBuffer(const DeviceMemoryBuffer&) = delete;
 

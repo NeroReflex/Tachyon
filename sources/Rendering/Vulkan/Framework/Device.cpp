@@ -113,7 +113,7 @@ const VkPhysicalDevice& Tachyon::Rendering::Vulkan::Framework::Device::getNative
 }
 
 const ComputeShader* Device::loadComputeShader(const ShaderLayoutBinding& bindings, const char* source, uint32_t size) noexcept {
-	return registerNewOwnedObj(new ComputeShader(this, bindings, source, size));
+	return new ComputeShader(this, bindings, source, size);
 }
 
 const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders) noexcept
@@ -202,7 +202,7 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 
 	DBG_ASSERT(result);
 
-	return registerNewOwnedObj(result);
+	return result;
 }
 
 Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
@@ -289,7 +289,7 @@ Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t heigh
 	VkImage image;
 	VK_CHECK_RESULT(vkCreateImage(mDevice, &imageCreateInfo, nullptr, &image));
 
-	return registerNewOwnedObj(new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image)));
+	return new Image(this, type, format, imageCreateInfo.extent, samples, mipLevels, std::move(image));
 }
 
 void Device::allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept {
@@ -327,7 +327,7 @@ MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceS
 
 	MemoryPool* createdPool = new MemoryPool(this, props, memoryTypeBits, blockCount, std::move(memoryPool));
 
-	mMemoryPools[props].push_back(std::move(std::unique_ptr<MemoryPool>(createdPool)));
+	mMemoryPools[props].push_back(createdPool);
 
 	return createdPool;
 }
@@ -343,7 +343,7 @@ CommandPool* Device::createCommandPool() noexcept {
 	VkCommandPool cmdPool;
 	VK_CHECK_RESULT(vkCreateCommandPool(mDevice, &commandPoolCreateInfo, nullptr, &cmdPool));
 	
-	return registerNewOwnedObj(new CommandPool(this, std::move(cmdPool)));
+	return new CommandPool(this, std::move(cmdPool));
 }
 
 uint32_t Device::findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept {
@@ -414,5 +414,5 @@ DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<Shader
 	VkDescriptorPool descriptorPool;
 	VK_CHECK_RESULT(vkCreateDescriptorPool(mDevice, &createInfo, nullptr, &descriptorPool));
 
-	return registerNewOwnedObj(new DescriptorPool(this, std::move(descriptorPool)));
+	return new DescriptorPool(this, std::move(descriptorPool));
 }

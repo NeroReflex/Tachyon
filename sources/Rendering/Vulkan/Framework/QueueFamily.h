@@ -20,7 +20,7 @@ namespace Tachyon {
 						Present
 					};
 
-					QueueFamily(const Device* const device, std::vector<QueueFamilySupportedOperationType> supportedOperationTypes, uint32_t familyIndex) noexcept;
+					QueueFamily(Device* const device, std::vector<QueueFamilySupportedOperationType> supportedOperationTypes, uint32_t familyIndex) noexcept;
 
 					QueueFamily(const QueueFamily&) = delete;
 
