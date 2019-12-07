@@ -38,6 +38,8 @@ namespace Tachyon {
 
 				Framework::Device* mDevice;
 
+				const Framework::QueueFamily* mQueueFamily;
+
 				Framework::Swapchain* const mSwapchain;
 
 				const Framework::Pipeline* const mInsertPipeline;

@@ -144,7 +144,9 @@ bool Instance::corresponds(const std::vector<QueueFamily::QueueFamilySupportedOp
 	return true;
 }
 
-Device* Instance::openDevice(std::vector<QueueFamily::QueueFamilySupportedOperationType> queueDescriptors) noexcept {
+Device* Instance::openDevice(std::vector<std::vector<QueueFamily::QueueFamilySupportedOperationType>> queueDescriptors) noexcept {
+	DBG_ASSERT((queueDescriptors.size() > 0));
+
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
@@ -201,15 +203,26 @@ Device* Instance::openDevice(std::vector<QueueFamily::QueueFamilySupportedOperat
 	vkGetPhysicalDeviceQueueFamilyProperties(bestPhysicalDevice, &queueFamilyCount, queueFamilies.data());
 
 	const auto requestedDescriptors = queueDescriptors;
-	std::vector<uint32_t> selectedQueues;
 	
+	std::vector<VkDeviceQueueCreateInfo> selectedQueues;
+	std::vector<std::tuple<std::vector<QueueFamily::QueueFamilySupportedOperationType>, uint32_t>> requiredQueueFamilyCollection;
+
 	while (!queueDescriptors.empty()) {
 		const auto currentDescriptorIt = queueDescriptors.cbegin();
 		
 		uint32_t familyIndex = 0;
 		for (const auto& queueFamily : queueFamilies) {
 			if (corresponds(*currentDescriptorIt, queueFamily, bestPhysicalDevice, familyIndex)) {
-				selectedQueues.push_back(familyIndex);
+				VkDeviceQueueCreateInfo queueCreateInfo = {};
+				queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+				queueCreateInfo.queueFamilyIndex = familyIndex;
+				queueCreateInfo.queueCount = 1;
+				queueCreateInfo.pQueuePriorities = &defaultQueuePriority;
+
+				selectedQueues.emplace_back(std::move(queueCreateInfo));
+
+				requiredQueueFamilyCollection.emplace_back(std::make_tuple(*currentDescriptorIt, familyIndex));
+
 				break; // found a suitable queue. Stop the search.
 			}
 			
@@ -220,17 +233,12 @@ Device* Instance::openDevice(std::vector<QueueFamily::QueueFamilySupportedOperat
 	}
 
 	DBG_ASSERT(requestedDescriptors.size() == selectedQueues.size());
-	
-	VkDeviceQueueCreateInfo queueCreateInfo = {};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = selectedQueueFamilyIndex;
-	queueCreateInfo.queueCount = 1;
-	queueCreateInfo.pQueuePriorities = &defaultQueuePriority;
+
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pQueueCreateInfos = &queueCreateInfo;
-	createInfo.queueCreateInfoCount = 1;
+	createInfo.pQueueCreateInfos = selectedQueues.data();
+	createInfo.queueCreateInfoCount = static_cast<uint32_t>(selectedQueues.size());
 	createInfo.pEnabledFeatures = &bestPhysicalDeviceFeatures;
 	createInfo.enabledExtensionCount = mDeviceExtensionsCount;
 	createInfo.ppEnabledExtensionNames = mDeviceExtensions;
@@ -254,7 +262,7 @@ Device* Instance::openDevice(std::vector<QueueFamily::QueueFamilySupportedOperat
 	VkDevice newDevice;
 	VK_CHECK_RESULT(vkCreateDevice(bestPhysicalDevice, &createInfo, nullptr, &newDevice));
 
-	Device* managedDeviceHandle = new Device(this, std::move(bestPhysicalDevice), std::move(newDevice), selectedQueueFamilyIndex);
+	Device* managedDeviceHandle = new Device(this, std::move(bestPhysicalDevice), std::move(newDevice), std::move(requiredQueueFamilyCollection));
 
 	mObjectsCollection.emplace_back(managedDeviceHandle);
 

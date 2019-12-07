@@ -64,7 +64,7 @@ uint morton3D(const in vec3 point)
 	return xx * 4 + yy * 2 + zz;
 }
 
-layout(local_size_x = 32, local_size_y = 48, local_size_z = 1) in;
+layout(local_size_x = INSERT_WORKGROUP_X, local_size_y = INSERT_WORKGROUP_Y, local_size_z = INSERT_WORKGROUP_Z) in;
 
 /**
  * This is the entry point for the geometry insertion program.

@@ -46,17 +46,20 @@ VkSwapchainCreateInfoKHR Device::SwapchainSelector::operator()(const SwapChainSu
 	return createInfo;
 }
 
-Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, uint32_t queueFamilyIndex) noexcept
+Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, std::vector<std::tuple<std::vector<QueueFamily::QueueFamilySupportedOperationType>, uint32_t>> requiredQueueFamilyCollection) noexcept
 	: InstanceOwned(instance),
 	mPhysicalDevice(physicalDevice),
-	mDevice(device),
-	mQueueFamilyIndex(queueFamilyIndex) {
+	mDevice(device) {
 	// Query avaliable extensions
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(mPhysicalDevice, nullptr, &extensionCount, nullptr);
 	
 	mAvailableExtensions.resize(extensionCount);
 	vkEnumerateDeviceExtensionProperties(mPhysicalDevice, nullptr, &extensionCount, mAvailableExtensions.data());
+
+	for (const auto& requiredQueueFamily : requiredQueueFamilyCollection) {
+		mQueueFamilies.push_back(new QueueFamily(this, std::get<0>(requiredQueueFamily), std::get<1>(requiredQueueFamily)));
+	}
 
 	// Query swapchain support
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mPhysicalDevice, getParentInstance()->getSurface(), &mSupportedSwapchain.capabilities);
@@ -92,6 +95,12 @@ Device::~Device() {
 	mMemoryPools.clear();
 
 	vkDestroyDevice(mDevice, nullptr);
+}
+
+const QueueFamily* Device::getQueueFamily(uint32_t index) const noexcept {
+	DBG_ASSERT((index < (mQueueFamilies.size())));
+
+	return mQueueFamilies[index];
 }
 
 bool Device::isExtensionAvailable(const std::string& extName) const noexcept {
@@ -205,10 +214,17 @@ const Pipeline* Device::createPipeline(const std::vector<const Shader*>& shaders
 	return result;
 }
 
-Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
+Swapchain* Device::createSwapchain(std::vector<const QueueFamily*> queueFamilyCollection, uint32_t width, uint32_t height, const SwapchainSelector& selector) noexcept {
 	DBG_ASSERT( (!mSwapchain) );
 
+	DBG_ASSERT((queueFamilyCollection.size() >= 1));
+
 	VkExtent2D actualExtent = { width, height };
+
+	std::vector<uint32_t> sharingQueueFamilyCollection;
+	for (const auto& sharingQueue : queueFamilyCollection) {
+		sharingQueueFamilyCollection.push_back(sharingQueue->getNativeQueueFamilyIndexHandle());
+	}
 
 	VkSwapchainCreateInfoKHR createInfo = selector(mSupportedSwapchain);
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -216,9 +232,9 @@ Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const Swapch
 	createInfo.flags = 0;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 	createInfo.surface = getParentInstance()->getSurface();
-	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.queueFamilyIndexCount = 0; // Optional
-    createInfo.pQueueFamilyIndices = nullptr; // Optional
+	createInfo.imageSharingMode = (queueFamilyCollection.size() > 1) ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.queueFamilyIndexCount = static_cast<uint32_t>(sharingQueueFamilyCollection.size());
+    createInfo.pQueueFamilyIndices = sharingQueueFamilyCollection.data();
 	actualExtent.width = std::max(mSupportedSwapchain.capabilities.minImageExtent.width, std::min(mSupportedSwapchain.capabilities.maxImageExtent.width, actualExtent.width));
     actualExtent.height = std::max(mSupportedSwapchain.capabilities.minImageExtent.height, std::min(mSupportedSwapchain.capabilities.maxImageExtent.height, actualExtent.height));
 	createInfo.imageExtent = actualExtent;
@@ -230,7 +246,7 @@ Swapchain* Device::createSwapchain(uint32_t width, uint32_t height, const Swapch
 	createInfo.flags = 0;
 	
 	VkBool32 isSurfaceSupported = VK_FALSE;
-	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, mQueueFamilyIndex, getParentInstance()->getSurface(), &isSurfaceSupported));
+	VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, queueFamilyCollection[0]->getNativeQueueFamilyIndexHandle(), getParentInstance()->getSurface(), &isSurfaceSupported));
 	DBG_ASSERT((isSurfaceSupported == VK_TRUE));
 
 	VkSwapchainKHR swapchain;
@@ -244,7 +260,7 @@ Swapchain* Device::getSwapchain() const noexcept {
 	return mSwapchain.get();
 }
 
-Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
+Image* Device::createImage(std::vector<const QueueFamily*> queueFamilyCollection, Image::ImageType type, uint32_t width, uint32_t height, uint32_t depth, VkFormat format, uint32_t mipLevels, VkSampleCountFlagBits samples) noexcept {
 	VkImageType imgType = VK_IMAGE_TYPE_3D;
 	switch (type) {
 	case Image::ImageType::Image1D:
@@ -266,17 +282,22 @@ Image* Device::createImage(Image::ImageType type, uint32_t width, uint32_t heigh
 		DBG_ASSERT(false);
 	}
 
+	std::vector<uint32_t> sharingQueueFamilyCollection;
+	for (const auto& sharingQueue : queueFamilyCollection) {
+		sharingQueueFamilyCollection.push_back(sharingQueue->getNativeQueueFamilyIndexHandle());
+	}
+
 	VkImageCreateInfo imageCreateInfo; // Using stack will lead to stack overflow
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageCreateInfo.pNext = nullptr;
 	imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-	imageCreateInfo.queueFamilyIndexCount = 1;
-	imageCreateInfo.pQueueFamilyIndices = &mQueueFamilyIndex;
+	imageCreateInfo.sharingMode = (sharingQueueFamilyCollection.size() > 1) ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(sharingQueueFamilyCollection.size());
+	imageCreateInfo.pQueueFamilyIndices = sharingQueueFamilyCollection.data();
 	imageCreateInfo.format = format;
 	imageCreateInfo.samples = samples;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageCreateInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT;
-	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	imageCreateInfo.mipLevels = mipLevels;
 	imageCreateInfo.arrayLayers = 1;
@@ -332,13 +353,13 @@ MemoryPool* Device::registerMemoryPool(VkMemoryPropertyFlagBits props, VkDeviceS
 	return createdPool;
 }
 
-CommandPool* Device::createCommandPool() noexcept {
+CommandPool* Device::createCommandPool(const QueueFamily* queueFamily) noexcept {
 	VkCommandPoolCreateInfo commandPoolCreateInfo = {};
 	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolCreateInfo.flags = 0;
     // the queue family of this command pool. All command buffers allocated from this command pool,
 	// must be submitted to queues of this family ONLY. 
-	commandPoolCreateInfo.queueFamilyIndex = mQueueFamilyIndex;
+	commandPoolCreateInfo.queueFamilyIndex = queueFamily->getNativeQueueFamilyIndexHandle();
 	
 	VkCommandPool cmdPool;
 	VK_CHECK_RESULT(vkCreateCommandPool(mDevice, &commandPoolCreateInfo, nullptr, &cmdPool));

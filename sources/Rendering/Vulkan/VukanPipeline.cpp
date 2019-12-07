@@ -15,8 +15,16 @@ using namespace Tachyon::Rendering::Vulkan;
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
 	mInstance(new Framework::Instance(getGLFWwindow())),
-	mDevice(mInstance->openDevice({})),
-	mSwapchain(mDevice->createSwapchain(getWidth(), getHeight())),
+	mDevice(mInstance->openDevice({ 
+		{
+			Framework::QueueFamily::QueueFamilySupportedOperationType::Transfer,
+			Framework::QueueFamily::QueueFamilySupportedOperationType::Compute,
+			Framework::QueueFamily::QueueFamilySupportedOperationType::Graphics,
+			Framework::QueueFamily::QueueFamilySupportedOperationType::Present
+		}
+	})),
+	mQueueFamily(mDevice->getQueueFamily(0)),
+	mSwapchain(mDevice->createSwapchain({ mQueueFamily }, getWidth(), getHeight())),
 	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
@@ -85,10 +93,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			raytrace_render_compVK_size
 		)
 		}))),
-	mRaytracingTLAS(mDevice->createImage(Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT)),
-	mRaytracingBLASCollection(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
-	mRaytracingModelMatrix(mDevice->createImage(Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
-	mRaytracingGeometryCollection(mDevice->createImage(Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
+	mRaytracingTLAS(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT)),
+	mRaytracingBLASCollection(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
+	mRaytracingModelMatrix(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
+	mRaytracingGeometryCollection(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
 	mRaytracerDescriptorPool(mDevice->createDescriptorPool({
 		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, uint32_t(1)),
 		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, uint32_t(3)),
@@ -98,7 +106,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracerFlushDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mFlushPipeline)),
 	mRaytracerUpdateDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mUpdatePipeline)),
 	mRaytracerRenderingDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mRenderingPipeline)),
-	mRaytracerCommandPool(mDevice->createCommandPool()),
+	mRaytracerCommandPool(mDevice->createCommandPool({ mQueueFamily })),
 	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer())
 {
 	// Allocate memory for core buffers on the GPU exclusive memory.

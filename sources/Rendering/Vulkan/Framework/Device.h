@@ -36,7 +36,7 @@ namespace Tachyon {
 						VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const noexcept;
 					};
 
-					Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, uint32_t queueFamilyIndex) noexcept;
+					Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, std::vector<std::tuple<std::vector<QueueFamily::QueueFamilySupportedOperationType>, uint32_t>> requiredQueueFamilyCollection) noexcept;
 
 					Device(Device&) = delete;
 
@@ -44,11 +44,18 @@ namespace Tachyon {
 
 					~Device() override;
 
-					Swapchain* createSwapchain(uint32_t width, uint32_t height, const SwapchainSelector& selector = Device::SwapchainSelector()) noexcept;
+
+					const QueueFamily* getQueueFamily(uint32_t index) const noexcept;
+
+					/**
+					 *
+					 * @param queueFamilyCollection the list of queue families that will access images on the swapchain
+					 */
+					Swapchain* createSwapchain(std::vector<const QueueFamily*> queueFamilyCollection, uint32_t width, uint32_t height, const SwapchainSelector& selector = Device::SwapchainSelector()) noexcept;
 
 					Swapchain* getSwapchain() const noexcept;
 
-					CommandPool* createCommandPool() noexcept;
+					CommandPool* createCommandPool(const QueueFamily* queueFamily) noexcept;
 					
 					bool isExtensionAvailable(const std::string& extName) const noexcept;
 
@@ -62,7 +69,7 @@ namespace Tachyon {
 
 					const Pipeline* createPipeline(const std::vector<const Shader*>& shaders) noexcept;
 
-					Image* createImage(Image::ImageType type, uint32_t width, uint32_t height = 1, uint32_t depth = 1, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
+					Image* createImage(std::vector<const QueueFamily*> queueFamilyCollection, Image::ImageType type, uint32_t width, uint32_t height = 1, uint32_t depth = 1, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
 
 					void allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
 
@@ -73,8 +80,6 @@ namespace Tachyon {
 
 					VkDevice mDevice;
 
-					uint32_t mQueueFamilyIndex;
-
 					std::vector<VkExtensionProperties> mAvailableExtensions;
 
 					SwapChainSupportDetails mSupportedSwapchain;
@@ -83,7 +88,9 @@ namespace Tachyon {
 
 					//std::vector<Queue> mQueueCollection;
 
-					std::unordered_map<VkMemoryPropertyFlagBits, std::list<MemoryPool*>> mMemoryPools;
+					std::vector<QueueFamily*> mQueueFamilies;
+
+					std::unordered_map<VkMemoryPropertyFlagBits, std::vector<MemoryPool*>> mMemoryPools;
 
 					std::unordered_map<uintptr_t, std::unique_ptr<DeviceOwned>> mOwnedObjects;
 

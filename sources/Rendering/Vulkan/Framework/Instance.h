@@ -22,7 +22,7 @@ namespace Tachyon {
 
 					~Instance();
 
-					Device* openDevice(std::vector<QueueFamily::QueueFamilySupportedOperationType> queueDescriptors) noexcept;
+					Device* openDevice(std::vector<std::vector<QueueFamily::QueueFamilySupportedOperationType>> queueDescriptors) noexcept;
 
 					const VkSurfaceKHR& getSurface() const noexcept;
 
@@ -31,7 +31,7 @@ namespace Tachyon {
 					const VkInstance& getNativeInstanceHandle() const noexcept;
 
 				private:
-					bool corresponds(const std::vector< Tachyon::Rendering::Vulkan::Framework::QueueFamily::QueueFamilySupportedOperationType >& operations, VkQueueFamilyProperties queueFamily, VkPhysicalDevice device, uint32_t familyIndex) const noexcept;
+					bool corresponds(const std::vector<Tachyon::Rendering::Vulkan::Framework::QueueFamily::QueueFamilySupportedOperationType>& operations, VkQueueFamilyProperties queueFamily, VkPhysicalDevice device, uint32_t familyIndex) const noexcept;
 					
 					void enqueueInstanceExtension(const char* extName) noexcept;
 
