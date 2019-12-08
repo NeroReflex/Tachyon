@@ -21,7 +21,16 @@ namespace Tachyon {
 						Present
 					};
 
-					QueueFamily(Device* const device, std::vector<QueueFamilySupportedOperationType> supportedOperationTypes, uint32_t familyIndex) noexcept;
+					typedef std::vector<QueueFamilySupportedOperationType> QueueFamilySelection;
+
+					struct ConcreteQueueFamilyDescriptor {
+						QueueFamilySelection supportedOperations;
+						uint32_t maxQueues;
+
+						ConcreteQueueFamilyDescriptor(QueueFamilySelection supportedOperations, uint32_t maxQueues) noexcept;
+					};
+
+					QueueFamily(Device* const device, const ConcreteQueueFamilyDescriptor& familyDescriptor, uint32_t familyIndex) noexcept;
 
 					QueueFamily(const QueueFamily&) = delete;
 
@@ -35,8 +44,12 @@ namespace Tachyon {
 
 					const std::vector<QueueFamilySupportedOperationType>& getSupportedOperationTypes() const noexcept;
 
+					uint32_t getMaximumQueuesCount() const noexcept;
+
+					Queue* getQueue(uint32_t index) const noexcept;
+
 				private:
-					std::vector<QueueFamilySupportedOperationType> mSupportedOperationTypes;
+					ConcreteQueueFamilyDescriptor mQueueFamilyDescriptor;
 
 					uint32_t mFamilyIndex;
 

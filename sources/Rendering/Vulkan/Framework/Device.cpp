@@ -46,7 +46,7 @@ VkSwapchainCreateInfoKHR Device::SwapchainSelector::operator()(const SwapChainSu
 	return createInfo;
 }
 
-Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, std::vector<std::tuple<std::vector<QueueFamily::QueueFamilySupportedOperationType>, uint32_t>> requiredQueueFamilyCollection) noexcept
+Device::Device(const Instance* instance, VkPhysicalDevice&& physicalDevice, VkDevice&& device, std::vector<std::tuple<QueueFamily::ConcreteQueueFamilyDescriptor, uint32_t>> requiredQueueFamilyCollection) noexcept
 	: InstanceOwned(instance),
 	mPhysicalDevice(physicalDevice),
 	mDevice(device) {
@@ -89,10 +89,6 @@ Device::~Device() {
 
 	// Remove each object
 	mOwnedObjects.clear();
-	//for (auto& ownedObj : mOwnedObjects) ownedObj.second.reset();
-
-	// Remove all memory pools AFTER each object has been removed
-	mMemoryPools.clear();
 
 	vkDestroyDevice(mDevice, nullptr);
 }

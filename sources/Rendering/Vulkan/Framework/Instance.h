@@ -22,7 +22,7 @@ namespace Tachyon {
 
 					~Instance();
 
-					Device* openDevice(std::vector<std::vector<QueueFamily::QueueFamilySupportedOperationType>> queueDescriptors) noexcept;
+					Device* openDevice(std::vector<QueueFamily::ConcreteQueueFamilyDescriptor> queueDescriptors) noexcept;
 
 					const VkSurfaceKHR& getSurface() const noexcept;
 

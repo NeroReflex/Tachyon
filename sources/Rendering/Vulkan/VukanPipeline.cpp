@@ -16,12 +16,12 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
 	mInstance(new Framework::Instance(getGLFWwindow())),
 	mDevice(mInstance->openDevice({ 
-		{
+		Framework::QueueFamily::ConcreteQueueFamilyDescriptor({
 			Framework::QueueFamily::QueueFamilySupportedOperationType::Transfer,
 			Framework::QueueFamily::QueueFamilySupportedOperationType::Compute,
 			Framework::QueueFamily::QueueFamilySupportedOperationType::Graphics,
 			Framework::QueueFamily::QueueFamilySupportedOperationType::Present
-		}
+		}, 1)
 	})),
 	mQueueFamily(mDevice->getQueueFamily(0)),
 	mSwapchain(mDevice->createSwapchain({ mQueueFamily }, getWidth(), getHeight())),

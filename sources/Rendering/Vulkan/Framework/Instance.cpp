@@ -144,7 +144,7 @@ bool Instance::corresponds(const std::vector<QueueFamily::QueueFamilySupportedOp
 	return true;
 }
 
-Device* Instance::openDevice(std::vector<std::vector<QueueFamily::QueueFamilySupportedOperationType>> queueDescriptors) noexcept {
+Device* Instance::openDevice(std::vector<QueueFamily::ConcreteQueueFamilyDescriptor> queueDescriptors) noexcept {
 	DBG_ASSERT((queueDescriptors.size() > 0));
 
 	uint32_t deviceCount = 0;
@@ -205,18 +205,21 @@ Device* Instance::openDevice(std::vector<std::vector<QueueFamily::QueueFamilySup
 	const auto requestedDescriptors = queueDescriptors;
 	
 	std::vector<VkDeviceQueueCreateInfo> selectedQueues;
-	std::vector<std::tuple<std::vector<QueueFamily::QueueFamilySupportedOperationType>, uint32_t>> requiredQueueFamilyCollection;
+	std::vector<std::tuple<QueueFamily::ConcreteQueueFamilyDescriptor, uint32_t>> requiredQueueFamilyCollection;
 
 	while (!queueDescriptors.empty()) {
 		const auto currentDescriptorIt = queueDescriptors.cbegin();
 		
 		uint32_t familyIndex = 0;
 		for (const auto& queueFamily : queueFamilies) {
-			if (corresponds(*currentDescriptorIt, queueFamily, bestPhysicalDevice, familyIndex)) {
+
+			DBG_ASSERT((currentDescriptorIt->maxQueues > 0));
+
+			if (corresponds(currentDescriptorIt->supportedOperations, queueFamily, bestPhysicalDevice, familyIndex)) {
 				VkDeviceQueueCreateInfo queueCreateInfo = {};
 				queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 				queueCreateInfo.queueFamilyIndex = familyIndex;
-				queueCreateInfo.queueCount = 1;
+				queueCreateInfo.queueCount = currentDescriptorIt->maxQueues;
 				queueCreateInfo.pQueuePriorities = &defaultQueuePriority;
 
 				selectedQueues.emplace_back(std::move(queueCreateInfo));
