@@ -24,6 +24,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 		}, 1)
 	})),
 	mQueueFamily(mDevice->getQueueFamily(0)),
+	mQueue(mQueueFamily->getQueue(0)),
 	mSwapchain(mDevice->createSwapchain({ mQueueFamily }, getWidth(), getHeight())),
 	mInsertPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
@@ -107,7 +108,9 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracerUpdateDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mUpdatePipeline)),
 	mRaytracerRenderingDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mRenderingPipeline)),
 	mRaytracerCommandPool(mDevice->createCommandPool({ mQueueFamily })),
-	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer())
+	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer()),
+	mRaytracerFlushFence(mDevice->createFence()),
+	mRaytracerInsertFence(mDevice->createFence())
 {
 	// Allocate memory for core buffers on the GPU exclusive memory.
 	mDevice->allocateResources(
@@ -145,7 +148,10 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 void VulkanPipeline::onReset() noexcept {
 	// perform the update of the descriptor set.
 	mRaytracerFlushDescriptorSet->bindImages(CORE_BINDING, {
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView)
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView),
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingBLASCollectionImageView),
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingGeometryCollectionImageView),
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingModelMatrixImageView)
 	});
 
 	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
@@ -154,6 +160,8 @@ void VulkanPipeline::onReset() noexcept {
 
 		vkCmdDispatch(commandBuffer, (uint32_t)ceil(static_cast<float>(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) / float(FLUSH_WORKGROUP_X)), 1, 1);
 	});
+
+	mRaytracerFlushCommandBuffer->submit(mQueue, mRaytracerFlushFence);
 }
 
 void VulkanPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {

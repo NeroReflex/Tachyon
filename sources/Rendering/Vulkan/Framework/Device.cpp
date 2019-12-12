@@ -433,3 +433,14 @@ DescriptorPool* Device::createDescriptorPool(const std::vector<std::tuple<Shader
 
 	return new DescriptorPool(this, std::move(descriptorPool));
 }
+
+Fence* Device::createFence(bool signaled) noexcept {
+	VkFence fence;
+
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = (signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0);
+	VK_CHECK_RESULT(vkCreateFence(getNativeDeviceHandle(), &fenceCreateInfo, NULL, &fence));
+
+	return new Fence(this, std::move(fence));
+}

@@ -40,6 +40,8 @@ namespace Tachyon {
 
 				const Framework::QueueFamily* mQueueFamily;
 
+				Framework::Queue* mQueue;
+
 				Framework::Swapchain* const mSwapchain;
 
 				const Framework::Pipeline* const mInsertPipeline;
@@ -75,6 +77,10 @@ namespace Tachyon {
 				Framework::CommandPool* const mRaytracerCommandPool;
 
 				Framework::CommandBuffer* const mRaytracerFlushCommandBuffer;
+
+				Framework::Fence* const mRaytracerFlushFence;
+
+				Framework::Fence* const mRaytracerInsertFence;
 			};
 		}
     }
