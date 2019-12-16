@@ -30,10 +30,17 @@ DescriptorPool* DescriptorSet::getParentDescriptorPool() const noexcept {
 	return mParentDescriptorPool;
 }
 
-void DescriptorSet::bindUniformBuffers(uint32_t firstLayoutId/*, const std::initializer_list<>& buffers*/) const noexcept {
+void DescriptorSet::bindUniformBuffers(uint32_t firstLayoutId, const std::initializer_list<const Buffer*>& buffers) const noexcept {
 	std::vector<VkDescriptorBufferInfo> descriptors;
 
-	//TODO: fill descriptors
+	for (const auto& buffer : buffers) {
+		DBG_ASSERT( (buffer->getBufferUsage() & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) );
+
+		VkDescriptorBufferInfo currentBufferDescriptor;
+		currentBufferDescriptor.buffer = buffer->getNativeBufferHandle();
+		currentBufferDescriptor.offset = 0;
+		currentBufferDescriptor.range = VK_WHOLE_SIZE;
+	}
 
 	VkWriteDescriptorSet writeDescriptorSet = {};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -45,10 +52,17 @@ void DescriptorSet::bindUniformBuffers(uint32_t firstLayoutId/*, const std::init
 	writeDescriptorSet.pBufferInfo = descriptors.data();
 }
 
-void DescriptorSet::bindStorageBuffers(uint32_t firstLayoutId/*, const std::initializer_list<>& buffers*/) const noexcept {
+void DescriptorSet::bindStorageBuffers(uint32_t firstLayoutId, const std::initializer_list<const Buffer*>& buffers) const noexcept {
 	std::vector<VkDescriptorBufferInfo> descriptors;
 
-	//TODO: fill descriptors
+	for (const auto& buffer : buffers) {
+		DBG_ASSERT((buffer->getBufferUsage() & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+
+		VkDescriptorBufferInfo currentBufferDescriptor;
+		currentBufferDescriptor.buffer = buffer->getNativeBufferHandle();
+		currentBufferDescriptor.offset = 0;
+		currentBufferDescriptor.range = VK_WHOLE_SIZE;
+	}
 
 	VkWriteDescriptorSet writeDescriptorSet = {};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

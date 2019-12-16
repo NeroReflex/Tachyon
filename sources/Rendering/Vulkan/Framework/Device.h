@@ -74,7 +74,7 @@ namespace Tachyon {
 
 					Fence* createFence(bool signaled = false) noexcept;
 
-					Buffer* createBuffer(std::vector<const QueueFamily*> queueFamilyCollection, uint32_t size) noexcept;
+					Buffer* createBuffer(std::vector<const QueueFamily*> queueFamilyCollection, VkBufferUsageFlagBits usage, VkDeviceSize size) noexcept;
 
 					void allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
 

@@ -12,7 +12,7 @@ namespace Tachyon {
 					virtual public SpaceRequiringResource {
 
 				public:
-					Buffer(Device* const device, VkBuffer&& buffer) noexcept;
+					Buffer(Device* const device, VkBufferUsageFlagBits usage, VkDeviceSize size, VkBuffer&& buffer) noexcept;
 
 					Buffer(const Buffer&) = delete;
 
@@ -24,12 +24,18 @@ namespace Tachyon {
 
 					const VkBuffer& getNativeBufferHandle() const noexcept;
 
+					const VkBufferUsageFlagBits& getBufferUsage() const noexcept;
+
 				protected:
 					std::unique_ptr<VkMemoryRequirements> queryMemoryRequirements() const noexcept final;
 
 					void bindMemory(const Device* const device, VkDeviceMemory memoryPool, VkDeviceSize offset) const noexcept final;
 
 				private:
+					VkBufferUsageFlagBits mUsage;
+
+					VkDeviceSize mSize;
+
 					VkBuffer mBuffer;
 				};
 			}

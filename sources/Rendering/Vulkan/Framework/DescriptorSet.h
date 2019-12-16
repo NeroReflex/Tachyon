@@ -2,6 +2,7 @@
 
 #include "ShaderLayoutBinding.h"
 #include "ImageInterface.h"
+#include "Buffer.h"
 
 namespace Tachyon {
 	namespace Rendering {
@@ -26,9 +27,9 @@ namespace Tachyon {
 
 					const VkDescriptorSet& getNativeDescriptorSetHandle() const noexcept;
 
-					void bindStorageBuffers(uint32_t firstLayoutId/*, const std::initializer_list<>& buffers*/) const noexcept;
+					void bindStorageBuffers(uint32_t firstLayoutId, const std::initializer_list<const Buffer*>& buffers) const noexcept;
 
-					void bindUniformBuffers(uint32_t firstLayoutId/*, const std::initializer_list<>& buffers*/) const noexcept;
+					void bindUniformBuffers(uint32_t firstLayoutId, const std::initializer_list<const Buffer*>& buffers) const noexcept;
 
 					/**
 					 * Update a set of contiguous image bindings starting from the given binding point.
