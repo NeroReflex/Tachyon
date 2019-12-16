@@ -7,37 +7,38 @@
 #include "aabb.glsl"
 #include "bvh.glsl"
 
-layout(rgba32f, binding = TLAS_BINDING) uniform TLAS_MEMORY_MODEL image1D tlas; // Raytracing Top-Level Acceleration Structure: X is the node index
+layout(std140, binding = TLAS_BINDING) TLAS_MEMORY_MODEL buffer TLAS_Buffer {
+	AABB tlas[];
+};
 
-layout(rgba32f, binding = BLAS_BINDING) uniform BLAS_MOEMORY_MODEL image2D tlasBLAS; // This is the BLAS collection: X is the node index, Y is the referred BLAS
+layout(std140, binding = BLAS_BINDING) BLAS_MOEMORY_MODEL buffer BLAS_Buffer {
+	AABB tlasBLAS[];
+};
 
-layout(rgba32f, binding = GEOMETRY_BINDING) uniform GEOMETRY_MEMORY_MODEL image3D globalGeometry; // This is the BLAS collection: X is the geometry index, Y is the referred geometry collection (BLAS leaf), Z is the referred BLAS
+layout(std140, binding = GEOMETRY_BINDING) GEOMETRY_MEMORY_MODEL buffer Triangles_Buffer {
+	Triangle globalGeometry[];
+};
 
-layout(rgba32f, binding = BLAS_ATTRIBUTES_BINDING) uniform MODELMATRIX_MEMORY_MODEL image2D ModelMatrix; // This is the collection of Model Matrices for each BLAS
+layout(std140, binding = BLAS_ATTRIBUTES_BINDING) GEOMETRY_MEMORY_MODEL buffer ModelMatrices_Buffer {
+	mat4 ModelMatrix[];
+};
 
 mat4 ReadModelMatrix_ByIndex(const in uint index) {
-	return mat4(
-		imageLoad(ModelMatrix, ivec2(0, index)),
-		imageLoad(ModelMatrix, ivec2(1, index)),
-		imageLoad(ModelMatrix, ivec2(2, index)),
-		imageLoad(ModelMatrix, ivec2(3, index))
-	);
+	return ModelMatrix[index];
 }
 
 #if !defined(MODELMATRIX_READONLY)
-void WriteModelMatrix_ByIndex(const in uint index, const in mat4 matrix) {
-	imageStore(ModelMatrix, ivec2(0, index), matrix[0]);
-	imageStore(ModelMatrix, ivec2(1, index), matrix[1]);
-	imageStore(ModelMatrix, ivec2(2, index), matrix[2]);
-	imageStore(ModelMatrix, ivec2(3, index), matrix[3]);
+void WriteModelMatrix_ByIndex(const in uint index, const in mat4 mMatrix) {
+	ModelMatrix[index] = mMatrix;
 }
 #endif
 
 Geometry ReadGeometry_ByIndexes(const in uint blasIndex, const in uint collectionIndex, const in uint indexOnCollection) {
-	vec4 center = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, collectionIndex, blasIndex));
-	vec4 radius = imageLoad(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, collectionIndex, blasIndex));
+	uint geometryIndex = blasIndex * ((1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection)) +
+		collectionIndex * (1 << expOfTwo_maxGeometryOnCollection) +
+		indexOnCollection;
 
-	return Geometry(center.xyz, radius.x);
+	return Geometry(globalGeometry[geometryIndex].vertices[0].xyz, globalGeometry[geometryIndex].vertices[1].x);
 }
 
 #if !defined(GEOMETRY_READONLY)
@@ -52,9 +53,12 @@ Geometry ReadGeometry_ByIndexes(const in uint blasIndex, const in uint collectio
  * @param indexOnCollection the index of the chosen collection that will be updated
  * @param geometry the geometry to be written
  */
-void WriteGeometry_ByIndexes(const in uint blasIndex, const in uint leafIndex, const in uint indexOnCollection, const in Geometry geometry) {
-	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 0, leafIndex, blasIndex), vec4(geometry.center, 1));
-	imageStore(globalGeometry, ivec3((indexOnCollection * (1 << expOfTwo_numOfVec4OnGeometrySerialization)) + 1, leafIndex, blasIndex), vec4(geometry.radius, geometry.radius, geometry.radius, geometry.radius));
+void WriteGeometry_ByIndexes(const in uint blasIndex, const in uint collectionIndex, const in uint indexOnCollection, const in Geometry geometry) {
+	uint geometryIndex = blasIndex * ((1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection)) +
+		collectionIndex * (1 << expOfTwo_maxGeometryOnCollection) +
+		indexOnCollection;
+
+	globalGeometry[geometryIndex].vertices[0] = vec4(geometry.center.xyz, geometry.radius);
 }
 #endif
 
@@ -68,7 +72,9 @@ void WriteGeometry_ByIndexes(const in uint blasIndex, const in uint leafIndex, c
  * @return the AABB stored at the given index
  */
 AABB ReadAABBFromBLAS_ByIndexes(const in uint blas, const in uint index) {
-	return AABB(imageLoad(tlasBLAS, ivec2(2 * index, blas)), imageLoad(tlasBLAS, ivec2(2 * index + 1, blas)));
+	uint aabbIndex = blas * (1 << numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel)) + index;
+
+	return tlasBLAS[aabbIndex];
 }
 
 #if !defined(BLAS_READONLY)
@@ -82,8 +88,9 @@ AABB ReadAABBFromBLAS_ByIndexes(const in uint blas, const in uint index) {
  * @param aabb the AABB to write
  */
 void WriteAABBOnBLAS_ByIndexes(const in uint blas, const in uint index, const in AABB aabb) {
-	imageStore(tlasBLAS, ivec2(2 * index, blas), aabb.position);
-	imageStore(tlasBLAS, ivec2(2 * index + 1, blas), aabb.dimensions);
+	uint aabbIndex = blas * (1 << numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel)) + index;
+
+	tlasBLAS[aabbIndex] = aabb;
 }
 #endif
 
@@ -108,7 +115,7 @@ bool isEmptyBLAS_ByIndex(const in uint index) {
  * @return the AABB stored at the given index
  */
 AABB ReadAABBFromTLAS_ByIndex(const in uint index) {
-	return AABB(imageLoad(tlas, 2 * int(index)), imageLoad(tlas, 2 * int(index) + 1));
+	return tlas[index];
 }
 
 #if !defined(TLAS_READONLY)
@@ -121,8 +128,7 @@ AABB ReadAABBFromTLAS_ByIndex(const in uint index) {
  * @param aabb the AABB to write
  */
 void WriteAABBOnTLAS_ByIndex(const in uint index, const in AABB aabb) {
-	imageStore(tlas, 2 * int(index), aabb.position);
-	imageStore(tlas, 2 * int(index) + 1, aabb.dimensions);
+	tlas[index] = aabb;
 }
 #endif
 

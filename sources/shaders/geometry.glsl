@@ -1,6 +1,10 @@
 #ifndef GEOMETRY_GLSL
 #define GEOMETRY_GLSL
 
+struct Triangle {
+	vec4 vertices[3];
+};
+
 /**
  * This represents a sphere.
  */

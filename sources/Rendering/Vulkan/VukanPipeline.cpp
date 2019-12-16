@@ -95,10 +95,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			raytrace_render_compVK_size
 		)
 		}))),
-	mRaytracingTLAS(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image1D, mRaytracerRequirements.mTLASTexels_Width, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT)),
-	mRaytracingBLASCollection(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
-	mRaytracingModelMatrix(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
-	mRaytracingGeometryCollection(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
+	mRaytracingTLAS(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (1 << expOfTwo_maxModels) )), // 2*16 is sizeof(AABB)
+	mRaytracingBLASCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (1 << expOfTwo_maxModels) * numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel) )),
+	mRaytracingModelMatrix(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(glm::mat4) * (1 << expOfTwo_maxModels) )),
+	mRaytracingGeometryCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (1 << expOfTwo_maxModels) * (1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection) )),
 	
 	// Buffer used on model insert
 	mRaytracerInsertModelAttributesUniformBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(GeometryInsertAttributes))),
@@ -144,12 +144,6 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 		}
 	);
 
-	// ImageView(s) are to be created after memory allocation
-	mRaytracingTLASImageView = mRaytracingTLAS->createImageView(Framework::ImageView::ViewType::Image1D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
-	mRaytracingBLASCollectionImageView = mRaytracingBLASCollection->createImageView(Framework::ImageView::ViewType::Image2D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
-	mRaytracingModelMatrixImageView = mRaytracingModelMatrix->createImageView(Framework::ImageView::ViewType::Image2D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
-	mRaytracingGeometryCollectionImageView = mRaytracingGeometryCollection->createImageView(Framework::ImageView::ViewType::Image3D, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
-
 #if defined(VULKAN_ENABLE_VALIDATION_LAYERS) 
 	std::cout << "Available Vulkan extensions:" << std::endl;
 	
@@ -164,11 +158,11 @@ VulkanPipeline::~VulkanPipeline() {
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, const GeometryInsertAttributes& insertData) noexcept {
 	// perform the update of the descriptor set.
-	mRaytracerInsertDescriptorSet->bindImages(TLAS_BINDING, {
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView),
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingBLASCollectionImageView),
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingGeometryCollectionImageView),
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingModelMatrixImageView)
+	mRaytracerInsertDescriptorSet->bindStorageBuffers(TLAS_BINDING, {
+		mRaytracingTLAS,
+		mRaytracingBLASCollection,
+		mRaytracingGeometryCollection,
+		mRaytracingModelMatrix
 	});
 	
 	/*
@@ -188,11 +182,11 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 
 void VulkanPipeline::onReset() noexcept {
 	// perform the update of the descriptor set.
-	mRaytracerFlushDescriptorSet->bindImages(TLAS_BINDING, {
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView),
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingBLASCollectionImageView),
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingGeometryCollectionImageView),
-		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingModelMatrixImageView)
+	mRaytracerFlushDescriptorSet->bindStorageBuffers(TLAS_BINDING, {
+		mRaytracingTLAS,
+		mRaytracingBLASCollection,
+		mRaytracingGeometryCollection,
+		mRaytracingModelMatrix
 	});
 
 	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
