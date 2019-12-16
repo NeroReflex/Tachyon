@@ -5,6 +5,7 @@
 #include "ShaderLayoutBinding.h"
 #include "Pipeline.h"
 #include "Image.h"
+#include "Buffer.h"
 #include "CommandPool.h"
 #include "MemoryPool.h"
 #include "DescriptorPool.h"
@@ -72,6 +73,8 @@ namespace Tachyon {
 					Image* createImage(std::vector<const QueueFamily*> queueFamilyCollection, Image::ImageType type, uint32_t width, uint32_t height = 1, uint32_t depth = 1, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT, uint32_t mipLevels = 1, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT) noexcept;
 
 					Fence* createFence(bool signaled = false) noexcept;
+
+					Buffer* createBuffer(std::vector<const QueueFamily*> queueFamilyCollection, uint32_t size) noexcept;
 
 					void allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
 

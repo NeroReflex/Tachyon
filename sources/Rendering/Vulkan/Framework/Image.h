@@ -13,7 +13,7 @@ namespace Tachyon {
 				 * Represents a buffer used to store an image or texture.
 				 */
 				class Image final :
-					public SpaceRequiringResource,
+					virtual public SpaceRequiringResource,
 					public ImageInterface {
 
 				public:

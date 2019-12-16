@@ -444,3 +444,24 @@ Fence* Device::createFence(bool signaled) noexcept {
 
 	return new Fence(this, std::move(fence));
 }
+
+Buffer* Device::createBuffer(std::vector<const QueueFamily*> queueFamilyCollection, uint32_t size) noexcept {
+	std::vector<uint32_t> sharingQueueFamilyCollection;
+	for (const auto& sharingQueue : queueFamilyCollection) {
+		sharingQueueFamilyCollection.push_back(sharingQueue->getNativeQueueFamilyIndexHandle());
+	}
+
+	VkBufferCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	createInfo.pNext = nullptr;
+	createInfo.sharingMode = (sharingQueueFamilyCollection.size() > 1) ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.queueFamilyIndexCount = static_cast<uint32_t>(sharingQueueFamilyCollection.size());
+	createInfo.pQueueFamilyIndices = sharingQueueFamilyCollection.data();
+	createInfo.size = size;
+	DBG_ASSERT(false); // TODO: createInfo.usage
+
+	VkBuffer buffer;
+	vkCreateBuffer(getNativeDeviceHandle(), &createInfo, nullptr, &buffer);
+
+	return new Buffer(this, std::move(buffer));
+}
