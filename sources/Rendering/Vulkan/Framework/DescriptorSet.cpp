@@ -40,6 +40,8 @@ void DescriptorSet::bindUniformBuffers(uint32_t firstLayoutId, const std::initia
 		currentBufferDescriptor.buffer = buffer->getNativeBufferHandle();
 		currentBufferDescriptor.offset = 0;
 		currentBufferDescriptor.range = VK_WHOLE_SIZE;
+
+		descriptors.emplace_back(std::move(currentBufferDescriptor));
 	}
 
 	VkWriteDescriptorSet writeDescriptorSet = {};
@@ -50,6 +52,8 @@ void DescriptorSet::bindUniformBuffers(uint32_t firstLayoutId, const std::initia
 	writeDescriptorSet.descriptorCount = static_cast<uint32_t>(descriptors.size());
 	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	writeDescriptorSet.pBufferInfo = descriptors.data();
+
+	vkUpdateDescriptorSets(getParentDescriptorPool()->getParentDevice()->getNativeDeviceHandle(), 1, &writeDescriptorSet, 0, NULL);
 }
 
 void DescriptorSet::bindStorageBuffers(uint32_t firstLayoutId, const std::initializer_list<const Buffer*>& buffers) const noexcept {
@@ -62,6 +66,8 @@ void DescriptorSet::bindStorageBuffers(uint32_t firstLayoutId, const std::initia
 		currentBufferDescriptor.buffer = buffer->getNativeBufferHandle();
 		currentBufferDescriptor.offset = 0;
 		currentBufferDescriptor.range = VK_WHOLE_SIZE;
+
+		descriptors.emplace_back(std::move(currentBufferDescriptor));
 	}
 
 	VkWriteDescriptorSet writeDescriptorSet = {};
@@ -72,6 +78,8 @@ void DescriptorSet::bindStorageBuffers(uint32_t firstLayoutId, const std::initia
 	writeDescriptorSet.descriptorCount = static_cast<uint32_t>(descriptors.size());
 	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	writeDescriptorSet.pBufferInfo = descriptors.data();
+
+	vkUpdateDescriptorSets(getParentDescriptorPool()->getParentDevice()->getNativeDeviceHandle(), 1, &writeDescriptorSet, 0, NULL);
 }
 
 void DescriptorSet::bindImages(uint32_t firstLayoutId, std::initializer_list<std::tuple<VkImageLayout, const ImageView*>> images) const noexcept {
@@ -96,4 +104,6 @@ void DescriptorSet::bindImages(uint32_t firstLayoutId, std::initializer_list<std
 	writeDescriptorSet.descriptorCount = static_cast<uint32_t>(descriptors.size());
 	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	writeDescriptorSet.pImageInfo = descriptors.data();
+
+	vkUpdateDescriptorSets(getParentDescriptorPool()->getParentDevice()->getNativeDeviceHandle(), 1, &writeDescriptorSet, 0, NULL);
 }

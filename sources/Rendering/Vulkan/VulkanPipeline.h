@@ -34,6 +34,8 @@ namespace Tachyon {
 				void onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept final;
 
 			private:
+				bool mFlushed;
+
 				std::unique_ptr<Framework::Instance> mInstance;
 
 				Framework::Device* mDevice;
@@ -64,6 +66,9 @@ namespace Tachyon {
 				Framework::Image* const mRaytracingGeometryCollection;
 				Framework::ImageView* mRaytracingGeometryCollectionImageView;
 
+				Framework::Buffer* const mRaytracerInsertModelAttributesUniformBuffer;
+				Framework::Buffer* const mRaytracerInsertModelGeometryStorageBuffer;
+
 				Framework::DescriptorPool* mRaytracerDescriptorPool;
 
 				Framework::DescriptorSet* mRaytracerInsertDescriptorSet;
@@ -77,6 +82,8 @@ namespace Tachyon {
 				Framework::CommandPool* const mRaytracerCommandPool;
 
 				Framework::CommandBuffer* const mRaytracerFlushCommandBuffer;
+
+				Framework::CommandBuffer* const mRaytracerInsertCommandBuffer;
 
 				Framework::Fence* const mRaytracerFlushFence;
 

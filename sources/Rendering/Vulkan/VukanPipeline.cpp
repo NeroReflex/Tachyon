@@ -14,6 +14,7 @@ using namespace Tachyon::Rendering::Vulkan;
 
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
+	mFlushed(false),
 	mInstance(new Framework::Instance(getGLFWwindow())),
 	mDevice(mInstance->openDevice({ 
 		Framework::QueueFamily::ConcreteQueueFamilyDescriptor({
@@ -98,6 +99,14 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingBLASCollection(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image2D, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height)),
 	mRaytracingModelMatrix(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image2D, mRaytracerRequirements.mModelMatrixCollection_Width, mRaytracerRequirements.mModelMatrixCollection_Height)),
 	mRaytracingGeometryCollection(mDevice->createImage({ mQueueFamily }, Framework::Image::ImageType::Image3D, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth)),
+	
+	// Buffer used on model insert
+	mRaytracerInsertModelAttributesUniformBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(GeometryInsertAttributes))),
+	mRaytracerInsertModelGeometryStorageBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+		sizeof(glm::vec4)* (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS)* size_t(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection)
+	)),
+
+	// Descriptor pool and descriptor set for each shader
 	mRaytracerDescriptorPool(mDevice->createDescriptorPool({
 		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, uint32_t(1)),
 		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, uint32_t(3)),
@@ -109,17 +118,29 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracerRenderingDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mRenderingPipeline)),
 	mRaytracerCommandPool(mDevice->createCommandPool({ mQueueFamily })),
 	mRaytracerFlushCommandBuffer(mRaytracerCommandPool->createCommandBuffer()),
+	mRaytracerInsertCommandBuffer(mRaytracerCommandPool->createCommandBuffer()),
+	
+	// Command fences
 	mRaytracerFlushFence(mDevice->createFence()),
 	mRaytracerInsertFence(mDevice->createFence())
 {
 	// Allocate memory for core buffers on the GPU exclusive memory.
 	mDevice->allocateResources(
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		{
 			mRaytracingTLAS,
 			mRaytracingBLASCollection,
 			mRaytracingModelMatrix,
 			mRaytracingGeometryCollection
+		}
+	);
+
+	// Allocate memory for buffers that are used on medel insert (and populated by the CPU).
+	mDevice->allocateResources(
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		{
+			mRaytracerInsertModelAttributesUniformBuffer,
+			mRaytracerInsertModelGeometryStorageBuffer,
 		}
 	);
 
@@ -142,12 +163,32 @@ VulkanPipeline::~VulkanPipeline() {
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, const GeometryInsertAttributes& insertData) noexcept {
+	// perform the update of the descriptor set.
+	mRaytracerInsertDescriptorSet->bindImages(TLAS_BINDING, {
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView),
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingBLASCollectionImageView),
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingGeometryCollectionImageView),
+		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingModelMatrixImageView)
+	});
+	
+	/*
+	mRaytracerInsertDescriptorSet->bindUniformBuffers(GEOMETRY_INSERTT_ATTR_BINDING, { mRaytracerInsertModelAttributesUniformBuffer });
+	mRaytracerInsertDescriptorSet->bindStorageBuffers(GEOMETRY_INSERT_BINDING, { mRaytracerInsertModelGeometryStorageBuffer });
+	
+	mRaytracerInsertCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mInsertPipeline->getNativePipelineHandle());
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mInsertPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mRaytracerInsertDescriptorSet->getNativeDescriptorSetHandle()), 0, NULL);
 
+		vkCmdDispatch(commandBuffer, (uint32_t)ceil(static_cast<float>(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) / float(FLUSH_WORKGROUP_X)), 1, 1);
+	});
+
+	mRaytracerInsertCommandBuffer->submit(mQueue, mRaytracerFlushFence);
+	*/
 }
 
 void VulkanPipeline::onReset() noexcept {
 	// perform the update of the descriptor set.
-	mRaytracerFlushDescriptorSet->bindImages(CORE_BINDING, {
+	mRaytracerFlushDescriptorSet->bindImages(TLAS_BINDING, {
 		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingTLASImageView),
 		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingBLASCollectionImageView),
 		std::make_tuple/*<VkImageLayout, const Framework::ImageView*>*/(VK_IMAGE_LAYOUT_GENERAL, mRaytracingGeometryCollectionImageView),
@@ -162,6 +203,8 @@ void VulkanPipeline::onReset() noexcept {
 	});
 
 	mRaytracerFlushCommandBuffer->submit(mQueue, mRaytracerFlushFence);
+
+	mFlushed = true;
 }
 
 void VulkanPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
