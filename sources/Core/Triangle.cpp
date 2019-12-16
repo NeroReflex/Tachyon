@@ -13,12 +13,16 @@ Triangle::Triangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept {
 }
 
 Triangle::Triangle(const Triangle& src) noexcept {
-	// TODO: copy
+	vertices[0] = vertices[0];
+	vertices[1] = vertices[1];
+	vertices[2] = vertices[2];
 }
 
 Triangle& Triangle::operator=(const Triangle& src) noexcept {
 	if (this != &src) {
-		// TODO: copy
+		vertices[0] = vertices[0];
+		vertices[1] = vertices[1];
+		vertices[2] = vertices[2];
 	}
 
 	return *this;
