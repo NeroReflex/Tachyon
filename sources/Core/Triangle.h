@@ -10,20 +10,16 @@ namespace Tachyon {
          */
         class Triangle {
             
-            /**
-             * xyz => sphere center
-             * w => sphere radius
-             */
             alignas(sizeof(glm::vec4)) glm::vec4 vertices[3];
 
         public:
-			/*Triangle(glm::vec3 position = glm::vec3(0, 0, 0), glm::float32 radius = 0) noexcept;
+			Triangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept;
 
 			Triangle(const Triangle& src) noexcept;
 
 			Triangle& operator=(const Triangle& src) noexcept;
 
-            ~Triangle() = default;*/
+            ~Triangle() = default;
         };
 
     }

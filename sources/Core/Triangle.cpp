@@ -2,18 +2,24 @@
 
 using namespace Tachyon;
 using namespace Tachyon::Core;
-/*
-Triangle::Triangle(glm::vec3 position, glm::float32 radius) noexcept
-    : sphere(glm::vec4(position, radius)) {}
 
-Triangle::Triangle(const Triangle& src) noexcept
-    : sphere(src.sphere) {}
+Triangle::Triangle(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) noexcept {
+	static_assert( sizeof(Triangle) == 48, "The layout is not std140 - wrong vertices size" );
+	static_assert( alignof(Triangle::vertices) == 16, "The layout is not std140 - wrong vertices alignment");
+
+	vertices[0] = glm::vec4(v1, 1);
+	vertices[1] = glm::vec4(v2, 1);
+	vertices[2] = glm::vec4(v3, 1);
+}
+
+Triangle::Triangle(const Triangle& src) noexcept {
+	// TODO: copy
+}
 
 Triangle& Triangle::operator=(const Triangle& src) noexcept {
-    if (&src != this) {
-        sphere = src.sphere;
-    }
+	if (this != &src) {
+		// TODO: copy
+	}
 
-    return *this;
+	return *this;
 }
-*/
