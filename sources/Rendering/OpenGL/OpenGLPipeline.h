@@ -61,9 +61,9 @@ namespace Tachyon {
 
 				GLuint mRaytracingBLASCollection;
 
-				GLuint mRaytracingGeometryCollection;
-
 				GLuint mRaytracingModelMatrix;
+
+				GLuint mRaytracingGeometryCollection;
 
 				/**
 				 * This is the output texture of the raytraing.

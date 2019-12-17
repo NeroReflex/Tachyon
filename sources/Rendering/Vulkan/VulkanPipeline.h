@@ -34,8 +34,6 @@ namespace Tachyon {
 				void onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept final;
 
 			private:
-				bool mFlushed;
-
 				std::unique_ptr<Framework::Instance> mInstance;
 
 				Framework::Device* mDevice;

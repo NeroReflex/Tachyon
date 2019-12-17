@@ -14,7 +14,6 @@ using namespace Tachyon::Rendering::Vulkan;
 
 VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	: RenderingPipeline(window),
-	mFlushed(false),
 	mInstance(new Framework::Instance(getGLFWwindow())),
 	mDevice(mInstance->openDevice({ 
 		Framework::QueueFamily::ConcreteQueueFamilyDescriptor({
@@ -98,7 +97,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingTLAS(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (1 << expOfTwo_maxModels) )), // 2*16 is sizeof(AABB)
 	mRaytracingBLASCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (1 << expOfTwo_maxModels) * numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel) )),
 	mRaytracingModelMatrix(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(glm::mat4) * (1 << expOfTwo_maxModels) )),
-	mRaytracingGeometryCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (1 << expOfTwo_maxModels) * (1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection) )),
+	mRaytracingGeometryCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(Core::Triangle)* (1 << expOfTwo_maxModels) * (1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection) )),
 	
 	// Buffer used on model insert
 	mRaytracerInsertModelAttributesUniformBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(GeometryInsertAttributes))),
@@ -126,7 +125,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 {
 	// Allocate memory for core buffers on the GPU exclusive memory.
 	mDevice->allocateResources(
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		{
 			mRaytracingTLAS,
 			mRaytracingBLASCollection,
@@ -137,7 +136,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 
 	// Allocate memory for buffers that are used on medel insert (and populated by the CPU).
 	mDevice->allocateResources(
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		{
 			mRaytracerInsertModelAttributesUniformBuffer,
 			mRaytracerInsertModelGeometryStorageBuffer,
@@ -161,8 +160,8 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 	mRaytracerInsertDescriptorSet->bindStorageBuffers(TLAS_BINDING, {
 		mRaytracingTLAS,
 		mRaytracingBLASCollection,
+		mRaytracingModelMatrix,
 		mRaytracingGeometryCollection,
-		mRaytracingModelMatrix
 	});
 	
 	/*
@@ -185,8 +184,8 @@ void VulkanPipeline::onReset() noexcept {
 	mRaytracerFlushDescriptorSet->bindStorageBuffers(TLAS_BINDING, {
 		mRaytracingTLAS,
 		mRaytracingBLASCollection,
+		mRaytracingModelMatrix,
 		mRaytracingGeometryCollection,
-		mRaytracingModelMatrix
 	});
 
 	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
@@ -197,8 +196,6 @@ void VulkanPipeline::onReset() noexcept {
 	});
 
 	mRaytracerFlushCommandBuffer->submit(mQueue, mRaytracerFlushFence);
-
-	mFlushed = true;
 }
 
 void VulkanPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {

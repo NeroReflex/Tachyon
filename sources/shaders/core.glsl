@@ -15,12 +15,12 @@ layout(std140, binding = BLAS_BINDING) BLAS_MOEMORY_MODEL buffer BLAS_Buffer {
 	AABB tlasBLAS[];
 };
 
-layout(std140, binding = GEOMETRY_BINDING) GEOMETRY_MEMORY_MODEL buffer Triangles_Buffer {
-	Triangle globalGeometry[];
-};
-
 layout(std140, binding = BLAS_ATTRIBUTES_BINDING) GEOMETRY_MEMORY_MODEL buffer ModelMatrices_Buffer {
 	mat4 ModelMatrix[];
+};
+
+layout(std140, binding = GEOMETRY_BINDING) GEOMETRY_MEMORY_MODEL buffer Triangles_Buffer {
+	Triangle globalGeometry[];
 };
 
 mat4 ReadModelMatrix_ByIndex(const in uint index) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Triangle.h"
 #include "Core/Camera.h"
 #include "Core/HDR.h"
 #include "GeometryPrimitive.h"

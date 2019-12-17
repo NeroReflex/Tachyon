@@ -104,29 +104,29 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 	glActiveTexture(GL_TEXTURE4);
 	glActiveTexture(GL_TEXTURE5);
 
-	// TLAS TEXTURE CREATION
-	glCreateTextures(GL_TEXTURE_1D, 1, &mRaytracingTLAS);
-	glBindTexture(GL_TEXTURE_1D, mRaytracingTLAS);
-	glTextureStorage1D(mRaytracingTLAS, 1, GL_RGBA32F, mRaytracerRequirements.mTLASTexels_Width);
-	// END OF TLAS TEXTURE CREATION
+	// TLAS CREATION
+	glCreateBuffers(1, &mRaytracingTLAS);
+	glNamedBufferStorage(mRaytracingTLAS, (2 * 16) * (1 << expOfTwo_maxModels), NULL, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TLAS_BINDING, mRaytracingTLAS);
+	// END OF TLAS CREATION
 
-	// BLAS COLLECTION TEXTURE CREATION
-	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingBLASCollection);
-	glBindTexture(GL_TEXTURE_2D, mRaytracingBLASCollection);
-	glTextureStorage2D(mRaytracingBLASCollection, 1, GL_RGBA32F, mRaytracerRequirements.mBLASCollectionTexels_Width, mRaytracerRequirements.mBLASCollectionTexels_Height);
-	// END OF BLAS COLLECTION TEXTURE CREATION
+	// BLAS COLLECTION CREATION
+	glCreateBuffers(1, &mRaytracingBLASCollection);
+	glNamedBufferStorage(mRaytracingBLASCollection, (2 * 16) * (1 << expOfTwo_maxModels) * numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel), NULL, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_BINDING, mRaytracingBLASCollection);
+	// END OF BLAS COLLECTION CREATION
 
-	// MODELMATRIX TEXTURE CREATION
-	glCreateTextures(GL_TEXTURE_2D, 1, &mRaytracingModelMatrix);
-	glBindTexture(GL_TEXTURE_2D, mRaytracingModelMatrix);
-	glTextureStorage2D(mRaytracingModelMatrix, 1, GL_RGBA32F, 4, size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels);
-	// END OF MODELMATRIX TEXTURE CREATION
+	// MODELMATRIX CREATION
+	glCreateBuffers(1, &mRaytracingModelMatrix);
+	glNamedBufferStorage(mRaytracingModelMatrix, sizeof(glm::mat4) * (1 << expOfTwo_maxModels), NULL, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix);
+	// END OF MODELMATRIX CREATION
 
-	// GEOMETRY COLLECTION TEXTURE CREATION
-	glCreateTextures(GL_TEXTURE_3D, 1, &mRaytracingGeometryCollection);
-	glBindTexture(GL_TEXTURE_3D, mRaytracingGeometryCollection);
-	glTextureStorage3D(mRaytracingGeometryCollection, 1, GL_RGBA32F, mRaytracerRequirements.mGeometryCollectionTexels_Width, mRaytracerRequirements.mGeometryCollectionTexels_Height, mRaytracerRequirements.mGeometryCollectionTexels_Depth);
-	// END OF GEOMETRY COLLECTION TEXTURE CREATION
+	// GEOMETRY COLLECTION CREATION
+	glCreateBuffers(1, &mRaytracingGeometryCollection);
+	glNamedBufferStorage(mRaytracingGeometryCollection, sizeof(Core::Triangle) * (static_cast<uint32_t>(1) << expOfTwo_maxModels)* (static_cast<uint32_t>(1) << expOfTwo_maxCollectionsForModel)* (static_cast<uint32_t>(1) << expOfTwo_maxGeometryOnCollection), NULL, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_BINDING, mRaytracingGeometryCollection);
+	// END OF GEOMETRY COLLECTION CREATION
 
 	glViewport(0, 0, getWidth(), getHeight());
 
@@ -175,12 +175,10 @@ OpenGLPipeline::~OpenGLPipeline() {
 
 void OpenGLPipeline::onReset() noexcept {
 	Program::use(*mRaytracerFlush);
-
-	// Bind the raytracer ModelMatrix as write-only as the shader will only nuke it
-	glBindImageTexture(BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-	// The TLAS may get updated to the root after a leaf deletion
-	glBindImageTexture(TLAS_BINDING, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TLAS_BINDING, mRaytracingTLAS);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_BINDING, mRaytracingBLASCollection);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_BINDING, mRaytracingGeometryCollection);
 
 	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels, 1, 1);
 
@@ -197,12 +195,14 @@ void OpenGLPipeline::onRender(const Core::HDR& hdr, const Core::Camera& camera) 
 
 	// Set the raytracer program as the active one
 	Program::use(*mRaytracerRender);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TLAS_BINDING, mRaytracingTLAS);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_BINDING, mRaytracingBLASCollection);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_BINDING, mRaytracingGeometryCollection);
 
-	// Bind the raytracer render context as read-only!
-	glBindImageTexture(TLAS_BINDING, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(BLAS_BINDING, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(GEOMETRY_BINDING, mRaytracingGeometryCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+	// update and bind HDR parameters uniform buffer
+	glBindBufferBase(GL_UNIFORM_BUFFER, HDR_BINDING, mHDRUniformBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Core::HDR), reinterpret_cast<const void*>(&hdr));
 
 	// update and bind the camera uniform buffer
 	glBindBufferBase(GL_UNIFORM_BUFFER, CAMERA_BINDING, mCameraUniformBuffer);
@@ -214,19 +214,15 @@ void OpenGLPipeline::onRender(const Core::HDR& hdr, const Core::Camera& camera) 
 	// Dispatch the compute work!
 	glDispatchCompute((GLuint)(getWidth()), (GLuint)(getHeight()), 1);
 
-	// Switch to the tone mapper program
-	Program::use(*mDisplayWriter);
-	glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-	// update and bind HDR parameters uniform buffer
-	glBindBufferBase(GL_UNIFORM_BUFFER, HDR_BINDING, mHDRUniformBuffer);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Core::HDR), reinterpret_cast<const void*>(&hdr));
-
-	// Bind the texture generated by raytracing
-	glBindTextureUnit(OUTPUT_BINDING, mRaytracerOutputTexture);
-
 	// make sure writing to render target has finished before using it
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+	glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+	// Switch to the tone mapper program
+	Program::use(*mDisplayWriter);
+	
+	// Bind the texture generated by raytracing
+	glBindTextureUnit(OUTPUT_BINDING, mRaytracerOutputTexture);
 
 	// Draw the generated image while gamma-correcting it
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -260,6 +256,10 @@ void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCol
 	}
 
 	Program::use(*mRaytracerInsert);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TLAS_BINDING, mRaytracingTLAS);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_BINDING, mRaytracingBLASCollection);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_BINDING, mRaytracingGeometryCollection);
 
 	// Prepare the temporary input geometry SSBO
 	GLuint temporaryInputGeometry;
@@ -270,11 +270,6 @@ void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCol
 	glBindBufferBase(GL_UNIFORM_BUFFER, GEOMETRY_INSERTT_ATTR_BINDING, mGeometryInsertAttributesUniformBuffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GeometryInsertAttributes), reinterpret_cast<const void*>(&insertData));
 
-	glBindImageTexture(TLAS_BINDING, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-	glBindImageTexture(BLAS_BINDING, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-	glBindImageTexture(GEOMETRY_BINDING, mRaytracingGeometryCollection, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-	glBindImageTexture(BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-	
 	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection, size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS, 1);
 
 	// synchronize with the GPU: the insert procedure writes to texture (BLAS) and to the ModelMatrix SSBO.
@@ -285,11 +280,10 @@ void OpenGLPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitivesCol
 
 void OpenGLPipeline::update() noexcept {
 	Program::use(*mRaytracerUpdate);
-
-	glBindImageTexture(TLAS_BINDING, mRaytracingTLAS, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-	glBindImageTexture(BLAS_BINDING, mRaytracingBLASCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(GEOMETRY_BINDING, mRaytracingGeometryCollection, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-	glBindImageTexture(BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TLAS_BINDING, mRaytracingTLAS);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_BINDING, mRaytracingBLASCollection);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_BINDING, mRaytracingGeometryCollection);
 
 	glDispatchCompute(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels, 1, 1);
 
