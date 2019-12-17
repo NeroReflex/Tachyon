@@ -34,10 +34,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, GEOMETRY_INSERTT_ATTR_BINDING,  1),
 
 				// Core bindings
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1)
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_ATTRIBUTES_BINDING,  1)
 			}),
 			reinterpret_cast<const char*>(raytrace_insert_compVK),
 			raytrace_insert_compVK_size
@@ -47,10 +47,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
 				// Core bindings
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_ATTRIBUTES_BINDING,  1),
 			}),
 			reinterpret_cast<const char*>(raytrace_flush_compVK),
 			raytrace_flush_compVK_size
@@ -60,10 +60,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
 				// Core bindings
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_ATTRIBUTES_BINDING,  1),
 			}),
 			reinterpret_cast<const char*>(raytrace_update_compVK),
 			raytrace_update_compVK_size
@@ -72,9 +72,6 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRenderingPipeline(mDevice->createPipeline(std::vector<const Framework::Shader*>({
 		mDevice->loadComputeShader(
 			Framework::ShaderLayoutBinding({
-				// Debug binding
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, DEBUG_BINDING,  1),
-
 				// Render target binding
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, OUTPUT_BINDING,  1),
 
@@ -85,10 +82,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, CAMERA_BINDING,  1),
 
 				// Core bindings
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, TLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, GEOMETRY_BINDING,  1),
-				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageImage, BLAS_ATTRIBUTES_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, TLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, GEOMETRY_BINDING,  1),
+				Framework::ShaderLayoutBinding::BindingDescriptor(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, BLAS_ATTRIBUTES_BINDING,  1),
 			}),
 			reinterpret_cast<const char*>(raytrace_render_compVK),
 			raytrace_render_compVK_size
@@ -99,17 +96,23 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 	mRaytracingModelMatrix(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(glm::mat4) * (1 << expOfTwo_maxModels) )),
 	mRaytracingGeometryCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(Core::Triangle)* (1 << expOfTwo_maxModels) * (1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection) )),
 	
+	// HDR buffer uniform
+	mRaytracerHDRUniformBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(Core::HDR))),
+
+	// Camera buffer uniform
+	mRaytracerCameraUniformBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(Core::Camera))),
+
 	// Buffer used on model insert
 	mRaytracerInsertModelAttributesUniformBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(GeometryInsertAttributes))),
-	mRaytracerInsertModelGeometryStorageBuffer(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+	mRaytracerInsertModelGeometryStorageBuffer(mDevice->createBuffer({ mQueueFamily }, static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
 		sizeof(glm::vec4)* (size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryCollectionOnBLAS)* size_t(size_t(1) << mRaytracerInfo.expOfTwo_numberOfGeometryOnCollection)
 	)),
 
 	// Descriptor pool and descriptor set for each shader
 	mRaytracerDescriptorPool(mDevice->createDescriptorPool({
-		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, uint32_t(1)),
+		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageBuffer, uint32_t(20)),
 		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::UniformBuffer, uint32_t(3)),
-		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageImage, uint32_t(18)),
+		std::make_tuple(Framework::ShaderLayoutBinding::BindingType::StorageImage, uint32_t(4)),
 	}, 4)),
 	mRaytracerInsertDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mInsertPipeline)),
 	mRaytracerFlushDescriptorSet(mRaytracerDescriptorPool->allocateDescriptorSet(mFlushPipeline)),
@@ -136,8 +139,10 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 
 	// Allocate memory for buffers that are used on medel insert (and populated by the CPU).
 	mDevice->allocateResources(
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		static_cast<VkMemoryPropertyFlagBits>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
 		{
+			mRaytracerHDRUniformBuffer,
+			mRaytracerCameraUniformBuffer,
 			mRaytracerInsertModelAttributesUniformBuffer,
 			mRaytracerInsertModelGeometryStorageBuffer,
 		}
@@ -156,6 +161,14 @@ VulkanPipeline::~VulkanPipeline() {
 }
 
 void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, const GeometryInsertAttributes& insertData) noexcept {
+	// Copy attributes
+	GeometryInsertAttributes* mappedAttributes = reinterpret_cast<GeometryInsertAttributes*>(mRaytracerInsertModelAttributesUniformBuffer->getAllocationMemoryPool()->mapMemory(mRaytracerInsertModelAttributesUniformBuffer->getAllocationOffset(), mRaytracerInsertModelAttributesUniformBuffer->getBufferSize()));
+	*mappedAttributes = insertData;
+	mRaytracerInsertModelAttributesUniformBuffer->getAllocationMemoryPool()->unmapMemory();
+	
+	std::vector<GeometryPrimitive> geometryData(std::move(primitive));
+	geometryData.resize((static_cast<size_t>(1) << expOfTwo_maxCollectionsForModel) * (static_cast<size_t>(1) << expOfTwo_maxGeometryOnCollection));
+	
 	// perform the update of the descriptor set.
 	mRaytracerInsertDescriptorSet->bindStorageBuffers(TLAS_BINDING, {
 		mRaytracingTLAS,
@@ -164,19 +177,21 @@ void VulkanPipeline::enqueueModel(std::vector<GeometryPrimitive>&& primitive, co
 		mRaytracingGeometryCollection,
 	});
 	
-	/*
 	mRaytracerInsertDescriptorSet->bindUniformBuffers(GEOMETRY_INSERTT_ATTR_BINDING, { mRaytracerInsertModelAttributesUniformBuffer });
 	mRaytracerInsertDescriptorSet->bindStorageBuffers(GEOMETRY_INSERT_BINDING, { mRaytracerInsertModelGeometryStorageBuffer });
 	
-	mRaytracerInsertCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
+	mRaytracerInsertCommandBuffer->registerCommands([this, &geometryData](const VkCommandBuffer& commandBuffer) {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mInsertPipeline->getNativePipelineHandle());
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mInsertPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mRaytracerInsertDescriptorSet->getNativeDescriptorSetHandle()), 0, NULL);
+
+		vkCmdUpdateBuffer(commandBuffer, mRaytracerInsertModelGeometryStorageBuffer->getNativeBufferHandle(), 0, geometryData.size() * sizeof(GeometryPrimitive), geometryData.data());
 
 		vkCmdDispatch(commandBuffer, (uint32_t)ceil(static_cast<float>(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) / float(FLUSH_WORKGROUP_X)), 1, 1);
 	});
 
-	mRaytracerInsertCommandBuffer->submit(mQueue, mRaytracerFlushFence);
-	*/
+	mRaytracerInsertCommandBuffer->submit(mQueue, mRaytracerInsertFence);
+
+	mDevice->waitForFences({ mRaytracerInsertFence });
 }
 
 void VulkanPipeline::onReset() noexcept {
@@ -196,6 +211,8 @@ void VulkanPipeline::onReset() noexcept {
 	});
 
 	mRaytracerFlushCommandBuffer->submit(mQueue, mRaytracerFlushFence);
+
+	mDevice->waitForFences({ mRaytracerFlushFence });
 }
 
 void VulkanPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::uint32 newWidth, glm::uint32 newHeight) noexcept {
@@ -203,5 +220,30 @@ void VulkanPipeline::onResize(glm::uint32 oldWidth, glm::uint32 oldHeight, glm::
 }
 
 void VulkanPipeline::onRender(const Core::HDR& hdr, const Core::Camera& camera) noexcept {
+	// Copy the HDR on the GPU
+	Core::HDR* mappedHDR = reinterpret_cast<Core::HDR*>(mRaytracerHDRUniformBuffer->getAllocationMemoryPool()->mapMemory(mRaytracerHDRUniformBuffer->getAllocationOffset(), mRaytracerHDRUniformBuffer->getBufferSize()));
+	*mappedHDR = hdr;
+	mRaytracerHDRUniformBuffer->getAllocationMemoryPool()->unmapMemory();
 
+	// Copy the Camera on the GPU
+	Core::Camera* mappedCamera = reinterpret_cast<Core::Camera*>(mRaytracerCameraUniformBuffer->getAllocationMemoryPool()->mapMemory(mRaytracerCameraUniformBuffer->getAllocationOffset(), mRaytracerCameraUniformBuffer->getBufferSize()));
+	*mappedCamera = camera;
+	mRaytracerCameraUniformBuffer->getAllocationMemoryPool()->unmapMemory();
+	
+	// perform the update of the descriptor set.
+	mRaytracerRenderingDescriptorSet->bindStorageBuffers(TLAS_BINDING, {
+		mRaytracingTLAS,
+		mRaytracingBLASCollection,
+		mRaytracingModelMatrix,
+		mRaytracingGeometryCollection,
+	});
+
+	mRaytracerRenderingDescriptorSet->bindUniformBuffers(CAMERA_BINDING, { mRaytracerCameraUniformBuffer, mRaytracerHDRUniformBuffer });
+
+	mRaytracerFlushCommandBuffer->registerCommands([this](const VkCommandBuffer& commandBuffer) {
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mRenderingPipeline->getNativePipelineHandle());
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mRenderingPipeline->getNativePipelineLayoutHandle(), 0, 1, &(mRaytracerRenderingDescriptorSet->getNativeDescriptorSetHandle()), 0, NULL);
+
+		vkCmdDispatch(commandBuffer, (uint32_t)ceil(static_cast<float>(size_t(1) << mRaytracerInfo.expOfTwo_numberOfModels) / float(FLUSH_WORKGROUP_X)), 1, 1);
+	});
 }

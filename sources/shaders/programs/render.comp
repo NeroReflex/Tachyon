@@ -12,8 +12,6 @@
 
 layout(local_size_x = RENDER_WORKGROUP_X, local_size_y = RENDER_WORKGROUP_Y, local_size_z = RENDER_WORKGROUP_Z) in;
 
-layout(rgba32f, binding = DEBUG_BINDING) uniform writeonly image2D debugOutput;
-
 layout(rgba32f, binding = OUTPUT_BINDING) uniform writeonly image2D renderTarget; // Raytracing output texture
 
 layout (std140, binding = HDR_BINDING) uniform hdr {
@@ -80,6 +78,4 @@ void main() {
 
 	// output to a specific pixel in the image
 	imageStore(renderTarget, pixel_coords, pixel);
-
-	imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 0.5));
 }

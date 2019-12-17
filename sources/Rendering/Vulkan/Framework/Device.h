@@ -78,6 +78,8 @@ namespace Tachyon {
 
 					void allocateResources(VkMemoryPropertyFlagBits props, const std::initializer_list<SpaceRequiringResource*>& resources) noexcept;
 
+					void waitForFences(std::vector<Fence*> fences, uint64_t timeout = 1000000000) const noexcept;
+
 				private:
 					uint32_t findMemoryType(uint32_t memoryTypeBits, VkMemoryPropertyFlags properties) const noexcept;
 

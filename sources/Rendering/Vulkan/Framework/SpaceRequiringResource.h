@@ -25,7 +25,11 @@ namespace Tachyon {
 					const VkMemoryRequirements& getMemoryRequirements() const noexcept;
 					
 					void execBinding(const Device* const device, MemoryPool* memoryPool, VkDeviceSize offset) noexcept;
-					
+
+					MemoryPool* getAllocationMemoryPool() noexcept;
+
+					const VkDeviceSize& getAllocationOffset() const noexcept;
+
 				protected:
 					virtual std::unique_ptr<VkMemoryRequirements> queryMemoryRequirements() const noexcept = 0;
 

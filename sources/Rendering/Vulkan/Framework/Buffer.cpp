@@ -9,6 +9,7 @@ using namespace Tachyon::Rendering::Vulkan::Framework;
 Buffer::Buffer(Device* const device, VkBufferUsageFlagBits usage, VkDeviceSize size, VkBuffer&& buffer) noexcept
 	: DeviceOwned(device),
 	mUsage(std::move(usage)),
+	mSize(size),
 	mBuffer(std::move(buffer)) {}
 
 Buffer::~Buffer() {
@@ -32,4 +33,8 @@ void Buffer::bindMemory(const Device* const device, VkDeviceMemory memoryPool, V
 
 const VkBufferUsageFlagBits& Buffer::getBufferUsage() const noexcept {
 	return mUsage;
+}
+
+const VkDeviceSize& Buffer::getBufferSize() const noexcept {
+	return mSize;
 }

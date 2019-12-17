@@ -60,6 +60,10 @@ namespace Tachyon {
 
 				Framework::Buffer* const mRaytracingGeometryCollection;
 
+				Framework::Buffer* const mRaytracerHDRUniformBuffer;
+
+				Framework::Buffer* const mRaytracerCameraUniformBuffer;
+
 				Framework::Buffer* const mRaytracerInsertModelAttributesUniformBuffer;
 				Framework::Buffer* const mRaytracerInsertModelGeometryStorageBuffer;
 

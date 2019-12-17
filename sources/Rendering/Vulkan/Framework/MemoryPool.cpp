@@ -11,9 +11,11 @@ MemoryPool::MemoryPool(Device* device, VkMemoryPropertyFlagBits props, uint32_t 
 	: DeviceOwned(device),
 	mProperties(std::move(props)),
 	mMemoryTypeBits(memoryTypeBits),
+	mTotalSize(pagesCount * Memory::atomicMemoryBlockSize),
 	mDeviceMemory(std::move(memory)),
 	mFixedPageTracker(::malloc(Memory::UnsafePoolManager::getManagementReservedSpace(pagesCount))),
-	mPoolManager(pagesCount, NULL, mFixedPageTracker) {}
+	mPoolManager(pagesCount, NULL, mFixedPageTracker),
+	mMappedMemory(nullptr) {}
 
 MemoryPool::~MemoryPool() {
 	::free(mFixedPageTracker);
@@ -37,8 +39,7 @@ VkDeviceSize MemoryPool::malloc(const SpaceRequiringResource& resource, VkDevice
 	return uintptr_t(result.result);
 }
 
-void MemoryPool::free(VkDeviceSize ptr, const SpaceRequiringResource& resource) noexcept
-{
+void MemoryPool::free(VkDeviceSize ptr, const SpaceRequiringResource& resource) noexcept {
 	const auto requirements = resource.getMemoryRequirements();
 	mPoolManager.free((void*)(uintptr_t(ptr)), requirements.size, requirements.alignment);
 }
@@ -47,3 +48,23 @@ VkDeviceSize MemoryPool::getAtomicMemoryBlockCount(const VkDeviceSize& size, con
 	return prev + 1 + ((alignment / Memory::atomicMemoryBlockSize) + (((alignment % Memory::atomicMemoryBlockSize) == 0) ? 0 : 1)) + ((size / Memory::atomicMemoryBlockSize) + (((size % Memory::atomicMemoryBlockSize) == 0) ? 0 : 1));
 }
 
+void* MemoryPool::mapMemory(VkDeviceSize offset, VkDeviceSize size) noexcept {
+	DBG_ASSERT( (mProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) );
+	DBG_ASSERT( ((offset + size) <= mTotalSize) );
+
+	DBG_ASSERT( (mMappedMemory == nullptr) );
+
+	void** ppPointer = &mMappedMemory;
+
+	VK_CHECK_RESULT(vkMapMemory(getParentDevice()->getNativeDeviceHandle(), mDeviceMemory, offset, size, 0, ppPointer));
+
+	return *ppPointer;
+}
+
+void MemoryPool::unmapMemory() noexcept {
+	DBG_ASSERT((mMappedMemory != nullptr));
+
+	vkUnmapMemory(getParentDevice()->getNativeDeviceHandle(), mDeviceMemory);
+
+	mMappedMemory = nullptr;
+}

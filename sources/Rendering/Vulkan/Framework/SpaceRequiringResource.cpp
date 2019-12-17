@@ -29,3 +29,11 @@ void SpaceRequiringResource::execBinding(const Device* const device, MemoryPool*
 	mStartingOffset = offset;
 	bindMemory(device, memoryPool->getNativeDeviceMemoryHandle(), mStartingOffset);
 }
+
+const VkDeviceSize& SpaceRequiringResource::getAllocationOffset() const noexcept {
+	return mStartingOffset;
+}
+
+MemoryPool* SpaceRequiringResource::getAllocationMemoryPool() noexcept {
+	return mUsedMemoryPool;
+}

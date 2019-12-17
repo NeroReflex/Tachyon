@@ -47,16 +47,24 @@ namespace Tachyon {
 					 */
 					static VkDeviceSize getAtomicMemoryBlockCount(const VkDeviceSize& size, const VkDeviceSize& alignment, const VkDeviceSize& prev = 0) noexcept;
 
+					void* mapMemory(VkDeviceSize offset, VkDeviceSize size) noexcept;
+
+					void unmapMemory() noexcept;
+
 				private:
 					VkMemoryPropertyFlagBits mProperties;
 
 					uint32_t mMemoryTypeBits;
+					
+					VkDeviceSize mTotalSize;
 
 					VkDeviceMemory mDeviceMemory;
 
 					void* const mFixedPageTracker;
 
 					Memory::UnsafePoolManager mPoolManager;
+
+					void* mMappedMemory;
 				};
 			}
 		}

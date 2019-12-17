@@ -26,6 +26,8 @@ namespace Tachyon {
 
 					const VkBufferUsageFlagBits& getBufferUsage() const noexcept;
 
+					const VkDeviceSize& getBufferSize() const noexcept;
+
 				protected:
 					std::unique_ptr<VkMemoryRequirements> queryMemoryRequirements() const noexcept final;
 
