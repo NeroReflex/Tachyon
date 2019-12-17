@@ -61,12 +61,6 @@ void main() {
 
 	RayGeometryIntersection isect = castRay(cameraRay, 0.001, 1000.0); // Cast a ray on the TLAS and check for hit
 
-	if (intersectAABB(cameraRay, ReadAABBFromBLAS_ByIndexes(0, 0), ReadModelMatrix_ByIndex(0))) {
-		imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 1));
-	} else {
-		imageStore(debugOutput, pixel_coords, vec4(0, 0, 1, 1));
-	}
-
 	// Base pixel colour for image
 	vec3 hdrColor = vec3(max(0, dot(isect.normal, normalize(vec4(camera.lookFrom, 0) - isect.point))));
 

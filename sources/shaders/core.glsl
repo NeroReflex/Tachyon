@@ -58,7 +58,8 @@ void WriteGeometry_ByIndexes(const in uint blasIndex, const in uint collectionIn
 		collectionIndex * (1 << expOfTwo_maxGeometryOnCollection) +
 		indexOnCollection;
 
-	globalGeometry[geometryIndex].vertices[0] = vec4(geometry.center.xyz, geometry.radius);
+	globalGeometry[geometryIndex].vertices[0] = vec4(geometry.center.xyz, 1);
+    globalGeometry[geometryIndex].vertices[1] = vec4(geometry.radius, 0, 0, 0);
 }
 #endif
 

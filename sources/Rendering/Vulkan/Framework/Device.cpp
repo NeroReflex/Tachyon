@@ -469,9 +469,7 @@ Buffer* Device::createBuffer(std::vector<const QueueFamily*> queueFamilyCollecti
 void Device::waitForFences(std::vector<Fence*> fences, uint64_t timeout) const noexcept {
 	std::vector<VkFence> nativeFences;
 
-	for (const auto& fence : fences) {
-		nativeFences.push_back(fence->getNativeFanceHandle());
-	}
+	for (const auto& fence : fences) nativeFences.push_back(fence->getNativeFanceHandle());
 
 	VK_CHECK_RESULT(vkWaitForFences(mDevice, nativeFences.size(), nativeFences.data(), VK_TRUE, timeout));
 }
