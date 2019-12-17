@@ -106,26 +106,22 @@ OpenGLPipeline::OpenGLPipeline(GLFWwindow* window) noexcept
 
 	// TLAS CREATION
 	glCreateBuffers(1, &mRaytracingTLAS);
-	glNamedBufferStorage(mRaytracingTLAS, (2 * 16) * (1 << expOfTwo_maxModels), NULL, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, TLAS_BINDING, mRaytracingTLAS);
+	glNamedBufferStorage(mRaytracingTLAS, (2 * 16) * (static_cast<uint32_t>(1) << numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxModels)), NULL, 0);
 	// END OF TLAS CREATION
 
 	// BLAS COLLECTION CREATION
 	glCreateBuffers(1, &mRaytracingBLASCollection);
-	glNamedBufferStorage(mRaytracingBLASCollection, (2 * 16) * (1 << expOfTwo_maxModels) * numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel), NULL, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_BINDING, mRaytracingBLASCollection);
+	glNamedBufferStorage(mRaytracingBLASCollection, (2 * 16) * (static_cast<uint32_t>(1) << expOfTwo_maxModels) * numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel), NULL, 0);
 	// END OF BLAS COLLECTION CREATION
 
 	// MODELMATRIX CREATION
 	glCreateBuffers(1, &mRaytracingModelMatrix);
-	glNamedBufferStorage(mRaytracingModelMatrix, sizeof(glm::mat4) * (1 << expOfTwo_maxModels), NULL, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BLAS_ATTRIBUTES_BINDING, mRaytracingModelMatrix);
+	glNamedBufferStorage(mRaytracingModelMatrix, sizeof(glm::mat4) * (static_cast<uint32_t>(1) << expOfTwo_maxModels), NULL, 0);
 	// END OF MODELMATRIX CREATION
 
 	// GEOMETRY COLLECTION CREATION
 	glCreateBuffers(1, &mRaytracingGeometryCollection);
 	glNamedBufferStorage(mRaytracingGeometryCollection, sizeof(Core::Triangle) * (static_cast<uint32_t>(1) << expOfTwo_maxModels)* (static_cast<uint32_t>(1) << expOfTwo_maxCollectionsForModel)* (static_cast<uint32_t>(1) << expOfTwo_maxGeometryOnCollection), NULL, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, GEOMETRY_BINDING, mRaytracingGeometryCollection);
 	// END OF GEOMETRY COLLECTION CREATION
 
 	glViewport(0, 0, getWidth(), getHeight());

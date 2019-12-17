@@ -48,6 +48,8 @@
 	#define MODELMATRIX_MEMORY_MODEL coherent
 #endif
 
+#define UPDATE_WORKGROUP_X 256
+
 #define FLUSH_WORKGROUP_X 256
 
 #define INSERT_WORKGROUP_X 16

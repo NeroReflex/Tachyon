@@ -94,7 +94,7 @@ VulkanPipeline::VulkanPipeline(GLFWwindow* window) noexcept
 			raytrace_render_compVK_size
 		)
 		}))),
-	mRaytracingTLAS(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (1 << expOfTwo_maxModels) )), // 2*16 is sizeof(AABB)
+	mRaytracingTLAS(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxModels)) )), // 2*16 is sizeof(AABB)
 	mRaytracingBLASCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, (2 * 16) * (1 << expOfTwo_maxModels) * numberOfTreeElementsToContainExpOfTwoLeafs(expOfTwo_maxCollectionsForModel) )),
 	mRaytracingModelMatrix(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(glm::mat4) * (1 << expOfTwo_maxModels) )),
 	mRaytracingGeometryCollection(mDevice->createBuffer({ mQueueFamily }, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(Core::Triangle)* (1 << expOfTwo_maxModels) * (1 << expOfTwo_maxCollectionsForModel) * (1 << expOfTwo_maxGeometryOnCollection) )),

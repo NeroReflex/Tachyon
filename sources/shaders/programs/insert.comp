@@ -91,7 +91,7 @@ void main() {
 	);
 
 	// Wait for all geometry to be in-place
-	memoryBarrierImage();
+	memoryBarrierBuffer();
 	//barrier();
 
 	// the geometry has been updated
@@ -101,7 +101,7 @@ void main() {
 	WriteAABBOnBLAS_ByIndexes(targetBLAS, indexOfNodeInBLASToUpdate, generateAABBFromGeometryOnBLASLeaf_ByBaseIndexOnGeometry(targetBLAS, gl_GlobalInvocationID.y));
 
 	while (!isRootNode(indexOfNodeInBLASToUpdate)) {
-		memoryBarrierImage();
+		memoryBarrierBuffer();
 
 		indexOfNodeInBLASToUpdate = parentNode(indexOfNodeInBLASToUpdate);
 
