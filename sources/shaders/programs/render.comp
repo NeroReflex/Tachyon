@@ -80,4 +80,6 @@ void main() {
 
 	// output to a specific pixel in the image
 	imageStore(renderTarget, pixel_coords, pixel);
+
+	imageStore(debugOutput, pixel_coords, vec4(1, 0, 0, 0.5));
 }
